@@ -27,6 +27,41 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
       "cdn": "https://cdn.mp3quran.net/audio/yassen-jazairi/r1",
     },
     {
+      "id": "sheim",
+      "name": "الشيخ عبد العزيز سحيم (الجزائر - ورش)",
+      "cdn": "https://cdn.mp3quran.net/audio/abdelaziz-sheim/r1",
+    },
+    {
+      "id": "kouchi",
+      "name": "الشيخ العيون الكوشي (رواية ورش عن نافع)",
+      "cdn": "https://cdn.mp3quran.net/audio/laayoun-kouchi/r1",
+    },
+    {
+      "id": "kazabri",
+      "name": "الشيخ عمر القزابري (رواية ورش عن نافع)",
+      "cdn": "https://cdn.mp3quran.net/audio/omar-kazabri/r1",
+    },
+    {
+      "id": "husr",
+      "name": "الشيخ محمود خليل الحصري (ورش عن نافع)",
+      "cdn": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3",
+    },
+    {
+      "id": "hudhaifi",
+      "name": "الشيخ علي بن عبد الرحمن الحذيفي",
+      "cdn": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r1",
+    },
+    {
+      "id": "shatri",
+      "name": "الشيخ أبو بكر الشاطري",
+      "cdn": "https://cdn.mp3quran.net/audio/abubakr-shatri/r1",
+    },
+    {
+      "id": "islam_sobhi",
+      "name": "القارئ إسلام صبحي",
+      "cdn": "https://cdn.mp3quran.net/audio/islam-sobhi/r1",
+    },
+    {
       "id": "basit",
       "name": "الشيخ عبد الباسط عبد الصمد (مرتل)",
       "cdn": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3",
@@ -35,21 +70,6 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
       "id": "minsh",
       "name": "الشيخ محمد صديق المنشاوي",
       "cdn": "https://cdn.mp3quran.net/audio/muhammad-minshawi/r1",
-    },
-    {
-      "id": "husr",
-      "name": "الشيخ محمود خليل الحصري (ورش عن نافع)",
-      "cdn": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3",
-    },
-    {
-      "id": "sds",
-      "name": "الشيخ عبد الرحمن السديس",
-      "cdn": "https://server11.mp3quran.net/sds",
-    },
-    {
-      "id": "shur",
-      "name": "الشيخ سعود الشريم",
-      "cdn": "https://server7.mp3quran.net/shur",
     },
     {
       "id": "maher",
@@ -62,14 +82,14 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
       "cdn": "https://cdn.mp3quran.net/audio/saad-ghamdi/r1",
     },
     {
-      "id": "shatri",
-      "name": "الشيخ أبو بكر الشاطري",
-      "cdn": "https://server11.mp3quran.net/shatri",
-    },
-    {
       "id": "dosari",
       "name": "الشيخ ياسر الدوسري",
       "cdn": "https://server11.mp3quran.net/yasser",
+    },
+    {
+      "id": "shur",
+      "name": "الشيخ سعود الشريم",
+      "cdn": "https://server7.mp3quran.net/shur",
     },
   ];
 

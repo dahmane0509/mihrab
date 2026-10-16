@@ -9,6 +9,7 @@ import '../data/algeria_communes.dart';
 import '../data/world_cities.dart';
 import 'adhan_audio_service.dart';
 import 'prayer_service.dart';
+import 'silent_mode_service.dart';
 
 /// Service responsible for notifying and playing Adhan audio when prayer times arrive.
 class PrayerNotificationService {
@@ -138,15 +139,21 @@ class PrayerNotificationService {
       final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
-        // Clean up older channels to force fresh Android sound & importance configuration
-        try {
-          await androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v6');
-          await androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v5');
-          await androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v4');
-          await androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v3');
-          await androidPlugin.deleteNotificationChannel(channelId: 'prayer_adhan_channel_v2');
-          await androidPlugin.deleteNotificationChannel(channelId: 'prayer_channel_high');
-        } catch (_) {}
+        // Clean up older channels once
+        final cleaned = prefs.getBool('legacy_channels_cleaned_v7') ?? false;
+        if (!cleaned) {
+          try {
+            await Future.wait([
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v6'),
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v5'),
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v4'),
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v3'),
+              androidPlugin.deleteNotificationChannel(channelId: 'prayer_adhan_channel_v2'),
+              androidPlugin.deleteNotificationChannel(channelId: 'prayer_channel_high'),
+            ]);
+            await prefs.setBool('legacy_channels_cleaned_v7', true);
+          } catch (_) {}
+        }
 
         await androidPlugin.createNotificationChannel(prayerChannel);
         await androidPlugin.requestNotificationsPermission();
@@ -471,6 +478,13 @@ class PrayerNotificationService {
       );
     } catch (e) {
       debugPrint("Failed to display adhan notification: $e");
+    }
+
+    // 3. Auto Silent Mode (Mosque reverence mode)
+    try {
+      await SilentModeService.enableMosqueSilentMode(durationMinutes: 25);
+    } catch (e) {
+      debugPrint("Failed to enable auto silent mode: $e");
     }
   }
 

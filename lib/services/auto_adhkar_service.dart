@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class AdhkarItem {
   final String id;
@@ -156,10 +159,19 @@ class AutoAdhkarService {
   static List<AdhkarItem> get enabledAdhkar =>
       allAdhkar.where((item) => item.isEnabled).toList();
 
+  static Timer? _activeTimer;
+  static const int _baseScheduledNotifId = 8000;
+  static const int _scheduleBatchSize = 24;
+
   /// Initialize local notification channels and load preferences
   static Future<void> initialize() async {
+    if (_isInitialized) return;
     try {
-      // Ensure notification channel is created for auto adhkar
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initSettings = InitializationSettings(android: androidInit);
+      await _notificationsPlugin.initialize(settings: initSettings);
+
+      // Ensure notification channel is created for auto adhkar with HIGH importance for heads-up display
       final androidPlugin = _notificationsPlugin
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
@@ -170,7 +182,7 @@ class AutoAdhkarService {
             channelId,
             channelName,
             description: channelDesc,
-            importance: Importance.defaultImportance,
+            importance: Importance.high,
             playSound: true,
             enableVibration: true,
             showBadge: true,
@@ -181,12 +193,91 @@ class AutoAdhkarService {
         await androidPlugin.requestNotificationsPermission();
       }
 
+      tz.initializeTimeZones();
       _isInitialized = true;
     } catch (e) {
       debugPrint("AutoAdhkarService initialization warning: $e");
     }
 
     await loadSettings();
+    if (isEnabled) {
+      await startScheduler();
+    }
+  }
+
+  /// Start scheduled background timer & OS notifications
+  static Future<void> startScheduler() async {
+    await stopScheduler();
+    if (!isEnabled) return;
+
+    // 1. In-process periodic timer while app process is alive
+    _activeTimer = Timer.periodic(Duration(minutes: intervalMinutes), (timer) {
+      if (isEnabled) {
+        showFloatingDhikrNotification();
+      } else {
+        timer.cancel();
+      }
+    });
+
+    // 2. Schedule upcoming OS-level notifications via timezone
+    if (!_isInitialized) return;
+
+    try {
+      tz.initializeTimeZones();
+      final now = tz.TZDateTime.now(tz.local);
+      final activeList = enabledAdhkar;
+      if (activeList.isEmpty) return;
+
+      for (int i = 1; i <= _scheduleBatchSize; i++) {
+        final scheduledTime = now.add(Duration(minutes: intervalMinutes * i));
+        final item = activeList[Random().nextInt(activeList.length)];
+        final notifId = _baseScheduledNotifId + i;
+
+        final androidDetails = AndroidNotificationDetails(
+          channelId,
+          channelName,
+          channelDescription: channelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          ticker: 'ذكر ودعاء',
+          icon: '@mipmap/ic_launcher',
+          styleInformation: BigTextStyleInformation(
+            item.text,
+            contentTitle: '📿 ${item.category}',
+            summaryText: item.virtue.isNotEmpty ? item.virtue : 'تطبيق مِحْراب',
+          ),
+          playSound: soundEnabled,
+          enableVibration: true,
+        );
+
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            id: notifId,
+            title: '📿 ${item.category}',
+            body: item.text,
+            scheduledDate: scheduledTime,
+            notificationDetails: NotificationDetails(android: androidDetails),
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          );
+        } catch (e) {
+          debugPrint("Failed to schedule adhkar item $notifId: $e");
+        }
+      }
+    } catch (e) {
+      debugPrint("Adhkar scheduling note: $e");
+    }
+  }
+
+  /// Stop scheduler and cancel all pending scheduled notifications
+  static Future<void> stopScheduler() async {
+    _activeTimer?.cancel();
+    _activeTimer = null;
+    if (!_isInitialized) return;
+    try {
+      for (int i = 1; i <= _scheduleBatchSize; i++) {
+        await _notificationsPlugin.cancel(id: _baseScheduledNotifId + i);
+      }
+    } catch (_) {}
   }
 
   /// Load persisted user settings and custom adhkar
@@ -216,7 +307,7 @@ class AutoAdhkarService {
     }
   }
 
-  /// Save settings to SharedPreferences
+  /// Save settings to SharedPreferences and update scheduler
   static Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('auto_adhkar_enabled', isEnabled);
@@ -230,6 +321,13 @@ class AutoAdhkarService {
     // Save custom items
     final customJson = jsonEncode(_customAdhkar.map((e) => e.toJson()).toList());
     await prefs.setString('auto_adhkar_custom_items', customJson);
+
+    // Update active schedule
+    if (isEnabled) {
+      await startScheduler();
+    } else {
+      await stopScheduler();
+    }
   }
 
   /// Toggle dhikr enabled status
@@ -279,6 +377,7 @@ class AutoAdhkarService {
   /// Trigger a heads-up floating notification displaying the dhikr on the screen
   static Future<void> showFloatingDhikrNotification({AdhkarItem? specificItem}) async {
     if (!isEnabled && specificItem == null) return;
+    if (!_isInitialized) return;
 
     final item = specificItem ?? getRandomEnabledDhikr();
     if (item == null) return;
@@ -288,9 +387,10 @@ class AutoAdhkarService {
         channelId,
         channelName,
         channelDescription: channelDesc,
-        importance: Importance.low,
-        priority: Priority.low,
+        importance: Importance.high,
+        priority: Priority.high,
         ticker: 'ذكر ودعاء',
+        icon: '@mipmap/ic_launcher',
         styleInformation: BigTextStyleInformation(
           item.text,
           contentTitle: '📿 ${item.category}',

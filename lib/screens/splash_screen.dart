@@ -35,10 +35,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   void initState() {
     super.initState();
 
-    // 1. Entrance animation (1800 ms)
+    // 1. Entrance animation (1200 ms)
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1200),
     );
 
     _scaleAnimation = CurvedAnimation(
@@ -87,8 +87,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // Start entrance
     _entranceController.forward();
 
-    // Navigate to home screen smoothly after 3.2 seconds
-    _navigationTimer = Timer(const Duration(milliseconds: 3200), () {
+    // Navigate to home screen smoothly after 2.3 seconds
+    _navigationTimer = Timer(const Duration(milliseconds: 2300), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder<void>(
@@ -96,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             transitionsBuilder: (_, animation, __, child) {
               return FadeTransition(opacity: animation, child: child);
             },
-            transitionDuration: const Duration(milliseconds: 650),
+            transitionDuration: const Duration(milliseconds: 500),
           ),
         );
       }
@@ -304,37 +304,30 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         offset: Offset(0, _slideAnimation.value),
                         child: Column(
                           children: [
-                            // Calligraphic Title with Amiri Font
+                            // Modern Sans / Cairo Minimalist Title (خالٍ من التشكيل والزخارف)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  "مِـحْـرَابْ",
-                                  style: GoogleFonts.amiri(
+                                  "محراب",
+                                  style: GoogleFonts.cairo(
                                     color: Colors.white,
-                                    fontSize: 34,
+                                    fontSize: 38,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
-                                    shadows: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
 
-                            // English Brand Name Underneath
+                            // English Brand Name Underneath in modern sans
                             Text(
                               "M I H R A B",
-                              style: GoogleFonts.cinzel(
-                                color: Colors.white,
+                              style: GoogleFonts.cairo(
+                                color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.bold,
                                 letterSpacing: 5,
                               ),
                             ),
@@ -351,12 +344,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                   width: 1,
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "مواقيت الصلاة والقرآن",
-                                style: TextStyle(
+                                style: GoogleFonts.cairo(
                                   color: Colors.white,
                                   fontSize: 13,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),

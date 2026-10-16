@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/quran_data.dart';
 import '../data/quran_texts.dart';
 import '../services/theme_service.dart';
+import '../services/language_service.dart';
 
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
@@ -28,15 +29,19 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
 
   final List<Map<String, String>> _reciters = [
     {"id": "jaza", "name": "الشيخ ياسين الجزائري (رواية ورش)", "server": "https://cdn.mp3quran.net/audio/yassen-jazairi/r1"},
+    {"id": "sheim", "name": "الشيخ عبد العزيز سحيم (الجزائر - ورش)", "server": "https://cdn.mp3quran.net/audio/abdelaziz-sheim/r1"},
+    {"id": "kouchi", "name": "الشيخ العيون الكوشي (رواية ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/laayoun-kouchi/r1"},
+    {"id": "kazabri", "name": "الشيخ عمر القزابري (رواية ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/omar-kazabri/r1"},
+    {"id": "husr", "name": "الشيخ محمود خليل الحصري (ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3"},
+    {"id": "hudhaifi", "name": "الشيخ علي بن عبد الرحمن الحذيفي", "server": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r1"},
+    {"id": "shatri", "name": "الشيخ أبو بكر الشاطري", "server": "https://cdn.mp3quran.net/audio/abubakr-shatri/r1"},
+    {"id": "islam_sobhi", "name": "القارئ إسلام صبحي", "server": "https://cdn.mp3quran.net/audio/islam-sobhi/r1"},
     {"id": "basit", "name": "الشيخ عبد الباسط عبد الصمد (مرتل)", "server": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3"},
     {"id": "minsh", "name": "الشيخ محمد صديق المنشاوي", "server": "https://cdn.mp3quran.net/audio/muhammad-minshawi/r1"},
-    {"id": "husr", "name": "الشيخ محمود خليل الحصري (ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3"},
-    {"id": "sds", "name": "الشيخ عبد الرحمن السديس", "server": "https://server11.mp3quran.net/sds"},
-    {"id": "shur", "name": "الشيخ سعود الشريم", "server": "https://server7.mp3quran.net/shur"},
     {"id": "maher", "name": "الشيخ ماهر المعيقلي", "server": "https://cdn.mp3quran.net/audio/maher-muaiqly/r1"},
     {"id": "s_gmd", "name": "الشيخ سعد الغامدي", "server": "https://cdn.mp3quran.net/audio/saad-ghamdi/r1"},
-    {"id": "shatri", "name": "الشيخ أبو بكر الشاطري", "server": "https://server11.mp3quran.net/shatri"},
     {"id": "dosari", "name": "الشيخ ياسر الدوسري", "server": "https://server11.mp3quran.net/yasser"},
+    {"id": "shur", "name": "الشيخ سعود الشريم", "server": "https://server7.mp3quran.net/shur"},
   ];
 
   int? _savedBookmarkSurah;
@@ -617,6 +622,139 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
   }
 }
 
+class QuranTranslationInfo {
+  final String id;
+  final String langCode;
+  final String authorName;
+  final String languageName;
+  final String flag;
+  final bool isRtl;
+
+  const QuranTranslationInfo({
+    required this.id,
+    required this.langCode,
+    required this.authorName,
+    required this.languageName,
+    required this.flag,
+    this.isRtl = false,
+  });
+}
+
+const List<QuranTranslationInfo> verifiedTranslations = [
+  QuranTranslationInfo(
+    id: 'it.piccardo',
+    langCode: 'it',
+    authorName: 'Hamza Roberto Piccardo (UCOII)',
+    languageName: 'Italiano',
+    flag: '🇮🇹',
+  ),
+  QuranTranslationInfo(
+    id: 'en.sahih',
+    langCode: 'en',
+    authorName: 'Saheeh International (King Fahd standard)',
+    languageName: 'English',
+    flag: '🇬🇧',
+  ),
+  QuranTranslationInfo(
+    id: 'fr.hamidullah',
+    langCode: 'fr',
+    authorName: 'Muhammad Hamidullah (مجمع الملك فهد)',
+    languageName: 'Français',
+    flag: '🇫🇷',
+  ),
+  QuranTranslationInfo(
+    id: 'es.cortes',
+    langCode: 'es',
+    authorName: 'Julio Cortés',
+    languageName: 'Español',
+    flag: '🇪🇸',
+  ),
+  QuranTranslationInfo(
+    id: 'de.bubenheim',
+    langCode: 'de',
+    authorName: 'A. S. F. Bubenheim & N. Elyas (مجمع الملك فهد)',
+    languageName: 'Deutsch',
+    flag: '🇩🇪',
+  ),
+  QuranTranslationInfo(
+    id: 'tr.diyanet',
+    langCode: 'tr',
+    authorName: 'Diyanet İşleri Başkanlığı',
+    languageName: 'Türkçe',
+    flag: '🇹🇷',
+  ),
+  QuranTranslationInfo(
+    id: 'id.indonesian',
+    langCode: 'id',
+    authorName: 'Kementerian Agama RI',
+    languageName: 'Bahasa Indonesia',
+    flag: '🇮🇩',
+  ),
+  QuranTranslationInfo(
+    id: 'ur.jalandhry',
+    langCode: 'ur',
+    authorName: 'فاتح محمد جالندھری (مجمع الملك فهد)',
+    languageName: 'اردو',
+    flag: '🇵🇰',
+    isRtl: true,
+  ),
+  QuranTranslationInfo(
+    id: 'ru.kuliev',
+    langCode: 'ru',
+    authorName: 'Эльмир Кулиев (مجمع الملك فهد)',
+    languageName: 'Русский',
+    flag: '🇷🇺',
+  ),
+];
+
+const Map<String, List<String>> offlineFatihaTranslations = {
+  'it.piccardo': [
+    'In nome di Allah, il Compassionevole, il Misericordioso.',
+    'La lode appartiene ad Allah, Signore dei mondi,',
+    'il Compassionevole, il Misericordioso,',
+    'Re del Giorno del Giudizio.',
+    'Te noi adoriamo e a Te chiediamo aiuto.',
+    'Guidaci sulla retta via,',
+    'la via di coloro che hai colmato di grazia, non di coloro che [sono incorsi] nella [Tua] ira, né degli sviati.',
+  ],
+  'en.sahih': [
+    'In the name of Allah, the Entirely Merciful, the Especially Merciful.',
+    '[All] praise is [due] to Allah, Lord of the worlds -',
+    'The Entirely Merciful, the Especially Merciful,',
+    'Sovereign of the Day of Recompense.',
+    'It is You we worship and You we ask for help.',
+    'Guide us to the straight path -',
+    'The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.',
+  ],
+  'fr.hamidullah': [
+    'Au nom d\'Allah, le Tout Miséricordieux, le Très Miséricordieux.',
+    'Louange à Allah, Seigneur de l\'univers.',
+    'Le Tout Miséricordieux, le Très Miséricordieux,',
+    'Maître du Jour de la rétribution.',
+    'C\'est Toi [Seul] que nous adorons, et c\'est Toi [Seul] dont nous implorons le secours.',
+    'Guide-nous dans le droit chemin,',
+    'Le chemin de ceux que Tu as comblés de faveurs, non pas de ceux qui ont encouru Ta colère, ni des égarés.',
+  ],
+  'es.cortes': [
+    'En el nombre de Alá, el Compasivo, el Misericordioso.',
+    'Alabado sea Alá, Señor del universo,',
+    'el Compasivo, el Misericordioso,',
+    'Dueño del día del Juicio.',
+    'A Ti solo servimos y a Ti solo imploramos ayuda.',
+    'Dirígenos por la vía recta,',
+    'la vía de los que Tú has agraciado, no de los que han incurrido en la ira, ni de los extraviados.',
+  ],
+  'de.bubenheim': [
+    'Im Namen Allahs, des Allerbarmers, des Barmherzigen.',
+    'Alles Lob gebührt Allah, dem Herrn der Welten,',
+    'dem Allerbarmer, dem Barmherzigen,',
+    'dem Herrscher am Tage des Gerichts.',
+    'Dir allein dienen wir, und zu Dir allein flehen wir um Hilfe.',
+    'Leite uns den geraden Weg,',
+    'den Weg derer, denen Du Gnade erwiesen hast, nicht derer, die Zorn erregt haben, und nicht der Irregehenden.',
+  ],
+};
+
 class SurahReaderView extends StatefulWidget {
   final Surah surah;
 
@@ -628,15 +766,31 @@ class SurahReaderView extends StatefulWidget {
 
 class _SurahReaderViewState extends State<SurahReaderView> {
   List<String> _verses = [];
+  List<String> _translations = [];
   bool _isLoading = true;
   double _fontSize = 19.0;
   bool _isBookmarked = false;
+  bool _showTranslation = false;
+  late QuranTranslationInfo _currentTranslation;
 
   @override
   void initState() {
     super.initState();
+    _initTranslationSetting();
     _loadSurahVerses();
     _checkBookmark();
+  }
+
+  void _initTranslationSetting() {
+    final currentLang = LanguageService.languageCode;
+    _currentTranslation = verifiedTranslations.firstWhere(
+      (t) => t.langCode == currentLang,
+      orElse: () => verifiedTranslations[1], // default Saheeh International
+    );
+    // Non-Arabic users get translation shown automatically
+    if (currentLang != 'ar') {
+      _showTranslation = true;
+    }
   }
 
   Future<void> _checkBookmark() async {
@@ -678,42 +832,140 @@ class _SurahReaderViewState extends State<SurahReaderView> {
     }
   }
 
+  void _toggleTranslation() async {
+    setState(() {
+      _showTranslation = !_showTranslation;
+    });
+    if (_showTranslation && _translations.isEmpty) {
+      await _loadSurahVerses();
+    }
+  }
+
+  void _showTranslationSelectorDialog(AppThemeColor theme) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: BoxDecoration(
+          color: theme.cardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: theme.accent.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.translate, color: theme.accent, size: 22),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    "ترجمات معاني القرآن المعتمدة عالمياً",
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: verifiedTranslations.length,
+                separatorBuilder: (_, __) => const Divider(color: Color(0xFF334155), height: 1),
+                itemBuilder: (context, index) {
+                  final t = verifiedTranslations[index];
+                  final isSelected = t.id == _currentTranslation.id;
+                  return ListTile(
+                    leading: Text(t.flag, style: const TextStyle(fontSize: 22)),
+                    title: Text(
+                      t.languageName,
+                      style: TextStyle(
+                        color: isSelected ? theme.accent : Colors.white,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(
+                      t.authorName,
+                      style: const TextStyle(color: Colors.white60, fontSize: 11),
+                    ),
+                    trailing: isSelected ? Icon(Icons.check_circle, color: theme.accent) : null,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        _currentTranslation = t;
+                        _showTranslation = true;
+                        _translations = [];
+                      });
+                      _loadSurahVerses();
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadSurahVerses() async {
     setState(() {
       _isLoading = true;
     });
 
-    // 1. Check local pre-bundled offline repository if complete
+    final prefs = await SharedPreferences.getInstance();
+
+    // 1. Check local Arabic verses
+    List<String> loadedVerses = [];
     if (QuranTexts.offlineSurahs.containsKey(widget.surah.number)) {
       final offlineList = QuranTexts.offlineSurahs[widget.surah.number]!;
       if (offlineList.length >= widget.surah.versesCount) {
-        setState(() {
-          _verses = offlineList;
-          _isLoading = false;
-        });
-        return;
+        loadedVerses = offlineList;
+      }
+    }
+    if (loadedVerses.isEmpty) {
+      final cached = prefs.getStringList('surah_text_${widget.surah.number}');
+      if (cached != null && cached.length >= widget.surah.versesCount) {
+        loadedVerses = cached;
       }
     }
 
-    // 2. Check local SharedPreferences cache if complete
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cached = prefs.getStringList('surah_text_${widget.surah.number}');
-      if (cached != null && cached.length >= widget.surah.versesCount) {
+    // 2. Check local Translation verses
+    List<String> loadedTrans = [];
+    if (widget.surah.number == 1 && offlineFatihaTranslations.containsKey(_currentTranslation.id)) {
+      loadedTrans = offlineFatihaTranslations[_currentTranslation.id]!;
+    }
+    if (loadedTrans.isEmpty) {
+      final cachedTrans = prefs.getStringList('surah_trans_${widget.surah.number}_${_currentTranslation.id}');
+      if (cachedTrans != null && cachedTrans.length >= widget.surah.versesCount) {
+        loadedTrans = cachedTrans;
+      }
+    }
+
+    // Fast-path: if both are ready, use immediately
+    if (loadedVerses.isNotEmpty && (!_showTranslation || loadedTrans.isNotEmpty)) {
+      if (mounted) {
         setState(() {
-          _verses = cached;
+          _verses = loadedVerses;
+          _translations = loadedTrans;
           _isLoading = false;
         });
-        return;
       }
-    } catch (_) {}
+      return;
+    }
 
-    // 3. Auto-fetch complete Surah from Quran Cloud API and save locally
+    // 3. Fetch from AlQuran Cloud API (Uthmani + verified translation edition)
     try {
       final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 8);
+      client.connectionTimeout = const Duration(seconds: 10);
+      final editionsParam = _showTranslation
+          ? 'quran-uthmani,${_currentTranslation.id}'
+          : 'quran-uthmani';
+
       final request = await client.getUrl(
-        Uri.parse('https://api.alquran.cloud/v1/surah/${widget.surah.number}/editions/quran-uthmani'),
+        Uri.parse('https://api.alquran.cloud/v1/surah/${widget.surah.number}/editions/$editionsParam'),
       );
       final response = await request.close();
 
@@ -721,54 +973,72 @@ class _SurahReaderViewState extends State<SurahReaderView> {
         final jsonString = await response.transform(utf8.decoder).join();
         final dynamic decoded = json.decode(jsonString);
         if (decoded is Map<String, dynamic> && decoded['data'] is List && (decoded['data'] as List).isNotEmpty) {
-          final dynamic firstEdition = (decoded['data'] as List)[0];
+          final editionsList = decoded['data'] as List<dynamic>;
+
+          // Arabic edition
+          final firstEdition = editionsList[0];
           if (firstEdition is Map<String, dynamic> && firstEdition['ayahs'] is List) {
             final List<dynamic> ayahsList = firstEdition['ayahs'] as List<dynamic>;
-            final List<String> fetched = ayahsList
+            loadedVerses = ayahsList
                 .map((dynamic a) => (a is Map<String, dynamic>) ? (a['text']?.toString() ?? '') : '')
                 .where((s) => s.isNotEmpty)
                 .toList();
 
-            if (fetched.isNotEmpty) {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setStringList('surah_text_${widget.surah.number}', fetched);
-
-              if (mounted) {
-                setState(() {
-                  _verses = fetched;
-                  _isLoading = false;
-                });
-              }
-              return;
+            if (loadedVerses.isNotEmpty) {
+              await prefs.setStringList('surah_text_${widget.surah.number}', loadedVerses);
             }
+          }
+
+          // Translation edition
+          if (editionsList.length > 1) {
+            final transEdition = editionsList[1];
+            if (transEdition is Map<String, dynamic> && transEdition['ayahs'] is List) {
+              final List<dynamic> ayahsList = transEdition['ayahs'] as List<dynamic>;
+              loadedTrans = ayahsList
+                  .map((dynamic a) => (a is Map<String, dynamic>) ? (a['text']?.toString() ?? '') : '')
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+
+              if (loadedTrans.isNotEmpty) {
+                await prefs.setStringList(
+                  'surah_trans_${widget.surah.number}_${_currentTranslation.id}',
+                  loadedTrans,
+                );
+              }
+            }
+          }
+
+          if (mounted && loadedVerses.isNotEmpty) {
+            setState(() {
+              _verses = loadedVerses;
+              _translations = loadedTrans;
+              _isLoading = false;
+            });
+            return;
           }
         }
       }
     } catch (e) {
-      debugPrint("API fetch error: $e");
+      debugPrint("Quran API fetch error: $e");
     }
 
-    // 4. Fallback: if we have pre-bundled partial verses, show them
-    if (QuranTexts.offlineSurahs.containsKey(widget.surah.number)) {
-      final partial = QuranTexts.offlineSurahs[widget.surah.number]!;
-      if (partial.isNotEmpty) {
-        setState(() {
-          _verses = partial;
-          _isLoading = false;
-        });
-        return;
-      }
+    // 4. Fallback if offline
+    if (loadedVerses.isEmpty && QuranTexts.offlineSurahs.containsKey(widget.surah.number)) {
+      loadedVerses = QuranTexts.offlineSurahs[widget.surah.number]!;
     }
 
-    // Comprehensive Fallback Overview if offline and not in bundle
-    setState(() {
-      _isLoading = false;
-      _verses = [
-        "سورة ${widget.surah.nameAr} من السور الـ ${widget.surah.typeAr} في كتاب الله عز وجل، وعدد آياتها ${widget.surah.versesCount} آية مباركة.",
-        "قال رسول الله ﷺ: «اقْرَءُوا القُرْآنَ فإنَّه يَأْتي يَومَ القِيامَةِ شَفِيعًا لأَصْحابِهِ».",
-        "يمكنك الاستماع للتلاوة العطرة لهذه السورة بصوت كبار القراء عبر تبويب «استماع وتلاوة» أعلاه في أي وقت.",
-      ];
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _verses = loadedVerses.isNotEmpty
+            ? loadedVerses
+            : [
+                "سورة ${widget.surah.nameAr} من السور الـ ${widget.surah.typeAr} في كتاب الله عز وجل، وعدد آياتها ${widget.surah.versesCount} آية مباركة.",
+                "قال رسول الله ﷺ: «اقْرَءُوا القُرْآنَ فإنَّه يَأْتي يَومَ القِيامَةِ شَفِيعًا لأَصْحابِهِ».",
+              ];
+        _translations = loadedTrans;
+      });
+    }
   }
 
   @override
@@ -784,6 +1054,14 @@ class _SurahReaderViewState extends State<SurahReaderView> {
             centerTitle: true,
             actions: [
               IconButton(
+                icon: Icon(
+                  _showTranslation ? Icons.translate : Icons.g_translate_outlined,
+                  color: _showTranslation ? theme.accent : Colors.white70,
+                ),
+                tooltip: LanguageService.tr('quran_translation_toggle'),
+                onPressed: _toggleTranslation,
+              ),
+              IconButton(
                 icon: Icon(_isBookmarked ? Icons.bookmark : Icons.bookmark_border, color: theme.accent),
                 tooltip: "حفظ العلامة المرجعية",
                 onPressed: _toggleBookmark,
@@ -795,12 +1073,6 @@ class _SurahReaderViewState extends State<SurahReaderView> {
                   setState(() {
                     if (_fontSize < 30) _fontSize += 2;
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      duration: Duration(milliseconds: 600),
-                      content: Text("تم تكبير الخط"),
-                    ),
-                  );
                 },
               ),
               IconButton(
@@ -810,12 +1082,6 @@ class _SurahReaderViewState extends State<SurahReaderView> {
                   setState(() {
                     if (_fontSize > 14) _fontSize -= 2;
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      duration: Duration(milliseconds: 600),
-                      content: Text("تم تصغير الخط"),
-                    ),
-                  );
                 },
               ),
             ],
@@ -850,6 +1116,41 @@ class _SurahReaderViewState extends State<SurahReaderView> {
                               "${widget.surah.typeAr} • عدد آياتها: ${widget.surah.versesCount} آية",
                               style: const TextStyle(color: Colors.white70, fontSize: 13),
                             ),
+                            if (_showTranslation) ...[
+                              const SizedBox(height: 12),
+                              InkWell(
+                                onTap: () => _showTranslationSelectorDialog(theme),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: theme.accent.withValues(alpha: 0.4)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(_currentTranslation.flag, style: const TextStyle(fontSize: 16)),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          "${_currentTranslation.languageName} • ${_currentTranslation.authorName}",
+                                          style: TextStyle(
+                                            color: theme.accent,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(Icons.keyboard_arrow_down, color: theme.accent, size: 18),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -881,40 +1182,72 @@ class _SurahReaderViewState extends State<SurahReaderView> {
                         child: Column(
                           children: List.generate(_verses.length, (i) {
                             final verseNum = i + 1;
+                            final hasTranslation = _showTranslation &&
+                                i < _translations.length &&
+                                _translations[i].isNotEmpty;
                             return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              padding: const EdgeInsets.symmetric(vertical: 12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: theme.darkPrimary,
-                                      border: Border.all(color: theme.accent, width: 1),
-                                    ),
-                                    child: Text(
-                                      "$verseNum",
-                                      style: TextStyle(
-                                        color: theme.accent,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: theme.darkPrimary,
+                                          border: Border.all(color: theme.accent, width: 1),
+                                        ),
+                                        child: Text(
+                                          "$verseNum",
+                                          style: TextStyle(
+                                            color: theme.accent,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Text(
+                                          _verses[i],
+                                          textDirection: TextDirection.rtl,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: _fontSize,
+                                            height: 2.1,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (hasTranslation) ...[
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 36),
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F172A).withValues(alpha: 0.65),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFF334155)),
+                                      ),
+                                      child: Text(
+                                        _translations[i],
+                                        textDirection: _currentTranslation.isRtl
+                                            ? TextDirection.rtl
+                                            : TextDirection.ltr,
+                                        style: TextStyle(
+                                          color: const Color(0xFFCBD5E1),
+                                          fontSize: (_fontSize * 0.74).clamp(13.0, 20.0),
+                                          height: 1.6,
+                                          fontWeight: FontWeight.w400,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Text(
-                                      _verses[i],
-                                      textDirection: TextDirection.rtl,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: _fontSize,
-                                        height: 2.1,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             );
@@ -929,3 +1262,4 @@ class _SurahReaderViewState extends State<SurahReaderView> {
     );
   }
 }
+

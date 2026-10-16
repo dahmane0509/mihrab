@@ -6,6 +6,9 @@ import '../services/location_service.dart';
 import '../services/adhan_audio_service.dart';
 import '../services/prayer_service.dart';
 import '../services/prayer_notification_service.dart';
+import '../services/silent_mode_service.dart';
+import '../services/auto_adhkar_service.dart';
+import '../screens/auto_adhkar_screen.dart';
 import '../services/app_feedback.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/language_service.dart';
@@ -31,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoSilentMode = true;
   bool _useGpsAuto = false;
   bool _iqamahReminder = true;
+  bool _autoAdhkar = false;
+  int _adhkarInterval = 15;
 
   // Calculation method & Madhab
   String _calculationMethod = "algeria";
@@ -53,19 +58,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'isha': 'madinah',
   };
 
-  final List<Map<String, String>> _adhanSoundsList = [
-    {"id": "algeria_grand_mosque", "name": "أذان جامع الجزائر (الجامع الأعظم)", "desc": "الأذان الرسمي لجامع الجزائر"},
-    {"id": "traditional_algerian", "name": "الأذان الجزائري الأصيل (المقام المغاربي)", "desc": "أذان الإذاعة والتلفزيون الجزائري"},
-    {"id": "makkah", "name": "أذان المسجد الحرام (مكة المكرمة)", "desc": "الشيخ علي ملا"},
-    {"id": "madinah", "name": "أذان المسجد النبوي (المدينة المنورة)", "desc": "الشيخ عصام بخاري"},
-    {"id": "al_aqsa", "name": "أذان المسجد الأقصى المبارك", "desc": "القدس الشريف - الشيخ ناجي قزاز"},
-    {"id": "abdulbasit", "name": "أذان الشيخ عبد الباسط عبد الصمد", "desc": "أذان مصر التاريخي النادر"},
-    {"id": "rifat", "name": "أذان الشيخ محمد رفعت", "desc": "قيثارة السماء"},
-    {"id": "husary", "name": "أذان الشيخ محمود خليل الحصري", "desc": "شيخ عموم المقارئ المصرية"},
-    {"id": "banna", "name": "أذان الشيخ محمود علي البنا", "desc": "أداء خاشع ومؤثر"},
-    {"id": "shaisha", "name": "أذان الشيخ أبو العينين شعيشع", "desc": "التسجيل المصري العريق"},
-    {"id": "takbeer_only", "name": "تكبيرات الأذان والعيد", "desc": "المسجد الحرام - تكبيرات الحرم المكي"},
-  ];
+  List<Map<String, String>> get _adhanSoundsList {
+    final lang = LanguageService.languageCode;
+    final isAr = lang == 'ar';
+    return [
+      {
+        "id": "algeria_grand_mosque",
+        "name": isAr ? "أذان جامع الجزائر (الجامع الأعظم)" : (lang == 'fr' ? "Grande Mosquée d'Alger" : "Algeria Grand Mosque Adhan"),
+        "desc": isAr ? "أذان العاصمة والمنارة التاريخية" : (lang == 'fr' ? "Appel officiel de la Grande Mosquée d'Alger" : "Official Adhan of the Grand Mosque of Algiers"),
+      },
+      {
+        "id": "traditional_algerian",
+        "name": isAr ? "الأذان الجزائري الأصيل (المقام المغاربي)" : (lang == 'fr' ? "Adhan Traditionnel Algérien" : "Authentic Algerian Adhan"),
+        "desc": isAr ? "الأذان التراثي الجزائري العذب" : (lang == 'fr' ? "Style maghrébin traditionnel" : "Traditional Maghrebi style"),
+      },
+      {
+        "id": "waled_mahzas",
+        "name": isAr ? "أذان الشيخ وليد مهساس (الجزائر)" : "Sheikh Walid Mehsas (Algeria)",
+        "desc": isAr ? "صوت خاشع ومؤثر من الجزائر" : "Touching Algerian Adhan recitation",
+      },
+      {
+        "id": "makkah",
+        "name": isAr ? "أذان المسجد الحرام (مكة المكرمة)" : (lang == 'fr' ? "Adhan de La Mecque" : "Makkah Grand Mosque Adhan"),
+        "desc": isAr ? "بصوت الشيخ علي بن أحمد ملا" : "Sheikh Ali Ibn Ahmad Mala",
+      },
+      {
+        "id": "madinah",
+        "name": isAr ? "أذان المسجد النبوي (المدينة المنورة)" : (lang == 'fr' ? "Adhan de Médine" : "Madinah Prophet's Mosque Adhan"),
+        "desc": isAr ? "الأذان المدني الشريف الخاشع" : "Sacred Madinah Al-Munawwarah Adhan",
+      },
+      {
+        "id": "al_aqsa",
+        "name": isAr ? "أذان المسجد الأقصى المبارك" : (lang == 'fr' ? "Adhan de la Mosquée Al-Aqsa" : "Al-Aqsa Mosque Adhan"),
+        "desc": isAr ? "بصوت مؤذن الأقصى الشريف الشيخ ناجي قزاز" : "Sheikh Najee Qazaz (Jerusalem)",
+      },
+      {
+        "id": "abdulbasit",
+        "name": isAr ? "أذان الشيخ عبد الباسط عبد الصمد" : "Sheikh Abdulbasit Abdulsamad",
+        "desc": isAr ? "أذان مصر التاريخي الخالد ذو الهيبة" : "Historic Egyptian Adhan",
+      },
+      {
+        "id": "rifat",
+        "name": isAr ? "أذان الشيخ محمد رفعت" : "Sheikh Muhammad Refaat",
+        "desc": isAr ? "قيثارة السماء والأذان الخالد" : "Classic Cairo Adhan",
+      },
+      {
+        "id": "husary",
+        "name": isAr ? "أذان الشيخ محمود خليل الحصري" : "Sheikh Mahmoud Khalil Al-Hussary",
+        "desc": isAr ? "أذان رصين متقن بالأحكام والتجويد" : "Precise tajweed Adhan recitation",
+      },
+      {
+        "id": "banna",
+        "name": isAr ? "أذان الشيخ محمود علي البنا" : "Sheikh Mahmoud Ali Al-Banna",
+        "desc": isAr ? "أداء رفيع وشجي من كبار قراء مصر" : "Renowned Egyptian recitation",
+      },
+      {
+        "id": "shaisha",
+        "name": isAr ? "أذان الشيخ أبو العينين شعيشع" : "Sheikh Abul-Ainain Shuaisha",
+        "desc": isAr ? "نبرة عذبة من الزمن الجميل" : "Classic golden-era Adhan",
+      },
+      {
+        "id": "afasy",
+        "name": isAr ? "أذان الشيخ مشاري راشد العفاسي" : "Sheikh Mishary Rashid Alafasy",
+        "desc": isAr ? "أذان الكويت بنبرة روحانية مميزة" : "Kuwait spiritual Adhan",
+      },
+      {
+        "id": "qatami",
+        "name": isAr ? "أذان الشيخ ناصر القطامي" : "Sheikh Nasser Al-Qatami",
+        "desc": isAr ? "أذان نجد الشجي والمؤثر" : "Melodious Riyadh Adhan",
+      },
+      {
+        "id": "takbeer_only",
+        "name": isAr ? "تكبيرات الأذان والعيد (المسجد الحرام)" : "Takbeerat of Eid & Adhan",
+        "desc": isAr ? "تكبيرات جماعية مهيبة" : "Harmonious collective Takbeer",
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -82,6 +150,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoSilentMode = prefs.getBool('auto_silent_mode') ?? true;
       _useGpsAuto = prefs.getBool('use_gps_auto') ?? false;
       _iqamahReminder = prefs.getBool('iqamah_reminder') ?? true;
+      _autoAdhkar = prefs.getBool('auto_adhkar_enabled') ?? AutoAdhkarService.isEnabled;
+      _adhkarInterval = prefs.getInt('auto_adhkar_interval') ?? AutoAdhkarService.intervalMinutes;
 
       _calculationMethod = prefs.getString('calculation_method') ?? "algeria";
       _juristicMethod = prefs.getString('juristic_method') ?? "standard";
@@ -108,14 +178,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await PrayerService.loadSettings();
   }
 
-  void _showPerPrayerAdhanDialog(String prayerKey, String prayerNameAr, AppThemeColor theme) {
+  void _showPerPrayerAdhanDialog(String prayerKey, String prayerName, AppThemeColor theme) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: theme.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          "اختر صوت أذان $prayerNameAr",
+          "${LanguageService.tr('settings_select_adhan_dialog_title')} $prayerName",
           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         content: SizedBox(
@@ -138,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37), size: 20),
-                  tooltip: "استماع",
+                  tooltip: LanguageService.tr('listen'),
                   onPressed: () {
                     AdhanAudioService.playAdhan(soundId: sound['id']!);
                   },
@@ -152,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: const Color(0xFF065F46),
-                      content: Text("تم اعتماد ${sound['name']} لصلاة $prayerNameAr"),
+                      content: Text("${LanguageService.tr('settings_adhan_assigned')} ${sound['name']}"),
                     ),
                   );
                 },
@@ -166,7 +236,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AdhanAudioService.stopAdhan();
               Navigator.pop(ctx);
             },
-            child: Text("إغلاق", style: TextStyle(color: theme.accent)),
+            child: Text(LanguageService.tr('close'), style: TextStyle(color: theme.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDndPermissionDialog(AppThemeColor theme) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.notifications_paused, color: Colors.amberAccent, size: 24),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                LanguageService.tr('dnd_permission_dialog_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          LanguageService.tr('dnd_permission_dialog_desc'),
+          style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(LanguageService.tr('cancel'), style: const TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await SilentModeService.openDndSettings();
+            },
+            child: Text(LanguageService.tr('grant_permission'), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -174,6 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAdjustmentCounter(String prayerName, int value, ValueChanged<int> onChanged, AppThemeColor theme) {
+    final unit = LanguageService.tr('settings_minute_short');
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -199,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 50,
                 alignment: Alignment.center,
                 child: Text(
-                  value == 0 ? "0 د" : (value > 0 ? "+$value د" : "$value د"),
+                  value == 0 ? "0 $unit" : (value > 0 ? "+$value $unit" : "$value $unit"),
                   style: TextStyle(
                     color: value != 0 ? theme.accent : const Color(0xFF94A3B8),
                     fontWeight: FontWeight.bold,
@@ -222,7 +337,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLanguageSelector(AppThemeColor activeTheme) {
-    final currentLang = LanguageService.languageCode;
+    final activeLang = LanguageService.activeLanguage;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -241,38 +357,127 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   LanguageService.tr('language_selector_desc'),
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.4),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _buildLanguageButton(
-                      langCode: 'ar',
-                      title: "العربية",
-                      flag: "🇩🇿",
-                      subtitle: "الافتراضية",
-                      isSelected: currentLang == 'ar',
-                      activeTheme: activeTheme,
+                const SizedBox(height: 14),
+
+                // Current Active Language Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: activeTheme.primary.withValues(alpha: 0.6), width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: activeTheme.darkPrimary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: activeTheme.accent, width: 1.5),
+                        ),
+                        child: Text(activeLang.flag, style: const TextStyle(fontSize: 22)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              activeLang.nativeName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "${activeLang.name} • ${activeLang.isRtl ? 'RTL' : 'LTR'}",
+                              style: TextStyle(
+                                color: activeTheme.accent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF065F46),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle, color: Color(0xFF34D399), size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              "نشطة",
+                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Quick Popular Languages
+                const Text(
+                  "اللغات الأكثر استخداماً:",
+                  style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildQuickLangChip('ar', '🇩🇿 العربية', activeTheme),
+                      const SizedBox(width: 6),
+                      _buildQuickLangChip('en', '🇬🇧 English', activeTheme),
+                      const SizedBox(width: 6),
+                      _buildQuickLangChip('fr', '🇫🇷 Français', activeTheme),
+                      const SizedBox(width: 6),
+                      _buildQuickLangChip('tr', '🇹🇷 Türkçe', activeTheme),
+                      const SizedBox(width: 6),
+                      _buildQuickLangChip('id', '🇮🇩 Indonesia', activeTheme),
+                      const SizedBox(width: 6),
+                      _buildQuickLangChip('ur', '🇵🇰 اردو', activeTheme),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Open All 20 Languages Modal Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: activeTheme.darkPrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: activeTheme.accent, width: 1.2),
+                      ),
+                      elevation: 2,
                     ),
-                    const SizedBox(width: 8),
-                    _buildLanguageButton(
-                      langCode: 'en',
-                      title: "English",
-                      flag: "🇬🇧",
-                      subtitle: "Global",
-                      isSelected: currentLang == 'en',
-                      activeTheme: activeTheme,
+                    icon: Icon(Icons.public, color: activeTheme.accent, size: 20),
+                    label: Text(
+                      "تصفح واختيار من جميع اللغات (${LanguageService.supportedLanguages.length} لغة عالمية) 🌐",
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(width: 8),
-                    _buildLanguageButton(
-                      langCode: 'fr',
-                      title: "Français",
-                      flag: "🇫🇷",
-                      subtitle: "Mondial",
-                      isSelected: currentLang == 'fr',
-                      activeTheme: activeTheme,
-                    ),
-                  ],
+                    onPressed: () => _showGlobalLanguageModal(activeTheme),
+                  ),
                 ),
               ],
             ),
@@ -283,81 +488,220 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageButton({
-    required String langCode,
-    required String title,
-    required String flag,
-    required String subtitle,
-    required bool isSelected,
-    required AppThemeColor activeTheme,
-  }) {
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          AppFeedback.select();
-          await LanguageService.setLanguage(langCode);
-          if (mounted) {
-            setState(() {});
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: const Color(0xFF065F46),
-                duration: const Duration(seconds: 2),
-                content: Text(
-                  langCode == 'ar'
-                      ? "تم تحويل لغة التطبيق إلى العربية بنجاح"
-                      : (langCode == 'fr'
-                          ? "Langue de l'application changée en Français"
-                          : "App language switched to English successfully"),
-                ),
-              ),
-            );
-          }
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? activeTheme.accent : const Color(0xFF334155),
-              width: isSelected ? 2 : 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: activeTheme.accent.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    )
-                  ]
-                : null,
+  Widget _buildQuickLangChip(String code, String label, AppThemeColor activeTheme) {
+    final isSelected = LanguageService.languageCode == code;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => _applyLanguage(code),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? activeTheme.accent : const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? activeTheme.accent : const Color(0xFF334155),
+            width: isSelected ? 1.5 : 1,
           ),
-          child: Column(
-            children: [
-              Text(flag, style: const TextStyle(fontSize: 20)),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: isSelected ? activeTheme.accent : const Color(0xFF64748B),
-                  fontSize: 10,
-                ),
-              ),
-            ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 12,
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _applyLanguage(String code) async {
+    AppFeedback.select();
+    await LanguageService.setLanguage(code);
+    if (!mounted) return;
+    setState(() {});
+    final lang = LanguageService.getLanguageByCode(code);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF065F46),
+        duration: const Duration(seconds: 2),
+        content: Text("${lang.flag} تم اعتماد لغة التطبيق: ${lang.nativeName} (${lang.name})"),
+      ),
+    );
+  }
+
+  void _showGlobalLanguageModal(AppThemeColor activeTheme) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        String searchQuery = "";
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            final filteredList = LanguageService.supportedLanguages.where((l) {
+              if (searchQuery.trim().isEmpty) return true;
+              final q = searchQuery.toLowerCase().trim();
+              return l.name.toLowerCase().contains(q) ||
+                  l.nativeName.toLowerCase().contains(q) ||
+                  l.code.toLowerCase().contains(q);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.85,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Column(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.public, color: activeTheme.accent, size: 24),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "لغات العالم المدعومة",
+                            style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: activeTheme.accent.withValues(alpha: 0.5)),
+                        ),
+                        child: Text(
+                          "${LanguageService.supportedLanguages.length} لغة",
+                          style: TextStyle(color: activeTheme.accent, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Search Field
+                  TextField(
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    onChanged: (val) {
+                      setModalState(() {
+                        searchQuery = val;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: "ابحث عن اللغة (مثال: Turkish, اردو, Français)...",
+                      hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFF0F172A),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: activeTheme.accent),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(color: Color(0xFF334155), height: 1),
+                  const SizedBox(height: 6),
+                  // Languages List
+                  Expanded(
+                    child: filteredList.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "لم يتم العثور على لغات مطابقة للبحث",
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: filteredList.length,
+                            separatorBuilder: (_, __) => const Divider(color: Color(0xFF334155), height: 1),
+                            itemBuilder: (context, idx) {
+                              final lang = filteredList[idx];
+                              final isSelected = LanguageService.languageCode == lang.code;
+
+                              return ListTile(
+                                leading: Container(
+                                  width: 42,
+                                  height: 42,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected ? activeTheme.accent : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  child: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      lang.nativeName,
+                                      style: TextStyle(
+                                        color: isSelected ? activeTheme.accent : Colors.white,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    if (lang.isRtl) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0F172A),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.white24),
+                                        ),
+                                        child: const Text(
+                                          "RTL",
+                                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                subtitle: Text(
+                                  lang.name,
+                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                ),
+                                trailing: isSelected
+                                    ? Icon(Icons.check_circle, color: activeTheme.accent, size: 22)
+                                    : null,
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _applyLanguage(lang.code);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -874,12 +1218,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     "تحويل الهاتف لوضع الصامت تلقائياً بعد الأذان لمدة 25 دقيقة أثناء صلاة الجماعة وإعادته بعدها.",
                     style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                   ),
-                  onChanged: (val) {
+                  onChanged: (val) async {
+                    if (val) {
+                      final hasAccess = await SilentModeService.isDndAccessGranted();
+                      if (!hasAccess && context.mounted) {
+                        _showDndPermissionDialog(activeTheme);
+                      }
+                    }
                     setState(() {
                       _autoSilentMode = val;
                     });
                     _savePreference('auto_silent_mode', val);
                   },
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 9. Auto Adhkar On-Screen Notifications
+              _buildSectionHeader("أذكار الشاشة التلقائية", Icons.auto_awesome, activeTheme.accent),
+              const SizedBox(height: 8),
+              Material(
+                color: activeTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _autoAdhkar,
+                        activeThumbColor: activeTheme.primary,
+                        title: const Text(
+                          "تفعيل أذكار الشاشة التلقائية",
+                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          "إظهار ذكر أو دعاء مأثور على شاشة الهاتف دورياً أثناء استخدام الهاتف لتظل رطباً بذكر الله",
+                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        ),
+                        onChanged: (val) async {
+                          setState(() => _autoAdhkar = val);
+                          AutoAdhkarService.isEnabled = val;
+                          await AutoAdhkarService.saveSettings();
+                          if (val && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Color(0xFF065F46),
+                                content: Text("تم تفعيل أذكار الشاشة التلقائية 📿"),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      if (_autoAdhkar) ...[
+                        const Divider(color: Color(0xFF334155)),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "فترة التكرار الزمني:",
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [5, 10, 15, 30, 60].map((mins) {
+                            final isSel = _adhkarInterval == mins;
+                            return ChoiceChip(
+                              label: Text("كل $mins دقيقة"),
+                              selected: isSel,
+                              selectedColor: activeTheme.primary,
+                              backgroundColor: const Color(0xFF0F172A),
+                              labelStyle: TextStyle(
+                                color: isSel ? Colors.white : const Color(0xFF94A3B8),
+                                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                              onSelected: (_) async {
+                                setState(() => _adhkarInterval = mins);
+                                AutoAdhkarService.intervalMinutes = mins;
+                                await AutoAdhkarService.saveSettings();
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.6)),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          icon: Icon(Icons.settings_suggest, color: activeTheme.accent, size: 18),
+                          label: const Text("تخصيص مكتبة الأذكار وإضافة أدعية خاصة"),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(builder: (_) => const AutoAdhkarScreen()),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1088,9 +1532,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Icon(icon, color: accentColor, size: 20),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );

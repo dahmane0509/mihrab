@@ -18,7 +18,7 @@ void main() {
 
     // Verify main app rendered MaterialApp and SplashScreen with brand name
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.text('مِـحْـرَابْ'), findsOneWidget);
+    expect(find.text('محراب'), findsOneWidget);
     expect(find.text('مواقيت الصلاة والقرآن'), findsOneWidget);
 
     // Clean up

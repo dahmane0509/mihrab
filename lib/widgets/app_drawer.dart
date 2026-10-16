@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../data/algeria_wilayas.dart';
 import '../data/algeria_communes.dart';
 import '../services/theme_service.dart';
@@ -70,9 +71,10 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  // Animated Header with the New Logo
-                  DrawerHeader(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  // Animated Header with the New Logo (Flexible Container to prevent overflow)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 12, 16, 14),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -85,17 +87,17 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         AnimatedBuilder(
                           animation: _pulseController,
                           builder: (context, _) {
                             return Container(
-                              width: 52,
-                              height: 52,
+                              width: 48,
+                              height: 48,
                               padding: const EdgeInsets.all(3),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(13),
                                 border: Border.all(color: Colors.white, width: 2),
                                 boxShadow: [
                                   BoxShadow(
@@ -106,31 +108,34 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                                 ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(9),
                                 child: Image.asset(
                                   'assets/icon/app_icon.png',
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.mosque, color: Colors.white, size: 30),
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.mosque, color: Colors.white, size: 28),
                                 ),
                               ),
                             );
                           },
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
-                          isAr ? "مِحْرَاب" : LanguageService.tr('drawer_brand'),
-                          style: const TextStyle(
+                          isAr ? "محراب" : LanguageService.tr('drawer_brand'),
+                          style: GoogleFonts.cairo(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
+                            letterSpacing: 1.0,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           isAr
                               ? "موقعك الحالي: $communeName (${widget.currentWilaya.nameAr})"
                               : "${LanguageService.tr('drawer_current_location')}: $communeName ($wilayaName)",
                           style: const TextStyle(color: Color(0xFFFDE68A), fontSize: 12),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -255,7 +260,7 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                       style: const TextStyle(color: Colors.white),
                     ),
                     subtitle: Text(
-                      isAr ? "تغيير ألوان التطبيق وصوت الأذان" : LanguageService.tr('drawer_settings_sub'),
+                      isAr ? "لغات التطبيق (20 لغة عالمية)، المظهر، وتنبيهات الأذان" : LanguageService.tr('drawer_settings_sub'),
                       style: const TextStyle(color: Colors.white54, fontSize: 11),
                     ),
                     onTap: () {
@@ -303,61 +308,13 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                       );
                     },
                   ),
-                  const Divider(color: Color(0xFF334155)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        _buildLangChip('ar', '🇩🇿 العربية', theme),
-                        const SizedBox(width: 6),
-                        _buildLangChip('en', '🇬🇧 EN', theme),
-                        const SizedBox(width: 6),
-                        _buildLangChip('fr', '🇫🇷 FR', theme),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
           },
         );
       },
-    );
-  }
-
-  Widget _buildLangChip(String code, String label, AppThemeColor theme) {
-    final isSelected = LanguageService.languageCode == code;
-    return Expanded(
-      child: InkWell(
-        onTap: () async {
-          AppFeedback.tap();
-          await LanguageService.setLanguage(code);
-          if (mounted) {
-            setState(() {});
-          }
-        },
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.accent : const Color(0xFF0F172A),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? theme.accent : const Color(0xFF334155),
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.black : Colors.white70,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

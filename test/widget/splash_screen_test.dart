@@ -21,7 +21,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1000));
 
     // Verify Brand Name, Subtitle & Indicator
-    expect(find.text('مِـحْـرَابْ'), findsOneWidget);
+    expect(find.text('محراب'), findsOneWidget);
     expect(find.text('M I H R A B'), findsOneWidget);
     expect(find.text('مواقيت الصلاة والقرآن'), findsOneWidget);
 

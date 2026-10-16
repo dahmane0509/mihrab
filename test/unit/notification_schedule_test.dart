@@ -17,13 +17,6 @@ void main() {
       date: now,
     );
 
-    print("Now: $now");
-    print("Fajr: ${times.fajr}");
-    print("Dhuhr: ${times.dhuhr}");
-    print("Asr: ${times.asr}");
-    print("Maghrib: ${times.maghrib}");
-    print("Isha: ${times.isha}");
-
     final scheduledDate = tz.TZDateTime(
       location,
       times.maghrib.year,
@@ -34,10 +27,11 @@ void main() {
       0,
     );
 
-    print("Scheduled Maghrib: $scheduledDate");
-    final currentTz = tz.TZDateTime.now(location);
-    print("Current TZ: $currentTz");
-    print("isAfter: ${scheduledDate.isAfter(currentTz)}");
     expect(scheduledDate, isNotNull);
+    expect(times.fajr, isNotNull);
+    expect(times.dhuhr, isNotNull);
+    expect(times.asr, isNotNull);
+    expect(times.maghrib, isNotNull);
+    expect(times.isha, isNotNull);
   });
 }

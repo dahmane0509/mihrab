@@ -37,7 +37,6 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
   late Timer _timer;
   late DateTime _currentTime;
   late Map<String, String> _todayTimes;
-  String? _lastAlertedPrayer;
 
   @override
   void initState() {
@@ -572,8 +571,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               ),
                               onPressed: () async {
                                 AppFeedback.tap();
-                                final prayerKey = next['key'] as String? ?? 'dhuhr';
-                                final prayerName = next['name'] as String? ?? 'الظهر';
+                                final prayerKey = next['key'] ?? 'dhuhr';
+                                final prayerName = next['name'] ?? 'الظهر';
                                 final enabled = await PrayerNotificationService.testAdhanNotification(
                                   prayerName: prayerName,
                                   prayerKey: prayerKey,
@@ -624,17 +623,17 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               ),
                               onPressed: () async {
                                 AppFeedback.tap();
-                                final prayerName = next['name'] as String? ?? 'الظهر';
+                                final prayerName = next['name'] ?? 'الظهر';
                                 await PrayerNotificationService.scheduleTestSleepAdhan(
                                   delaySeconds: 10,
                                   prayerName: prayerName,
                                 );
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF1E3A8A),
-                                    duration: const Duration(seconds: 7),
-                                    content: const Text(
+                                  const SnackBar(
+                                    backgroundColor: Color(0xFF1E3A8A),
+                                    duration: Duration(seconds: 7),
+                                    content: Text(
                                       "⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.",
                                     ),
                                   ),

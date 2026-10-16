@@ -134,24 +134,28 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAr = LanguageService.languageCode == 'ar';
-    final communeName = isAr
-        ? (widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr)
-        : (widget.currentCommune?.nameFr ?? widget.currentWilaya.nameFr);
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LanguageService.currentLocale,
+      builder: (context, activeLocale, _) {
+        final lang = activeLocale.languageCode;
+        final isAr = lang == 'ar';
+        final communeName = isAr
+            ? (widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr)
+            : (widget.currentCommune?.nameFr ?? widget.currentWilaya.nameFr);
 
-    final prayersList = [
-      {"key": "fajr", "name": isAr ? "الصبح" : LanguageService.tr('fajr'), "icon": Icons.nightlight_round, "color": const Color(0xFF38BDF8)},
-      {"key": "sunrise", "name": isAr ? "الشروق" : LanguageService.tr('sunrise'), "icon": Icons.wb_twilight, "color": const Color(0xFFF59E0B)},
-      {"key": "dhuhr", "name": isAr ? "الظهر" : LanguageService.tr('dhuhr'), "icon": Icons.wb_sunny, "color": const Color(0xFF10B981)},
-      {"key": "asr", "name": isAr ? "العصر" : LanguageService.tr('asr'), "icon": Icons.wb_cloudy, "color": const Color(0xFF34D399)},
-      {"key": "maghrib", "name": isAr ? "المغرب" : LanguageService.tr('maghrib'), "icon": Icons.flare, "color": const Color(0xFFFB923C)},
-      {"key": "isha", "name": isAr ? "العشاء" : LanguageService.tr('isha'), "icon": Icons.nights_stay, "color": const Color(0xFF818CF8)},
-    ];
+        final prayersList = [
+          {"key": "fajr", "name": isAr ? "الصبح" : LanguageService.tr('fajr'), "icon": Icons.nightlight_round, "color": const Color(0xFF38BDF8)},
+          {"key": "sunrise", "name": isAr ? "الشروق" : LanguageService.tr('sunrise'), "icon": Icons.wb_twilight, "color": const Color(0xFFF59E0B)},
+          {"key": "dhuhr", "name": isAr ? "الظهر" : LanguageService.tr('dhuhr'), "icon": Icons.wb_sunny, "color": const Color(0xFF10B981)},
+          {"key": "asr", "name": isAr ? "العصر" : LanguageService.tr('asr'), "icon": Icons.wb_cloudy, "color": const Color(0xFF34D399)},
+          {"key": "maghrib", "name": isAr ? "المغرب" : LanguageService.tr('maghrib'), "icon": Icons.flare, "color": const Color(0xFFFB923C)},
+          {"key": "isha", "name": isAr ? "العشاء" : LanguageService.tr('isha'), "icon": Icons.nights_stay, "color": const Color(0xFF818CF8)},
+        ];
 
-    return ValueListenableBuilder<AppThemeColor>(
-      valueListenable: ThemeService.currentTheme,
-      builder: (context, theme, _) {
-        return Scaffold(
+        return ValueListenableBuilder<AppThemeColor>(
+          valueListenable: ThemeService.currentTheme,
+          builder: (context, theme, _) {
+            return Scaffold(
           backgroundColor: theme.background,
           appBar: AppBar(
             backgroundColor: theme.darkPrimary,
@@ -218,18 +222,29 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                         });
                       },
                     ),
-                    Column(
-                      children: [
-                        Text(
-                          PrayerService.getFormattedGregorianDate(_selectedDate, LanguageService.languageCode),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          PrayerService.getFormattedHijriDate(_selectedDate, LanguageService.languageCode),
-                          style: TextStyle(color: theme.accent, fontSize: 13),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              PrayerService.getFormattedGregorianDate(_selectedDate, LanguageService.languageCode),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              PrayerService.getFormattedHijriDate(_selectedDate, LanguageService.languageCode),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: theme.accent, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right, color: Colors.white),
@@ -359,5 +374,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         );
       },
     );
-  }
+  },
+);
+}
 }

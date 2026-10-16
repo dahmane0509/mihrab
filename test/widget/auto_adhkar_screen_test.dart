@@ -68,5 +68,12 @@ void main() {
 
     expect(find.text('إضافة ذكر أو دعاء مخصص'), findsOneWidget);
     expect(find.text('حفظ الذكر'), findsOneWidget);
+
+    // Cancel pending timer before widget tester invariants check
+    await AutoAdhkarService.stopScheduler();
+  });
+
+  tearDown(() async {
+    await AutoAdhkarService.stopScheduler();
   });
 }

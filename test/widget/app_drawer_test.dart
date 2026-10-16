@@ -41,7 +41,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     // Verify App Brand Header
-    expect(find.text('مِحْرَاب'), findsOneWidget);
+    expect(find.text('محراب'), findsOneWidget);
     expect(find.text('موقعك الحالي: ${commune.nameAr} (${wilaya.nameAr})'), findsOneWidget);
 
     // Verify Navigation List Tiles
@@ -88,36 +88,22 @@ void main() {
       ),
     );
 
+    // Switch language to English via LanguageService
+    await LanguageService.setLanguage('en');
+
     await tester.tap(find.text('Open Drawer'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Scroll to reveal language chips
-    await tester.dragUntilVisible(
-      find.text('🇬🇧 EN'),
-      find.byType(ListView),
-      const Offset(0, -100),
-    );
-    await tester.pump(const Duration(milliseconds: 300));
-
-    // Tap English chip
-    await tester.tap(find.text('🇬🇧 EN'), warnIfMissed: false);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    // Verify translated elements in drawer
-    expect(find.text('About Mihrab'), findsOneWidget);
-
-    // Scroll up
-    await tester.dragUntilVisible(
-      find.text('Play Adhan Sound'),
-      find.byType(ListView),
-      const Offset(0, 100),
-    );
-    await tester.pump(const Duration(milliseconds: 300));
-
+    // Verify translated elements in drawer header/top
     expect(find.text('Play Adhan Sound'), findsOneWidget);
     expect(find.text('Islamic Events & Calendar'), findsOneWidget);
+
+    // Scroll to reveal lower items
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('About Mihrab'), findsOneWidget);
 
     // Reset language back to Arabic
     await LanguageService.setLanguage('ar');

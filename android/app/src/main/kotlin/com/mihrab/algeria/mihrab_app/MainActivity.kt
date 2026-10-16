@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.app.NotificationManager
+import android.media.AudioManager
 import androidx.core.app.NotificationManagerCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -114,6 +116,88 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     } catch (e: Exception) {
                         result.success(false)
+                    }
+                }
+                "isDndAccessGranted" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                            result.success(nm.isNotificationPolicyAccessGranted)
+                        } else {
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        result.success(true)
+                    }
+                }
+                "openDndSettings" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+                "setRingerMode" -> {
+                    try {
+                        val mode = call.argument<String>("mode") ?: "silent"
+                        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                        val nm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        } else null
+
+                        val hasAccess = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && nm != null) {
+                            nm.isNotificationPolicyAccessGranted
+                        } else true
+
+                        if (!hasAccess) {
+                            // If DND is not granted, try vibrate mode as safe fallback or return false
+                            try {
+                                am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+                                result.success(true)
+                            } catch (secEx: Exception) {
+                                result.error("PERMISSION_DENIED", "Notification policy access not granted", null)
+                            }
+                            return@setMethodCallHandler
+                        }
+
+                        when (mode) {
+                            "silent" -> {
+                                am.ringerMode = AudioManager.RINGER_MODE_SILENT
+                                result.success(true)
+                            }
+                            "vibrate" -> {
+                                am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+                                result.success(true)
+                            }
+                            "normal" -> {
+                                am.ringerMode = AudioManager.RINGER_MODE_NORMAL
+                                result.success(true)
+                            }
+                            else -> result.error("INVALID_MODE", "Unknown mode: $mode", null)
+                        }
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "getRingerMode" -> {
+                    try {
+                        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                        val modeStr = when (am.ringerMode) {
+                            AudioManager.RINGER_MODE_SILENT -> "silent"
+                            AudioManager.RINGER_MODE_VIBRATE -> "vibrate"
+                            else -> "normal"
+                        }
+                        result.success(modeStr)
+                    } catch (e: Exception) {
+                        result.success("normal")
                     }
                 }
                 else -> result.notImplemented()

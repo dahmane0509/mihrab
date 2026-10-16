@@ -224,8 +224,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
       return;
     }
 
-    // Don't pop up heads-up system banner over the screen
-    // Only display the in-app bottom sheet preview requested by user
+    // Display actual heads-up notification on user's device screen
+    await AutoAdhkarService.showFloatingDhikrNotification(specificItem: item);
+
     if (!mounted) return;
     showModalBottomSheet<void>(
       context: context,

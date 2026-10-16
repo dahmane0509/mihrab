@@ -57,5 +57,21 @@ void main() {
       expect(AppTranslations.get('non_existent_key_xyz', 'ar'), equals('non_existent_key_xyz'));
       expect(AppTranslations.get('non_existent_key_xyz', 'en'), equals('non_existent_key_xyz'));
     });
+
+    test('Supports 20 major global languages with accurate metadata and RTL detection', () {
+      expect(LanguageService.supportedLanguages.length, equals(20));
+      expect(LanguageService.isSupported('tr'), isTrue);
+      expect(LanguageService.isSupported('id'), isTrue);
+      expect(LanguageService.isSupported('ur'), isTrue);
+      expect(LanguageService.isSupported('ru'), isTrue);
+      expect(LanguageService.isSupported('es'), isTrue);
+      expect(LanguageService.isSupported('fa'), isTrue);
+
+      expect(AppTranslations.isRtl('ar'), isTrue);
+      expect(AppTranslations.isRtl('ur'), isTrue);
+      expect(AppTranslations.isRtl('fa'), isTrue);
+      expect(AppTranslations.isRtl('en'), isFalse);
+      expect(AppTranslations.isRtl('tr'), isFalse);
+    });
   });
 }

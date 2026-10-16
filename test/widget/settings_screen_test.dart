@@ -31,6 +31,13 @@ void main() {
     // Verify AppBar Title
     expect(find.text('الإعدادات العامة وتخصيص المظهر'), findsOneWidget);
 
+    // Verify Global Language Selector section
+    expect(find.textContaining('لغة التطبيق'), findsOneWidget);
+    expect(find.textContaining('20 لغة عالمية'), findsWidgets);
+    expect(find.text('🇩🇿 العربية'), findsOneWidget);
+    expect(find.text('🇬🇧 English'), findsOneWidget);
+    expect(find.text('🇫🇷 Français'), findsOneWidget);
+
     // Verify Theme Choices are listed
     expect(find.text('الأخضر الزمردي الأندلسي (الافتراضي)'), findsOneWidget);
     expect(find.text('الأزرق الملكي القرطبي'), findsOneWidget);
@@ -53,9 +60,12 @@ void main() {
 
     final adhanFinder = find.textContaining('أذان جامع الجزائر');
     expect(adhanFinder, findsWidgets);
-
     // Scroll down further to reveal Mosque Mode
-    await tester.drag(find.byType(ListView), const Offset(0, -1500));
+    await tester.scrollUntilVisible(
+      find.text('الوضع الصامت التلقائي في المسجد'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
 
     final mosqueModeFinder = find.text('الوضع الصامت التلقائي في المسجد');

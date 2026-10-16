@@ -26,13 +26,31 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  await LanguageService.init();
-  await ThemeService.init();
-  await AdhanAudioService.init();
-  await PrayerService.loadSettings();
-  await AutoAdhkarService.initialize();
-  await PrayerNotificationService.initialize();
+
+  // Fast preloading of essential UI state in parallel (< 20ms)
+  await Future.wait([
+    LanguageService.init(),
+    ThemeService.init(),
+    PrayerService.loadSettings(),
+  ]);
+
+  // Launch Flutter UI immediately to dismiss OS native splash screen instantly
   runApp(const AlgeriaPrayerApp());
+
+  // Concurrently initialize heavier platform services in background during splash animation
+  _initBackgroundServices();
+}
+
+void _initBackgroundServices() {
+  Future.microtask(() async {
+    try {
+      await AdhanAudioService.init();
+      await AutoAdhkarService.initialize();
+      await PrayerNotificationService.initialize();
+    } catch (e) {
+      debugPrint("Background services init note: $e");
+    }
+  });
 }
 
 class AlgeriaPrayerApp extends StatelessWidget {
@@ -47,7 +65,7 @@ class AlgeriaPrayerApp extends StatelessWidget {
           valueListenable: ThemeService.currentTheme,
           builder: (context, activeTheme, _) {
             return MaterialApp(
-              title: 'مِحْرَاب',
+              title: 'محراب',
               debugShowCheckedModeBanner: false,
               locale: activeLocale,
               supportedLocales: LanguageService.supportedLocales,
