@@ -127,7 +127,7 @@ class MainActivity : FlutterActivity() {
                             result.success(true)
                         }
                     } catch (e: Exception) {
-                        result.success(true)
+                        result.success(false)
                     }
                 }
                 "openDndSettings" -> {
@@ -158,33 +158,50 @@ class MainActivity : FlutterActivity() {
                         } else true
 
                         if (!hasAccess) {
-                            // If DND is not granted, try vibrate mode as safe fallback or return false
-                            try {
-                                am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
-                                result.success(true)
-                            } catch (secEx: Exception) {
-                                result.error("PERMISSION_DENIED", "Notification policy access not granted", null)
-                            }
+                            result.success(false)
                             return@setMethodCallHandler
                         }
 
                         when (mode) {
                             "silent" -> {
-                                am.ringerMode = AudioManager.RINGER_MODE_SILENT
+                                try {
+                                    am.ringerMode = AudioManager.RINGER_MODE_SILENT
+                                } catch (_: Exception) {
+                                    try {
+                                        am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+                                    } catch (_: Exception) {}
+                                }
+                                try {
+                                    am.setStreamVolume(AudioManager.STREAM_RING, 0, 0)
+                                    am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0)
+                                } catch (_: Exception) {}
                                 result.success(true)
                             }
                             "vibrate" -> {
-                                am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+                                try {
+                                    am.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+                                } catch (_: Exception) {
+                                    try {
+                                        am.setStreamVolume(AudioManager.STREAM_RING, 0, 0)
+                                    } catch (_: Exception) {}
+                                }
                                 result.success(true)
                             }
                             "normal" -> {
-                                am.ringerMode = AudioManager.RINGER_MODE_NORMAL
+                                try {
+                                    am.ringerMode = AudioManager.RINGER_MODE_NORMAL
+                                } catch (_: Exception) {}
+                                val maxVol = am.getStreamMaxVolume(AudioManager.STREAM_RING)
+                                try {
+                                    am.setStreamVolume(AudioManager.STREAM_RING, (maxVol * 0.7).toInt(), 0)
+                                    am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, (maxVol * 0.7).toInt(), 0)
+                                } catch (_: Exception) {}
                                 result.success(true)
                             }
                             else -> result.error("INVALID_MODE", "Unknown mode: $mode", null)
                         }
                     } catch (e: Exception) {
-                        result.error("ERROR", e.message, null)
+                        result.success(false)
                     }
                 }
                 "getRingerMode" -> {

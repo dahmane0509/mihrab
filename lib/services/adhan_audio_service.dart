@@ -1,49 +1,272 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class AdhanSoundItem {
+  final String id;
+  final String name;
+  final String desc;
+  final String url;
+  final bool isCustom;
+
+  const AdhanSoundItem({
+    required this.id,
+    required this.name,
+    required this.desc,
+    required this.url,
+    this.isCustom = false,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'desc': desc,
+    'url': url,
+    'isCustom': isCustom,
+  };
+
+  factory AdhanSoundItem.fromJson(Map<String, dynamic> json) => AdhanSoundItem(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    desc: json['desc'] as String? ?? '',
+    url: json['url'] as String,
+    isCustom: json['isCustom'] as bool? ?? true,
+  );
+}
+
 class AdhanAudioService {
   static final AudioPlayer _player = AudioPlayer();
+  static final AudioPlayer _chimePlayer = AudioPlayer();
   static bool isPlaying = false;
   static ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
   static ValueNotifier<String> currentPlayingTitle = ValueNotifier<String>("");
 
-  // Authentic human Muezzin recordings hosted directly on GitHub Raw
-  static const Map<String, String> adhanOnlineUrls = {
-    "algeria_grand_mosque": "assets/audio/adhan.mp3", // جامع الجزائر
-    "traditional_algerian": "assets/audio/adhan.mp3", // أذان مغاربي جزائري
-    "waled_mahzas": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Waled_Mahsas_2_-_Algeria_(%D9%88%D9%84%D9%8A%D8%AF_%D9%85%D8%AD%D8%B3%D8%A7%D8%B3_-_%D8%A7%D9%84%D8%AC%D8%B2%D8%A7%D8%A6%D8%B1).mp3", // الشيخ وليد مهساس - الجزائر
-    "makkah": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Ali_Ibn_Ahmad_Mala_HQ.mp3", // المسجد الحرام - الشيخ علي ملا
-    "madinah": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Adhan_Al_Haram_Al_Madani_-_Al_Madinah_1_(%D8%A3%D8%B0%D8%A7%D9%86_%D8%A7%D9%84%D8%AD%D8%B1%D9%85_%D8%A7%D9%84%D9%85%D8%AF%D9%86%D9%8A_-_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9_%D8%A7%D9%84%D9%85%D9%86%D9%88%D8%B1%D8%A9).mp3", // المسجد النبوي - المدينة المنورة
-    "al_aqsa": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Najee_Qazaz_-_Al_Aqsa_Jerusalem_(%D9%86%D8%A7%D8%AC%D9%8A_%D9%82%D8%B2%D8%A7%D8%B2_-_%D8%A7%D9%84%D9%85%D8%B3%D8%AC%D8%AF_%D8%A7%D9%84%D8%A3%D9%82%D8%B5%D9%89_%D8%A7%D9%84%D9%82%D8%AF%D8%B3).mp3", // المسجد الأقصى - الشيخ ناجي قزاز
-    "abdulbasit": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Abdulbasit_Abdusamad_1_-_Egypt_(%D8%B9%D8%A8%D8%AF_%D8%A7%D9%84%D8%A8%D8%A7%D8%B3%D8%B7_%D8%B9%D8%A8%D8%AF_%D8%A7%D9%84%D8%B5%D9%85%D8%AF_-_%D9%85%D8%B5%D8%B1).mp3", // الشيخ عبد الباسط عبد الصمد
-    "rifat": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Muhammad_Refaat_-_Cairo_(%D9%85%D8%AD%D9%85%D8%AF_%D8%B1%D9%81%D8%B9%D8%AA_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3", // الشيخ محمد رفعت
-    "husary": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Mahmoud_Khalil_Al_Hussary_-_Cairo_(%D9%85%D8%AD%D9%85%D9%88%D8%AF_%D8%AE%D9%84%D9%8A%D9%84_%D8%A7%D9%84%D8%AD%D8%B5%D8%B1%D9%8A_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3", // الشيخ محمود خليل الحصري
-    "banna": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Mahmoud_Ali_Al_Banna_-_Cairo_(%D9%85%D8%AD%D9%85%D9%88%D8%AF_%D8%B9%D9%84%D9%8A_%D8%A7%D9%84%D8%A8%D9%86%D8%A7_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3", // الشيخ محمود علي البنا
-    "shaisha": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Abul_Ainain_Shuaisha_-_Cairo_(%D8%A3%D8%A8%D9%88_%D8%A7%D9%84%D8%B9%D9%8A%D9%86%D9%8A%D9%86_%D8%B4%D8%B9%D9%8A%D8%B4%D8%B9_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3", // الشيخ أبو العينين شعيشع
-    "afasy": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Mishary_Al_Afasy_-_HQ_(%D9%85%D8%B4%D8%A7%D8%B1%D9%8A_%D8%A7%D9%84%D8%B9%D9%81%D8%A7%D8%B3%D9%8A).mp3", // الشيخ مشاري العفاسي
-    "qatami": "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Nasser_Al_Qatami_-_HQ_(%D9%86%D8%A7%D8%B5%D8%B1_%D8%A7%D9%84%D9%82%D8%B7%D8%A7%D9%85%D9%8A).mp3", // الشيخ ناصر القطامي
-    "takbeer_only": "assets/audio/takbeer.wav", // تكبيرات العيد والأذان
-  };
+  // Built-in Adhan options
+  static final List<AdhanSoundItem> defaultAdhans = [
+    const AdhanSoundItem(
+      id: "algeria_grand_mosque",
+      name: "أذان جامع الجزائر (الجامع الأعظم)",
+      desc: "الأذان الجزائري الرسمي الموحد بأجمل صوت",
+      url: "assets/audio/adhan.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "traditional_algerian",
+      name: "الأذان الجزائري الأصيل (المقام المغاربي)",
+      desc: "أذان مغاربي جزائري تقليدي خاشع ومهيب",
+      url: "assets/audio/adhan.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "waled_mahzas",
+      name: "أذان الشيخ وليد مهساس",
+      desc: "الجزائر - نبرة سكينة وخشوع عذب",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Waled_Mahsas_2_-_Algeria_(%D9%88%D9%84%D9%8A%D8%AF_%D9%85%D8%AD%D8%B3%D8%A7%D8%B3_-_%D8%A7%D9%84%D8%AC%D8%B2%D8%A7%D8%A6%D8%B1).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "makkah",
+      name: "أذان المسجد الحرام",
+      desc: "مكة المكرمة - الشيخ علي أحمد ملا",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Ali_Ibn_Ahmad_Mala_HQ.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "madinah",
+      name: "أذان المسجد النبوي الشريف",
+      desc: "المدينة المنورة - نبرة مدنية زكية",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Adhan_Al_Haram_Al_Madani_-_Al_Madinah_1_(%D8%A3%D8%B0%D8%A7%D9%86_%D8%A7%D9%84%D8%AD%D8%B1%D9%85_%D8%A7%D9%84%D9%85%D8%AF%D9%86%D9%8A_-_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9_%D8%A7%D9%84%D9%85%D9%86%D9%88%D8%B1%D8%A9).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "al_aqsa",
+      name: "أذان المسجد الأقصى المبارك",
+      desc: "القدس الشريف - الشيخ ناجي قزاز",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Najee_Qazaz_-_Al_Aqsa_Jerusalem_(%D9%86%D8%A7%D8%AC%D9%8A_%D9%82%D8%B2%D8%A7%D8%B2_-_%D8%A7%D9%84%D9%85%D8%B3%D8%AC%D8%AF_%D8%A7%D9%84%D8%A3%D9%82%D8%B5%D9%89_%D8%A7%D9%84%D9%82%D8%AF%D8%B3).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "abdulbasit",
+      name: "أذان الشيخ عبد الباسط عبد الصمد",
+      desc: "مصر - من روائع التلاوة والآذان الخالد",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Abdulbasit_Abdusamad_1_-_Egypt_(%D8%B9%D8%A8%D8%AF_%D8%A7%D9%84%D8%A8%D8%A7%D8%B3%D8%B7_%D8%B9%D8%A8%D8%AF_%D8%A7%D9%84%D8%B5%D9%85%D8%AF_-_%D9%85%D8%B5%D8%B1).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "rifat",
+      name: "أذان الشيخ محمد رفعت",
+      desc: "قيثارة السماء وأذان القاهرة التاريخي الخالد",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Muhammad_Refaat_-_Cairo_(%D9%85%D8%AD%D9%85%D8%AF_%D8%B1%D9%81%D8%B9%D8%AA_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "husary",
+      name: "أذان الشيخ محمود خليل الحصري",
+      desc: "أذان رصين متقن بالأحكام والتجويد",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Mahmoud_Khalil_Al_Hussary_-_Cairo_(%D9%85%D8%AD%D9%85%D9%88%D8%AF_%D8%AE%D9%84%D9%8A%D9%84_%D8%A7%D9%84%D8%AD%D8%B5%D8%B1%D9%8A_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "banna",
+      name: "أذان الشيخ محمود علي البنا",
+      desc: "أداء رفيع وشجي من كبار قراء مصر",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Mahmoud_Ali_Al_Banna_-_Cairo_(%D9%85%D8%AD%D9%85%D9%88%D8%AF_%D8%B9%D9%84%D9%8A_%D8%A7%D9%84%D8%A8%D9%86%D8%A7_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "shaisha",
+      name: "أذان الشيخ أبو العينين شعيشع",
+      desc: "نبرة عذبة من الزمن الجميل الأصيل",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Abul_Ainain_Shuaisha_-_Cairo_(%D8%A3%D8%A8%D9%88_%D8%A7%D9%84%D8%B9%D9%8A%D9%86%D9%8A%D9%86_%D8%B4%D8%B9%D9%8A%D8%B4%D8%B9_-_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "qatami",
+      name: "أذان الشيخ ناصر القطامي",
+      desc: "أذان نجد الشجي والمؤثر",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Nasser_Al_Qatami_-_HQ_(%D9%86%D8%A7%D8%B5%D8%B1_%D8%A7%D9%84%D9%82%D8%B7%D8%A7%D9%85%D9%8A).mp3",
+    ),
+    const AdhanSoundItem(
+      id: "takbeer_only",
+      name: "تكبيرات الأذان والعيد (المسجد الحرام)",
+      desc: "تكبيرات جماعية مهيبة وخاشعة",
+      url: "assets/audio/takbeer.wav",
+    ),
+  ];
 
-  static const Map<String, String> adhanNames = {
-    "algeria_grand_mosque": "أذان جامع الجزائر (الجامع الأعظم)",
-    "traditional_algerian": "الأذان الجزائري الأصيل (المقام المغاربي)",
-    "waled_mahzas": "أذان الشيخ وليد مهساس (الجزائر)",
-    "makkah": "أذان المسجد الحرام (مكة المكرمة - الشيخ علي ملا)",
-    "madinah": "أذان المسجد النبوي (المدينة المنورة)",
-    "al_aqsa": "أذان المسجد الأقصى المبارك (القدس الشريف)",
-    "abdulbasit": "أذان الشيخ عبد الباسط عبد الصمد (مصر)",
-    "rifat": "أذان الشيخ محمد رفعت (قيثارة السماء)",
-    "husary": "أذان الشيخ محمود خليل الحصري",
-    "banna": "أذان الشيخ محمود علي البنا",
-    "shaisha": "أذان الشيخ أبو العينين شعيشع",
-    "afasy": "أذان الشيخ مشاري راشد العفاسي",
-    "qatami": "أذان الشيخ ناصر القطامي",
-    "takbeer_only": "تكبيرات الأذان والعيد (المسجد الحرام)",
-  };
+  // Extended catalog of authentic regional Adhans ready to add with 1-click
+  static final List<AdhanSoundItem> catalogAdhans = [
+    const AdhanSoundItem(
+      id: "zaytouna_tunis",
+      name: "أذان جامع الزيتونة المعمور (تونس)",
+      desc: "المقام المغاربي التونسي الأصيل ذو النبرة العذبة",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Tunisia_-_Ez-Zitouna_Mosque.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "qarawiyyin_fes",
+      name: "أذان جامع القرويين بفاس (المغرب)",
+      desc: "تراث مغاربي أندلسي عريق ونغم شجي",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Morocco_-_Al_Qarawiyyin.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "umayyad_damascus",
+      name: "أذان الجامع الأموي الكبير (دمشق)",
+      desc: "نغمة شامية مهيبة من أقدم جوامع الإسلام",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Syria_-_Umayyad_Mosque.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "istanbul_sultanahmet",
+      name: "أذان جامع السلطان أحمد (إسطنبول - تركيا)",
+      desc: "مقام صبا وشجن عثماني مؤثر وفريد",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Turkey_-_Blue_Mosque.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "zayed_abudhabi",
+      name: "أذان جامع الشيخ زايد الكبير (أبوظبي)",
+      desc: "نبرة خشوع ووقار خليجي هادئ",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Abu_Dhabi_-_Sheikh_Zayed_Mosque.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "tlemcen_algeria",
+      name: "أذان تلمسان التاريخي (الجزائر)",
+      desc: "أصالة جوهرة الغرب الجزائري والتراث الأندلسي",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Algeria_-_Tlemcen.mp3",
+    ),
+    const AdhanSoundItem(
+      id: "constantine_algeria",
+      name: "أذان قسنطينة الزكي (الجزائر)",
+      desc: "أداء أندلسي عريق من مدينة الجسور المعلقة",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Algeria_-_Constantine.mp3",
+    ),
+  ];
+
+  static List<AdhanSoundItem> _customAdhans = [];
+  static bool _customLoaded = false;
+
+  /// Loads custom added adhans from storage
+  static Future<List<AdhanSoundItem>> getCustomAdhans() async {
+    if (_customLoaded) return _customAdhans;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getStringList('custom_adhans_list') ?? [];
+      _customAdhans = raw.map((item) => AdhanSoundItem.fromJson(jsonDecode(item) as Map<String, dynamic>)).toList();
+      _customLoaded = true;
+    } catch (e) {
+      debugPrint("Error loading custom adhans: $e");
+      _customAdhans = [];
+    }
+    return _customAdhans;
+  }
+
+  /// Get all active adhans (default + user added)
+  static Future<List<AdhanSoundItem>> getAllAdhans() async {
+    final custom = await getCustomAdhans();
+    return [...defaultAdhans, ...custom];
+  }
+
+  /// Add a new adhan (from catalog or custom URL)
+  static Future<bool> addAdhan(AdhanSoundItem adhan) async {
+    try {
+      final current = await getAllAdhans();
+      if (current.any((a) => a.id == adhan.id)) return false;
+
+      final custom = await getCustomAdhans();
+      custom.add(adhan);
+      _customAdhans = custom;
+
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = custom.map((a) => jsonEncode(a.toJson())).toList();
+      await prefs.setStringList('custom_adhans_list', encoded);
+      return true;
+    } catch (e) {
+      debugPrint("addAdhan error: $e");
+      return false;
+    }
+  }
+
+  /// Delete a user-added adhan
+  static Future<bool> deleteAdhan(String id) async {
+    try {
+      final custom = await getCustomAdhans();
+      custom.removeWhere((a) => a.id == id);
+      _customAdhans = custom;
+
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = custom.map((a) => jsonEncode(a.toJson())).toList();
+      await prefs.setStringList('custom_adhans_list', encoded);
+
+      // If this adhan was selected as default or for any prayer, revert to algeria_grand_mosque
+      final defaultSound = prefs.getString('adhan_sound');
+      if (defaultSound == id) {
+        await prefs.setString('adhan_sound', 'algeria_grand_mosque');
+      }
+      for (var p in ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
+        if (prefs.getString('adhan_sound_$p') == id) {
+          await prefs.setString('adhan_sound_$p', 'algeria_grand_mosque');
+        }
+      }
+      return true;
+    } catch (e) {
+      debugPrint("deleteAdhan error: $e");
+      return false;
+    }
+  }
+
+  /// Lookup map of all available URLs
+  static Map<String, String> get adhanOnlineUrls {
+    final map = <String, String>{};
+    for (var a in defaultAdhans) {
+      map[a.id] = a.url;
+    }
+    for (var a in _customAdhans) {
+      map[a.id] = a.url;
+    }
+    return map;
+  }
+
+  /// Lookup map of all adhan names
+  static Map<String, String> get adhanNames {
+    final map = <String, String>{};
+    for (var a in defaultAdhans) {
+      map[a.id] = a.name;
+    }
+    for (var a in _customAdhans) {
+      map[a.id] = a.name;
+    }
+    return map;
+  }
 
   static Future<void> init() async {
     try {
@@ -84,9 +307,14 @@ class AdhanAudioService {
   /// Get specific adhan sound configured for a prayer ('fajr', 'dhuhr', 'asr', 'maghrib', 'isha')
   static Future<String> getSoundForPrayer(String prayerKey) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('adhan_sound_$prayerKey') ??
+    var sound = prefs.getString('adhan_sound_$prayerKey') ??
            prefs.getString('adhan_sound') ??
            'algeria_grand_mosque';
+    if (sound == 'afasy') {
+      sound = 'algeria_grand_mosque';
+      await prefs.setString('adhan_sound_$prayerKey', sound);
+    }
+    return sound;
   }
 
   /// Set specific adhan sound for a prayer
@@ -214,13 +442,13 @@ class AdhanAudioService {
   /// Short pleasant alert chime
   static Future<void> playNotificationChime() async {
     try {
-      final quickPlayer = AudioPlayer();
-      await quickPlayer.play(AssetSource('audio/notification.mp3'));
+      await _chimePlayer.stop();
+      await _chimePlayer.play(AssetSource('audio/notification.mp3'));
     } catch (e) {
       debugPrint("Chime mp3 error: $e");
       try {
-        final quickPlayer2 = AudioPlayer();
-        await quickPlayer2.play(AssetSource('audio/notification.wav'));
+        await _chimePlayer.stop();
+        await _chimePlayer.play(AssetSource('audio/notification.wav'));
       } catch (_) {
         try {
           await SystemSound.play(SystemSoundType.alert);

@@ -12,6 +12,9 @@ import '../screens/auto_adhkar_screen.dart';
 import '../services/app_feedback.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/language_service.dart';
+import '../services/app_update_service.dart';
+import '../services/app_support_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   final int selectedWilayaCode;
@@ -27,7 +30,7 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   late int _wilayaCode;
   String _adhanSound = "algeria_grand_mosque";
   int _advanceReminderMinutes = 15;
@@ -36,6 +39,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _iqamahReminder = true;
   bool _autoAdhkar = false;
   int _adhkarInterval = 15;
+  String _appVersionString = "1.0.0";
+
+  // Mosque silent mode settings
+  bool _isDndGranted = false;
+  String _mosqueSilentType = 'silent'; // 'silent' or 'vibrate'
+  int _mosqueSilentDuration = 25;
+  bool _isTestingSilent = false;
+  List<AdhanSoundItem> _customAdhansList = [];
 
   // Calculation method & Madhab
   String _calculationMethod = "algeria";
@@ -61,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<Map<String, String>> get _adhanSoundsList {
     final lang = LanguageService.languageCode;
     final isAr = lang == 'ar';
-    return [
+    final list = <Map<String, String>>[
       {
         "id": "algeria_grand_mosque",
         "name": isAr ? "أذان جامع الجزائر (الجامع الأعظم)" : (lang == 'fr' ? "Grande Mosquée d'Alger" : "Algeria Grand Mosque Adhan"),
@@ -118,11 +129,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         "desc": isAr ? "نبرة عذبة من الزمن الجميل" : "Classic golden-era Adhan",
       },
       {
-        "id": "afasy",
-        "name": isAr ? "أذان الشيخ مشاري راشد العفاسي" : "Sheikh Mishary Rashid Alafasy",
-        "desc": isAr ? "أذان الكويت بنبرة روحانية مميزة" : "Kuwait spiritual Adhan",
-      },
-      {
         "id": "qatami",
         "name": isAr ? "أذان الشيخ ناصر القطامي" : "Sheikh Nasser Al-Qatami",
         "desc": isAr ? "أذان نجد الشجي والمؤثر" : "Melodious Riyadh Adhan",
@@ -133,19 +139,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
         "desc": isAr ? "تكبيرات جماعية مهيبة" : "Harmonious collective Takbeer",
       },
     ];
+
+    for (final custom in _customAdhansList) {
+      list.add({
+        "id": custom.id,
+        "name": custom.name,
+        "desc": custom.desc.isNotEmpty ? custom.desc : (isAr ? "أذان مخصص مضاف" : "Custom added Adhan"),
+        "isCustom": "true",
+      });
+    }
+
+    return list;
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _wilayaCode = widget.selectedWilayaCode;
+    _checkDndPermission();
     _loadPreferences();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkDndPermission();
+    }
+  }
+
+  Future<void> _checkDndPermission() async {
+    final granted = await SilentModeService.isDndAccessGranted();
+    if (mounted) {
+      setState(() {
+        _isDndGranted = granted;
+      });
+    }
   }
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    final dndOk = await SilentModeService.isDndAccessGranted();
+    final customAdhans = await AdhanAudioService.getCustomAdhans();
+
+    var savedAdhan = prefs.getString('adhan_sound') ?? "algeria_grand_mosque";
+    if (savedAdhan == 'afasy') {
+      savedAdhan = 'algeria_grand_mosque';
+      await prefs.setString('adhan_sound', 'algeria_grand_mosque');
+    }
+
     setState(() {
-      _adhanSound = prefs.getString('adhan_sound') ?? "algeria_grand_mosque";
+      _isDndGranted = dndOk;
+      _customAdhansList = customAdhans;
+      _adhanSound = savedAdhan;
+      _mosqueSilentType = prefs.getString('mosque_silent_type') ?? 'silent';
+      _mosqueSilentDuration = prefs.getInt('mosque_silent_duration') ?? 25;
+
       _advanceReminderMinutes = prefs.getInt('advance_reminder_minutes') ?? 15;
       _autoSilentMode = prefs.getBool('auto_silent_mode') ?? true;
       _useGpsAuto = prefs.getBool('use_gps_auto') ?? false;
@@ -164,9 +219,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _adjIsha = prefs.getInt('adj_isha') ?? 0;
 
       for (var p in ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
-        _prayerAdhanSounds[p] = prefs.getString('adhan_sound_$p') ?? _adhanSound;
+        var pSound = prefs.getString('adhan_sound_$p') ?? _adhanSound;
+        if (pSound == 'afasy') {
+          pSound = 'algeria_grand_mosque';
+          prefs.setString('adhan_sound_$p', 'algeria_grand_mosque');
+        }
+        _prayerAdhanSounds[p] = pSound;
       }
     });
+
+    try {
+      final pkg = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersionString = pkg.version;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _savePreference(String key, dynamic value) async {
@@ -283,6 +352,258 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(LanguageService.tr('grant_permission'), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAddAdhanModal(AppThemeColor theme) {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final urlCtrl = TextEditingController();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalCtx, setModalState) {
+          final availableCatalog = AdhanAudioService.catalogAdhans.where((c) {
+            return !_customAdhansList.any((a) => a.id == c.id);
+          }).toList();
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 20,
+              top: 16,
+              left: 16,
+              right: 16,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.library_music, color: theme.accent, size: 24),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          "إضافة صوت أذان آخر 🕌",
+                          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        onPressed: () {
+                          AdhanAudioService.stopAdhan();
+                          Navigator.pop(modalCtx);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "اختر من أصوات الأذان التراثية المقترحة من مختلف ربوع العالم الإسلامي، أو أضف رابط أذان مخصص:",
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Section 1: Catalog Adhans
+                  if (availableCatalog.isNotEmpty) ...[
+                    const Text(
+                      "أذانات مقترحة جاهزة للإضافة بنقرة واحدة:",
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ...availableCatalog.map((item) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF334155), width: 0.8),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37), size: 22),
+                              tooltip: "استماع للعينة",
+                              onPressed: () {
+                                AdhanAudioService.playAdhan(soundId: item.id);
+                              },
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    item.desc,
+                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text("إضافة", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              onPressed: () async {
+                                await AdhanAudioService.addAdhan(item);
+                                await _loadPreferences();
+                                if (modalCtx.mounted) {
+                                  Navigator.pop(modalCtx);
+                                }
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: const Color(0xFF064E3B),
+                                      content: Text("تمت إضافة «${item.name}» إلى قائمة أصوات الأذان!"),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Section 2: Custom URL Form
+                  Theme(
+                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      initiallyExpanded: availableCatalog.isEmpty,
+                      tilePadding: EdgeInsets.zero,
+                      title: const Text(
+                        "إضافة أذان مخصص برابط صوتي (MP3) 🔗",
+                        style: TextStyle(color: Colors.amberAccent, fontSize: 13.5, fontWeight: FontWeight.bold),
+                      ),
+                      children: [
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: nameCtrl,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          decoration: InputDecoration(
+                            labelText: "اسم الأذان أو المؤذن *",
+                            labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            hintText: "مثال: أذان مسجد النور",
+                            hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+                            filled: true,
+                            fillColor: const Color(0xFF0F172A),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: descCtrl,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          decoration: InputDecoration(
+                            labelText: "الوصف أو المدينة (اختياري)",
+                            labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            hintText: "مثال: بصوت مؤذن حينا",
+                            hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+                            filled: true,
+                            fillColor: const Color(0xFF0F172A),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: urlCtrl,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          decoration: InputDecoration(
+                            labelText: "رابط ملف الصوت المباشر (URL .mp3) *",
+                            labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            hintText: "https://example.com/audio/adhan.mp3",
+                            hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+                            filled: true,
+                            fillColor: const Color(0xFF0F172A),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: const Icon(Icons.check, size: 18),
+                            label: const Text("حفظ وإضافة الأذان", style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: () async {
+                              final name = nameCtrl.text.trim();
+                              final url = urlCtrl.text.trim();
+                              if (name.isEmpty || url.isEmpty) {
+                                ScaffoldMessenger.of(modalCtx).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Colors.redAccent,
+                                    content: Text("يرجى إدخال اسم الأذان ورابط الصوت."),
+                                  ),
+                                );
+                                return;
+                              }
+                              final customId = "custom_${DateTime.now().millisecondsSinceEpoch}";
+                              final customAdhan = AdhanSoundItem(
+                                id: customId,
+                                name: name,
+                                desc: descCtrl.text.trim().isNotEmpty ? descCtrl.text.trim() : "أذان مخصص",
+                                url: url,
+                                isCustom: true,
+                              );
+                              await AdhanAudioService.addAdhan(customAdhan);
+                              await _loadPreferences();
+                              if (modalCtx.mounted) {
+                                Navigator.pop(modalCtx);
+                              }
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF064E3B),
+                                    content: Text("تمت إضافة «$name» بنجاح!"),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -542,16 +863,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         String searchQuery = "";
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
-            final filteredList = LanguageService.supportedLanguages.where((l) {
+            final activeFiltered = LanguageService.supportedLanguages.where((l) {
               if (searchQuery.trim().isEmpty) return true;
               final q = searchQuery.toLowerCase().trim();
               return l.name.toLowerCase().contains(q) ||
                   l.nativeName.toLowerCase().contains(q) ||
-                  l.code.toLowerCase().contains(q);
+                  l.code.toLowerCase().contains(q) ||
+                  l.nameAr.toLowerCase().contains(q);
             }).toList();
 
+            final catalogAvailable = LanguageService.searchAvailableGlobalLanguages(searchQuery);
+
             return Container(
-              height: MediaQuery.of(ctx).size.height * 0.85,
+              height: MediaQuery.of(ctx).size.height * 0.88,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
@@ -577,17 +901,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: activeTheme.accent.withValues(alpha: 0.5)),
-                        ),
-                        child: Text(
-                          "${LanguageService.supportedLanguages.length} لغة",
-                          style: TextStyle(color: activeTheme.accent, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: activeTheme.accent.withValues(alpha: 0.5)),
+                            ),
+                            child: Text(
+                              "${LanguageService.supportedLanguages.length} لغة",
+                              style: TextStyle(color: activeTheme.accent, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: Icon(Icons.add_circle, color: activeTheme.accent, size: 24),
+                            tooltip: "إضافة لغة مخصصة",
+                            onPressed: () => _showAddCustomLanguageDialog(ctx, activeTheme, setModalState),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -601,9 +935,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       });
                     },
                     decoration: InputDecoration(
-                      hintText: "ابحث عن اللغة (مثال: Turkish, اردو, Français)...",
+                      hintText: "ابحث عن اللغة (مثال: Turkish, يابانية, Español)...",
                       hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                       prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8)),
+                      suffixIcon: searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
+                              onPressed: () {
+                                setModalState(() {
+                                  searchQuery = "";
+                                });
+                              },
+                            )
+                          : null,
                       filled: true,
                       fillColor: const Color(0xFF0F172A),
                       isDense: true,
@@ -624,80 +968,415 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 10),
                   const Divider(color: Color(0xFF334155), height: 1),
                   const SizedBox(height: 6),
+
                   // Languages List
                   Expanded(
-                    child: filteredList.isEmpty
-                        ? const Center(
-                            child: Text(
-                              "لم يتم العثور على لغات مطابقة للبحث",
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    child: (activeFiltered.isEmpty && catalogAvailable.isEmpty)
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.language, color: Colors.white24, size: 48),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "لم يتم العثور على لغة باسم «$searchQuery»",
+                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: activeTheme.accent,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: Text("إضافة «$searchQuery» كلغة مخصصة الآن"),
+                                  onPressed: () => _showAddCustomLanguageDialog(
+                                    ctx,
+                                    activeTheme,
+                                    setModalState,
+                                    initialName: searchQuery,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
-                        : ListView.separated(
-                            itemCount: filteredList.length,
-                            separatorBuilder: (_, __) => const Divider(color: Color(0xFF334155), height: 1),
-                            itemBuilder: (context, idx) {
-                              final lang = filteredList[idx];
-                              final isSelected = LanguageService.languageCode == lang.code;
-
-                              return ListTile(
-                                leading: Container(
-                                  width: 42,
-                                  height: 42,
-                                  alignment: Alignment.center,
+                        : ListView(
+                            children: [
+                              // 1. Available to add from Global Catalog
+                              if (catalogAvailable.isNotEmpty) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  margin: const EdgeInsets.only(bottom: 6),
                                   decoration: BoxDecoration(
-                                    color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isSelected ? activeTheme.accent : const Color(0xFF334155),
-                                    ),
+                                    color: activeTheme.primary.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: activeTheme.primary.withValues(alpha: 0.3)),
                                   ),
-                                  child: Text(lang.flag, style: const TextStyle(fontSize: 22)),
-                                ),
-                                title: Row(
-                                  children: [
-                                    Text(
-                                      lang.nativeName,
-                                      style: TextStyle(
-                                        color: isSelected ? activeTheme.accent : Colors.white,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    if (lang.isRtl) ...[
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.add_circle_outline, color: activeTheme.accent, size: 18),
                                       const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF0F172A),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: Colors.white24),
-                                        ),
-                                        child: const Text(
-                                          "RTL",
-                                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9, fontWeight: FontWeight.bold),
+                                      Expanded(
+                                        child: Text(
+                                          "لغات عالمية متوفرة للإضافة المباشرة (${catalogAvailable.length})",
+                                          style: TextStyle(
+                                            color: activeTheme.accent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
                                     ],
-                                  ],
+                                  ),
                                 ),
-                                subtitle: Text(
-                                  lang.name,
-                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                ...catalogAvailable.map((lang) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0F172A),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFF334155)),
+                                    ),
+                                    child: ListTile(
+                                      leading: Container(
+                                        width: 38,
+                                        height: 38,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1E293B),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: const Color(0xFF334155)),
+                                        ),
+                                        child: Text(lang.flag, style: const TextStyle(fontSize: 20)),
+                                      ),
+                                      title: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              lang.nativeName,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (lang.isRtl) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF1E293B),
+                                                borderRadius: BorderRadius.circular(4),
+                                                border: Border.all(color: Colors.white24),
+                                              ),
+                                              child: const Text(
+                                                "RTL",
+                                                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      subtitle: Text(
+                                        "${lang.name} ${lang.nameAr.isNotEmpty ? '• ${lang.nameAr}' : ''}",
+                                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                      ),
+                                      trailing: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: activeTheme.accent,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        ),
+                                        icon: const Icon(Icons.add, size: 16),
+                                        label: const Text("إضافة", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                        onPressed: () async {
+                                          await LanguageService.addLanguage(lang, activateNow: true);
+                                          setModalState(() {});
+                                          if (mounted) setState(() {});
+                                          if (ctx.mounted) Navigator.pop(ctx);
+                                          if (!mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              backgroundColor: const Color(0xFF065F46),
+                                              duration: const Duration(seconds: 3),
+                                              content: Text("${lang.flag} تمت إضافة وتفعيل لغة: ${lang.nativeName} (${lang.name})"),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 10),
+                                const Divider(color: Color(0xFF334155), height: 1),
+                                const SizedBox(height: 10),
+                              ],
+
+                              // 2. Active Supported Languages
+                              if (activeFiltered.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                  child: Text(
+                                    "اللغات المفعلة حالياً (${activeFiltered.length}):",
+                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
                                 ),
-                                trailing: isSelected
-                                    ? Icon(Icons.check_circle, color: activeTheme.accent, size: 22)
-                                    : null,
-                                onTap: () {
-                                  Navigator.pop(ctx);
-                                  _applyLanguage(lang.code);
-                                },
-                              );
-                            },
+                                ...activeFiltered.map((lang) {
+                                  final isSelected = LanguageService.languageCode == lang.code;
+                                  return ListTile(
+                                    leading: Container(
+                                      width: 42,
+                                      height: 42,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isSelected ? activeTheme.accent : const Color(0xFF334155),
+                                        ),
+                                      ),
+                                      child: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          lang.nativeName,
+                                          style: TextStyle(
+                                            color: isSelected ? activeTheme.accent : Colors.white,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        if (lang.isRtl) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF0F172A),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: Colors.white24),
+                                            ),
+                                            child: const Text(
+                                              "RTL",
+                                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                        if (lang.isCustom) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF064E3B),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Text(
+                                              "مخصصة",
+                                              style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    subtitle: Text(
+                                      "${lang.name} ${lang.nameAr.isNotEmpty ? '• ${lang.nameAr}' : ''}",
+                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isSelected)
+                                          Icon(Icons.check_circle, color: activeTheme.accent, size: 22),
+                                        if (lang.isCustom)
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                                            tooltip: "حذف هذه اللغة المخصصة",
+                                            onPressed: () async {
+                                              await LanguageService.removeCustomLanguage(lang.code);
+                                              setModalState(() {});
+                                              if (mounted) setState(() {});
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("تم حذف اللغة المخصصة: ${lang.name}"),
+                                                  duration: const Duration(seconds: 2),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(ctx);
+                                      _applyLanguage(lang.code);
+                                    },
+                                  );
+                                }),
+                              ],
+                            ],
                           ),
                   ),
                 ],
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddCustomLanguageDialog(
+    BuildContext bottomSheetContext,
+    AppThemeColor activeTheme,
+    StateSetter setModalState, {
+    String initialName = "",
+  }) {
+    final codeCtrl = TextEditingController(text: initialName.length >= 2 ? initialName.substring(0, 2).toLowerCase() : "");
+    final nameCtrl = TextEditingController(text: initialName);
+    final nativeCtrl = TextEditingController(text: initialName);
+    final flagCtrl = TextEditingController(text: "🌐");
+    bool isRtl = false;
+
+    showDialog<void>(
+      context: context,
+      builder: (dlgContext) {
+        return StatefulBuilder(
+          builder: (context, setDlgState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Icon(Icons.add_circle, color: activeTheme.accent, size: 24),
+                  const SizedBox(width: 8),
+                  const Text("إضافة لغة مخصصة جديدة", style: TextStyle(color: Colors.white, fontSize: 16)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: codeCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: const InputDecoration(
+                        labelText: "رمز اللغة (مثال: es, ber, ko, ja)",
+                        labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: nameCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: const InputDecoration(
+                        labelText: "اسم اللغة بالإنجليزية (English Name)",
+                        labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: nativeCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: const InputDecoration(
+                        labelText: "الاسم الأصلي للغة (Native Name)",
+                        labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: TextField(
+                            controller: flagCtrl,
+                            style: const TextStyle(color: Colors.white, fontSize: 18),
+                            textAlign: TextAlign.center,
+                            decoration: const InputDecoration(
+                              labelText: "العلم",
+                              labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text("اتجاه RTL (من اليمين)", style: TextStyle(color: Colors.white, fontSize: 12)),
+                            value: isRtl,
+                            activeThumbColor: activeTheme.accent,
+                            onChanged: (val) {
+                              setDlgState(() => isRtl = val);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dlgContext),
+                  child: const Text("إلغاء", style: TextStyle(color: Colors.white60)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: activeTheme.accent,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () async {
+                    final code = codeCtrl.text.trim().toLowerCase();
+                    final name = nameCtrl.text.trim();
+                    final nativeName = nativeCtrl.text.trim().isEmpty ? name : nativeCtrl.text.trim();
+                    final flag = flagCtrl.text.trim().isEmpty ? "🌐" : flagCtrl.text.trim();
+
+                    if (code.isEmpty || name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("يرجى ملء رمز اللغة واسمها على الأقل")),
+                      );
+                      return;
+                    }
+
+                    final newLang = AppLanguage(
+                      code: code,
+                      name: name,
+                      nativeName: nativeName,
+                      flag: flag,
+                      isRtl: isRtl,
+                      isCustom: true,
+                    );
+
+                    final messenger = ScaffoldMessenger.of(context);
+                    await LanguageService.addLanguage(newLang, activateNow: true);
+                    setModalState(() {});
+                    if (mounted) setState(() {});
+
+                    if (dlgContext.mounted) Navigator.pop(dlgContext);
+                    if (bottomSheetContext.mounted) Navigator.pop(bottomSheetContext);
+
+                    messenger.showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF065F46),
+                        duration: const Duration(seconds: 3),
+                        content: Text("$flag تمت إضافة وتفعيل لغة: $nativeName ($name) بنجاح!"),
+                      ),
+                    );
+                  },
+                  child: const Text("حفظ وإضافة الآن"),
+                ),
+              ],
             );
           },
         );
@@ -1090,56 +1769,104 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Material(
                 color: activeTheme.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                child: RadioGroup<String>(
-                  groupValue: _adhanSound,
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _adhanSound = val;
-                      });
-                      _savePreference('adhan_sound', val);
-                    }
-                  },
-                  child: Column(
-                    children: _adhanSoundsList.map((sound) {
-                      final isSelected = sound['id'] == _adhanSound;
-                      return RadioListTile<String>(
-                        value: sound['id']!,
-                        activeColor: activeTheme.primary,
-                        title: Text(
-                          sound['name']!,
-                          style: TextStyle(
-                            color: isSelected ? activeTheme.accent : Colors.white,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 14,
-                          ),
-                        ),
-                        subtitle: Text(
-                          sound['desc']!,
-                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                        ),
-                        secondary: IconButton(
-                          icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37)),
-                          tooltip: "استماع لعينة الصوت",
-                          onPressed: () {
-                            AdhanAudioService.playAdhan(soundId: sound['id']!);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: const Color(0xFF064E3B),
-                                duration: const Duration(seconds: 4),
-                                content: Text("جاري تشغيل عينة ${sound['name']}"),
-                                action: SnackBarAction(
-                                  label: "إيقاف",
-                                  textColor: const Color(0xFFFDE68A),
-                                  onPressed: () => AdhanAudioService.stopAdhan(),
-                                ),
+                child: Column(
+                  children: [
+                    RadioGroup<String>(
+                      groupValue: _adhanSound,
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _adhanSound = val;
+                          });
+                          _savePreference('adhan_sound', val);
+                        }
+                      },
+                      child: Column(
+                        children: _adhanSoundsList.map((sound) {
+                          final isSelected = sound['id'] == _adhanSound;
+                          final isCustom = sound['isCustom'] == "true";
+                          return RadioListTile<String>(
+                            value: sound['id']!,
+                            activeColor: activeTheme.primary,
+                            title: Text(
+                              sound['name']!,
+                              style: TextStyle(
+                                color: isSelected ? activeTheme.accent : Colors.white,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 14,
                               ),
-                            );
-                          },
+                            ),
+                            subtitle: Text(
+                              sound['desc']!,
+                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            ),
+                            secondary: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37)),
+                                  tooltip: "استماع لعينة الصوت",
+                                  onPressed: () {
+                                    AdhanAudioService.playAdhan(soundId: sound['id']!);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: const Color(0xFF064E3B),
+                                        duration: const Duration(seconds: 4),
+                                        content: Text("جاري تشغيل عينة ${sound['name']}"),
+                                        action: SnackBarAction(
+                                          label: "إيقاف",
+                                          textColor: const Color(0xFFFDE68A),
+                                          onPressed: () => AdhanAudioService.stopAdhan(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                if (isCustom)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                    tooltip: "حذف هذا الأذان",
+                                    onPressed: () async {
+                                      await AdhanAudioService.deleteAdhan(sound['id']!);
+                                      await _loadPreferences();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: const Color(0xFF7F1D1D),
+                                            content: Text("تم حذف «${sound['name']}» من القائمة."),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const Divider(color: Color(0xFF334155), height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: activeTheme.accent,
+                            side: BorderSide(color: activeTheme.primary.withValues(alpha: 0.6)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.add_circle_outline, size: 20),
+                          label: const Text(
+                            "إضافة صوت أذان آخر ➕",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                          ),
+                          onPressed: () => _showAddAdhanModal(activeTheme),
                         ),
-                      );
-                    }).toList(),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -1207,29 +1934,252 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Material(
                 color: activeTheme.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                child: SwitchListTile(
-                  value: _autoSilentMode,
-                  activeThumbColor: activeTheme.primary,
-                  title: const Text(
-                    "كتم صوت الهاتف تلقائياً أثناء الصلاة",
-                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _autoSilentMode,
+                        activeThumbColor: activeTheme.primary,
+                        title: const Text(
+                          "كتم صوت الهاتف تلقائياً أثناء الصلاة",
+                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          "تحويل الهاتف لوضع الصامت تلقائياً بعد الأذان أثناء صلاة الجماعة في المسجد وإعادته بعدها.",
+                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        ),
+                        onChanged: (val) async {
+                          if (val) {
+                            final hasAccess = await SilentModeService.isDndAccessGranted();
+                            if (!hasAccess && context.mounted) {
+                              _showDndPermissionDialog(activeTheme);
+                            }
+                          }
+                          setState(() {
+                            _autoSilentMode = val;
+                          });
+                          _savePreference('auto_silent_mode', val);
+                        },
+                      ),
+
+                      if (_autoSilentMode) ...[
+                        const SizedBox(height: 8),
+                        // DND Permission Alert or Badge
+                        if (!_isDndGranted)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0x28EF4444),
+                              border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 20),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "إذن كتم الصوت غير ممنوح في نظام أندرويد",
+                                        style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  "لكي يعمل الكتم التلقائي بنجاح، يجب منح التطبيق إذن «الوصول إلى عدم الإزعاج» من إعدادات الهاتف.",
+                                  style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.4),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFDC2626),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                    icon: const Icon(Icons.settings, size: 16),
+                                    label: const Text(
+                                      "منح إذن كتم الصوت في إعدادات النظام ⚙️",
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                    onPressed: () async {
+                                      await SilentModeService.openDndSettings();
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0x1F10B981),
+                              border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "إذن كتم الصوت مفعّل في النظام - الوضع الصامت جاهز للعمل.",
+                                    style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        const SizedBox(height: 14),
+                        const Divider(color: Color(0xFF334155), height: 1),
+                        const SizedBox(height: 12),
+
+                        // Mode selection: Silent or Vibrate
+                        const Text(
+                          "نوع الوضع أثناء الصلاة:",
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Center(child: Text("صامت تماماً 🔕")),
+                                selected: _mosqueSilentType == 'silent',
+                                selectedColor: activeTheme.primary,
+                                backgroundColor: const Color(0xFF0F172A),
+                                labelStyle: TextStyle(
+                                  color: _mosqueSilentType == 'silent' ? Colors.white : const Color(0xFF94A3B8),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                onSelected: (_) {
+                                  setState(() => _mosqueSilentType = 'silent');
+                                  _savePreference('mosque_silent_type', 'silent');
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Center(child: Text("اهتزاز فقط 📳")),
+                                selected: _mosqueSilentType == 'vibrate',
+                                selectedColor: activeTheme.primary,
+                                backgroundColor: const Color(0xFF0F172A),
+                                labelStyle: TextStyle(
+                                  color: _mosqueSilentType == 'vibrate' ? Colors.white : const Color(0xFF94A3B8),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                onSelected: (_) {
+                                  setState(() => _mosqueSilentType = 'vibrate');
+                                  _savePreference('mosque_silent_type', 'vibrate');
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+                        // Duration selection: 15, 20, 25, 30 min
+                        const Text(
+                          "مدة كتم الصوت بعد الأذان:",
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [15, 20, 25, 30].map((mins) {
+                            final isSel = _mosqueSilentDuration == mins;
+                            return ChoiceChip(
+                              label: Text("$mins دقيقة"),
+                              selected: isSel,
+                              selectedColor: activeTheme.primary,
+                              backgroundColor: const Color(0xFF0F172A),
+                              labelStyle: TextStyle(
+                                color: isSel ? Colors.white : const Color(0xFF94A3B8),
+                                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                              onSelected: (_) {
+                                setState(() => _mosqueSilentDuration = mins);
+                                _savePreference('mosque_silent_duration', mins);
+                              },
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 16),
+                        // Test silent mode button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF38BDF8),
+                              side: const BorderSide(color: Color(0xFF0284C7)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: _isTestingSilent
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)),
+                                  )
+                                : const Icon(Icons.phonelink_ring_rounded, size: 18),
+                            label: Text(
+                              _isTestingSilent
+                                  ? "جاري التجربة (الهاتف مكتوم الآن)..."
+                                  : "تجربة كتم الصوت الآن (لمدة 5 ثوانٍ) 🧪",
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                            ),
+                            onPressed: _isTestingSilent
+                                ? null
+                                : () async {
+                                    final granted = await SilentModeService.isDndAccessGranted();
+                                    if (!granted) {
+                                      if (context.mounted) _showDndPermissionDialog(activeTheme);
+                                      return;
+                                    }
+                                    setState(() => _isTestingSilent = true);
+                                    final success = await SilentModeService.testSilentMode(durationSeconds: 5);
+                                    if (context.mounted) {
+                                      if (success) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            backgroundColor: Color(0xFF064E3B),
+                                            duration: Duration(seconds: 5),
+                                            content: Text("🔕 تم كتم الهاتف بنجاح! سيتم إرجاع الصوت تلقائياً بعد 5 ثوانٍ..."),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            backgroundColor: Color(0xFF7F1D1D),
+                                            content: Text("⚠️ تعذر كتم الصوت، يرجى التحقق من إذن عدم الإزعاج في إعدادات الهاتف."),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                    await Future<void>.delayed(const Duration(seconds: 5));
+                                    if (mounted) setState(() => _isTestingSilent = false);
+                                  },
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  subtitle: const Text(
-                    "تحويل الهاتف لوضع الصامت تلقائياً بعد الأذان لمدة 25 دقيقة أثناء صلاة الجماعة وإعادته بعدها.",
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                  ),
-                  onChanged: (val) async {
-                    if (val) {
-                      final hasAccess = await SilentModeService.isDndAccessGranted();
-                      if (!hasAccess && context.mounted) {
-                        _showDndPermissionDialog(activeTheme);
-                      }
-                    }
-                    setState(() {
-                      _autoSilentMode = val;
-                    });
-                    _savePreference('auto_silent_mode', val);
-                  },
                 ),
               ),
               const SizedBox(height: 24),
@@ -1477,6 +2427,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 30),
 
+              // Updates, Feedback & Support Section
+              _buildSectionHeader(
+                LanguageService.tr('settings_support_header'),
+                Icons.volunteer_activism_rounded,
+                activeTheme.accent,
+              ),
+              const SizedBox(height: 14),
+
+              // Feature 1: Check for Updates
+              _buildSupportTile(
+                icon: Icons.system_update_alt_rounded,
+                iconColor: const Color(0xFF38BDF8),
+                title: LanguageService.tr('settings_check_updates_title'),
+                subtitle: activeLocale.languageCode == 'ar'
+                    ? "الإصدار الحالي: v$_appVersionString • فحص أحدث إصدار وتحديثات الأذان"
+                    : "${LanguageService.tr('settings_current_version')}: v$_appVersionString • ${LanguageService.tr('settings_check_updates_subtitle')}",
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.refresh_rounded, color: Color(0xFF38BDF8), size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        LanguageService.tr('settings_check_now_btn'),
+                        style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                onTap: () async {
+                  AppFeedback.select();
+                  await AppUpdateService.showUpdateDialog(context, theme: activeTheme);
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Feature 2: Report a Bug
+              _buildSupportTile(
+                icon: Icons.bug_report_rounded,
+                iconColor: const Color(0xFFF43F5E),
+                title: LanguageService.tr('settings_report_bug_title'),
+                subtitle: LanguageService.tr('settings_report_bug_subtitle'),
+                trailing: Icon(
+                  LanguageService.isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                  color: Colors.white38,
+                  size: 22,
+                ),
+                onTap: () async {
+                  AppFeedback.select();
+                  await AppSupportService.showBugReportSheet(context, theme: activeTheme);
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Feature 3: Request a Feature
+              _buildSupportTile(
+                icon: Icons.lightbulb_outline_rounded,
+                iconColor: activeTheme.accent,
+                title: LanguageService.tr('settings_suggest_feature_title'),
+                subtitle: LanguageService.tr('settings_suggest_feature_subtitle'),
+                trailing: Icon(Icons.auto_awesome_rounded, color: activeTheme.accent, size: 20),
+                onTap: () async {
+                  AppFeedback.select();
+                  await AppSupportService.showFeatureRequestSheet(context, theme: activeTheme);
+                },
+              ),
+              const SizedBox(height: 30),
+
               // About Section with New Logo
               Center(
                 child: Column(
@@ -1510,9 +2534,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      "الإصدار 1.0.0 (الجزائر) • مجاني 100% وبدون أي إعلانات",
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    Text(
+                      "الإصدار $_appVersionString (الجزائر) • مجاني 100% وبدون أي إعلانات",
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                   ],
                 ),
@@ -1525,6 +2549,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   },
 );
+  }
+
+  Widget _buildSupportTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required Widget trailing,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: const Color(0xFF1E293B),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: iconColor.withValues(alpha: 0.35), width: 1.2),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              trailing,
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSectionHeader(String title, IconData icon, Color accentColor) {

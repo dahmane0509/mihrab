@@ -19,6 +19,7 @@ import 'services/prayer_notification_service.dart';
 import 'services/app_feedback.dart';
 import 'services/location_service.dart';
 import 'services/language_service.dart';
+import 'services/quran_audio_reciters_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ void main() async {
     LanguageService.init(),
     ThemeService.init(),
     PrayerService.loadSettings(),
+    QuranAudioRecitersService.init(),
   ]);
 
   // Launch Flutter UI immediately to dismiss OS native splash screen instantly

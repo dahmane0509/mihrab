@@ -304,24 +304,30 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         offset: Offset(0, _slideAnimation.value),
                         child: Column(
                           children: [
-                            // Modern Sans / Cairo Minimalist Title (خالٍ من التشكيل والزخارف)
+                            // Brand Title - Alexandria Light 200 with Soft Glow (النموذج الثالث)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   "محراب",
-                                  style: GoogleFonts.cairo(
+                                  style: GoogleFonts.alexandria(
                                     color: Colors.white,
                                     fontSize: 38,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+                                    fontWeight: FontWeight.w200,
+                                    letterSpacing: 3.5,
+                                    shadows: const [
+                                      Shadow(
+                                        color: Color(0x8000E5FF),
+                                        blurRadius: 15,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 2),
 
-                            // English Brand Name Underneath in modern sans
+                            // English Brand Name Underneath in modern sans (Shape 1 Agreed)
                             Text(
                               "M I H R A B",
                               style: GoogleFonts.cairo(

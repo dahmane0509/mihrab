@@ -5,8 +5,10 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/quran_data.dart';
 import '../data/quran_texts.dart';
+import '../data/quran_reciters_catalog.dart';
 import '../services/theme_service.dart';
 import '../services/language_service.dart';
+import '../services/quran_audio_reciters_service.dart';
 
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
@@ -27,23 +29,6 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
-  final List<Map<String, String>> _reciters = [
-    {"id": "jaza", "name": "الشيخ ياسين الجزائري (رواية ورش)", "server": "https://cdn.mp3quran.net/audio/yassen-jazairi/r1"},
-    {"id": "sheim", "name": "الشيخ عبد العزيز سحيم (الجزائر - ورش)", "server": "https://cdn.mp3quran.net/audio/abdelaziz-sheim/r1"},
-    {"id": "kouchi", "name": "الشيخ العيون الكوشي (رواية ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/laayoun-kouchi/r1"},
-    {"id": "kazabri", "name": "الشيخ عمر القزابري (رواية ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/omar-kazabri/r1"},
-    {"id": "husr", "name": "الشيخ محمود خليل الحصري (ورش عن نافع)", "server": "https://cdn.mp3quran.net/audio/mahmoud-husary/r3"},
-    {"id": "hudhaifi", "name": "الشيخ علي بن عبد الرحمن الحذيفي", "server": "https://cdn.mp3quran.net/audio/ali-hudhaifi/r1"},
-    {"id": "shatri", "name": "الشيخ أبو بكر الشاطري", "server": "https://cdn.mp3quran.net/audio/abubakr-shatri/r1"},
-    {"id": "islam_sobhi", "name": "القارئ إسلام صبحي", "server": "https://cdn.mp3quran.net/audio/islam-sobhi/r1"},
-    {"id": "basit", "name": "الشيخ عبد الباسط عبد الصمد (مرتل)", "server": "https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3"},
-    {"id": "minsh", "name": "الشيخ محمد صديق المنشاوي", "server": "https://cdn.mp3quran.net/audio/muhammad-minshawi/r1"},
-    {"id": "maher", "name": "الشيخ ماهر المعيقلي", "server": "https://cdn.mp3quran.net/audio/maher-muaiqly/r1"},
-    {"id": "s_gmd", "name": "الشيخ سعد الغامدي", "server": "https://cdn.mp3quran.net/audio/saad-ghamdi/r1"},
-    {"id": "dosari", "name": "الشيخ ياسر الدوسري", "server": "https://server11.mp3quran.net/yasser"},
-    {"id": "shur", "name": "الشيخ سعود الشريم", "server": "https://server7.mp3quran.net/shur"},
-  ];
-
   int? _savedBookmarkSurah;
   String? _savedBookmarkName;
 
@@ -51,6 +36,12 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _currentReciterId = QuranAudioRecitersService.activeReciterId;
+    QuranAudioRecitersService.activeReciterNotifier.addListener(_onReciterChanged);
+    QuranAudioRecitersService.recitersVersionNotifier.addListener(_onRecitersListChanged);
     _loadBookmark();
 
     _audioPlayer.onPlayerStateChanged.listen((state) {
@@ -79,10 +70,27 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
     });
   }
 
+  void _onReciterChanged() {
+    if (mounted) {
+      setState(() {
+        _currentReciterId = QuranAudioRecitersService.activeReciterId;
+      });
+      if (_isPlaying && _currentPlayingSurahNumber != null) {
+        _playSurah(_currentPlayingSurahNumber!);
+      }
+    }
+  }
+
+  void _onRecitersListChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
     _audioPlayer.dispose();
+    QuranAudioRecitersService.activeReciterNotifier.removeListener(_onReciterChanged);
+    QuranAudioRecitersService.recitersVersionNotifier.removeListener(_onRecitersListChanged);
     super.dispose();
   }
 
@@ -104,9 +112,8 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
   }
 
   Future<void> _playSurah(int surahNum) async {
-    final reciter = _reciters.firstWhere((r) => r['id'] == _currentReciterId);
-    final paddedNum = surahNum.toString().padLeft(3, '0');
-    final url = "${reciter['server']}/$paddedNum.mp3";
+    final reciter = QuranAudioRecitersService.getReciterById(_currentReciterId);
+    final url = reciter.getSurahUrl(surahNum);
     final surahObj = QuranData.surahs.firstWhere((s) => s.number == surahNum);
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -114,7 +121,7 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
       SnackBar(
         backgroundColor: const Color(0xFF065F46),
         duration: const Duration(seconds: 4),
-        content: Text("جاري تشغيل سورة ${surahObj.nameAr} بصوت ${reciter['name']}"),
+        content: Text("جاري تشغيل سورة ${surahObj.nameAr} بصوت ${reciter.name}"),
         action: SnackBarAction(
           label: "إيقاف",
           textColor: const Color(0xFFFDE68A),
@@ -275,6 +282,56 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
                 ),
               ),
 
+              // Smart Reciter Search prompt when searching
+              if (_searchQuery.isNotEmpty)
+                Builder(
+                  builder: (context) {
+                    final matchingCatalog = QuranAudioRecitersService.searchCatalogAvailableToAdd(_searchQuery);
+                    final matchingCurrent = QuranAudioRecitersService.searchCurrentReciters(_searchQuery);
+                    final totalMatches = matchingCatalog.length + matchingCurrent.length;
+                    final isReciterQuery = totalMatches > 0 ||
+                        _searchQuery.contains('قارئ') ||
+                        _searchQuery.contains('الشيخ') ||
+                        _searchQuery.contains('شيخ');
+                    if (!isReciterQuery) return const SizedBox.shrink();
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0369A1).withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF38BDF8), width: 0.8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.mic, color: Color(0xFF38BDF8), size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              totalMatches > 0
+                                  ? "وجدنا $totalMatches قارئ يطابق «$_searchQuery»"
+                                  : "هل تبحث عن القارئ «$_searchQuery»؟",
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              minimumSize: Size.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: () => _showRecitersModal(theme, initialQuery: _searchQuery),
+                            child: const Text("عرض وإضافة القراء", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
               // Saved Bookmark Quick Resume
               if (_savedBookmarkSurah != null && _searchQuery.isEmpty)
                 Container(
@@ -411,61 +468,109 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
   }
 
   Widget _buildListeningView(List<Surah> surahs, AppThemeColor theme) {
+    final activeReciter = QuranAudioRecitersService.activeReciter;
+
     return Column(
       children: [
-        // Reciter Selection Header
+        // Active Reciter Card & Change / Add button
         Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: theme.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: theme.primary.withValues(alpha: 0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              Icon(Icons.mic, color: theme.accent),
-              const SizedBox(width: 12),
-              const Text(
-                "القارئ:",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: theme.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: theme.accent, width: 1.2),
+                ),
+                child: Center(
+                  child: Text(
+                    activeReciter.countryFlag,
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: DropdownButton<String>(
-                  value: _currentReciterId,
-                  dropdownColor: theme.cardBackground,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  icon: Icon(Icons.arrow_drop_down, color: theme.accent),
-                  items: _reciters.map((r) {
-                    return DropdownMenuItem<String>(
-                      value: r['id'],
-                      child: Text(
-                        r['name']!,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (newId) {
-                    if (newId != null) {
-                      setState(() {
-                        _currentReciterId = newId;
-                      });
-                      final chosen = _reciters.firstWhere((r) => r['id'] == newId);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: theme.darkPrimary,
-                          duration: const Duration(seconds: 2),
-                          content: Text("تم اختيار القارئ: ${chosen['name']}"),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          "القارئ:",
+                          style: TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      );
-                      if (_isPlaying && _currentPlayingSurahNumber != null) {
-                        _playSurah(_currentPlayingSurahNumber!);
-                      }
-                    }
-                  },
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            activeReciter.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (activeReciter.isCustom)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              "مخصص",
+                              style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${activeReciter.riwayah} • ${activeReciter.subtext}",
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.search, size: 16),
+                label: const Text(
+                  "تغيير / إضافة",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () => _showRecitersModal(theme),
               ),
             ],
           ),
@@ -474,7 +579,7 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
         // Surahs List for Audio
         Expanded(
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             itemCount: surahs.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
@@ -539,12 +644,392 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
     );
   }
 
+  void _showRecitersModal(AppThemeColor theme, {String initialQuery = ""}) {
+    final searchCtrl = TextEditingController(text: initialQuery);
+    String query = initialQuery.trim();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalCtx, setModalState) {
+          final currentReciters = QuranAudioRecitersService.searchCurrentReciters(query);
+          final catalogAvailable = QuranAudioRecitersService.searchCatalogAvailableToAdd(query);
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 16,
+              top: 16,
+              left: 16,
+              right: 16,
+            ),
+            child: SizedBox(
+              height: MediaQuery.of(modalCtx).size.height * 0.78,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.mic_external_on, color: theme.accent, size: 24),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          "اختيار وإضافة قراء القرآن الكريم 🎙️",
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        onPressed: () => Navigator.pop(modalCtx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Search field inside modal
+                  TextField(
+                    controller: searchCtrl,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    textDirection: TextDirection.rtl,
+                    onChanged: (val) {
+                      setModalState(() {
+                        query = val.trim();
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: "ابحث عن أي قارئ (مثل: عبد الباسط، العفاسي، المنشاوي، مهساس)...",
+                      hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                      prefixIcon: Icon(Icons.search, color: theme.primary, size: 20),
+                      suffixIcon: query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
+                              onPressed: () {
+                                searchCtrl.clear();
+                                setModalState(() => query = "");
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: const Color(0xFF0F172A),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Content list
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        // Section 1: Active Reciters
+                        if (currentReciters.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              Icon(Icons.check_circle_outline, color: theme.accent, size: 18),
+                              const SizedBox(width: 6),
+                              Text(
+                                "القراء المتاحون حالياً (${currentReciters.length}):",
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ...currentReciters.map((r) {
+                            final isSel = r.id == QuranAudioRecitersService.activeReciterId;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              decoration: BoxDecoration(
+                                color: isSel ? theme.primary.withValues(alpha: 0.25) : const Color(0xFF0F172A),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSel ? theme.accent : const Color(0xFF334155),
+                                  width: isSel ? 1.5 : 0.8,
+                                ),
+                              ),
+                              child: ListTile(
+                                dense: true,
+                                leading: Text(r.countryFlag, style: const TextStyle(fontSize: 20)),
+                                title: Text(
+                                  r.name,
+                                  style: TextStyle(
+                                    color: isSel ? theme.accent : Colors.white,
+                                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  "${r.riwayah} • ${r.subtext}",
+                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isSel)
+                                      Icon(Icons.check_circle, color: theme.accent, size: 20)
+                                    else
+                                      const Icon(Icons.circle_outlined, color: Colors.white30, size: 18),
+                                    if (r.isCustom) ...[
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                                        tooltip: "حذف القارئ",
+                                        onPressed: () async {
+                                          await QuranAudioRecitersService.removeCustomReciter(r.id);
+                                          setModalState(() {});
+                                          setState(() {});
+                                        },
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                onTap: () async {
+                                  await QuranAudioRecitersService.setActiveReciter(r.id);
+                                  if (modalCtx.mounted) Navigator.pop(modalCtx);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: const Color(0xFF065F46),
+                                        content: Text("تم اختيار القارئ: ${r.name}"),
+                                      ),
+                                    );
+                                    if (_isPlaying && _currentPlayingSurahNumber != null) {
+                                      _playSurah(_currentPlayingSurahNumber!);
+                                    }
+                                  }
+                                },
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 14),
+                        ],
+
+                        // Section 2: Catalog Reciters
+                        if (catalogAvailable.isNotEmpty) ...[
+                          const Row(
+                            children: [
+                              Icon(Icons.cloud_download_outlined, color: Color(0xFF38BDF8), size: 18),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  "قراء متاحون للإضافة من المكتبة العالمية (أكثر من 40 قارئ):",
+                                  style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...catalogAvailable.map((item) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F172A),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF1E293B)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(item.countryFlag, style: const TextStyle(fontSize: 20)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.name,
+                                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                        ),
+                                        Text(
+                                          "${item.riwayah} • ${item.subtext}",
+                                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: theme.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      minimumSize: Size.zero,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(Icons.add, size: 14),
+                                    label: const Text("إضافة واستماع", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    onPressed: () async {
+                                      await QuranAudioRecitersService.addReciter(item, activateNow: true);
+                                      if (modalCtx.mounted) Navigator.pop(modalCtx);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: const Color(0xFF065F46),
+                                            content: Text("تمت إضافة القارئ ${item.name} وتفعيله بنجاح!"),
+                                          ),
+                                        );
+                                        if (_isPlaying && _currentPlayingSurahNumber != null) {
+                                          _playSurah(_currentPlayingSurahNumber!);
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 14),
+                        ],
+
+                        // Section 3: Custom Reciter Addition
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.amberAccent,
+                            side: const BorderSide(color: Colors.amberAccent),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.add_link, size: 18),
+                          label: const Text(
+                            "+ إضافة قارئ مخصص برابط صوتي",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          onPressed: () {
+                            _showAddCustomReciterDialog(theme);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddCustomReciterDialog(AppThemeColor theme) {
+    final nameCtrl = TextEditingController();
+    final riwayahCtrl = TextEditingController(text: "حفص عن عاصم");
+    final urlCtrl = TextEditingController();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: theme.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Icon(Icons.person_add_alt_1, color: Colors.amberAccent, size: 22),
+            SizedBox(width: 8),
+            Text(
+              "إضافة قارئ مخصص",
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: "اسم القارئ / الشيخ *",
+                  hintText: "مثال: الشيخ فلان الفلاني",
+                  labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: riwayahCtrl,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: "الرواية",
+                  labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: urlCtrl,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: const InputDecoration(
+                  labelText: "رابط السيرفر الصوتي (Base URL) *",
+                  hintText: "https://serverX.mp3quran.net/name/",
+                  helperText: "يدعم إضافة أرقام السور تلقائياً مثل 001.mp3",
+                  labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  helperStyle: TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("إلغاء", style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              final url = urlCtrl.text.trim();
+              if (name.isEmpty || url.isEmpty) return;
+
+              final customId = "custom_${DateTime.now().millisecondsSinceEpoch}";
+              final newReciter = QuranReciter(
+                id: customId,
+                name: name,
+                riwayah: riwayahCtrl.text.trim().isNotEmpty ? riwayahCtrl.text.trim() : "حفص عن عاصم",
+                server: url,
+                country: "🎙️",
+                isCustom: true,
+              );
+
+              await QuranAudioRecitersService.addReciter(newReciter, activateNow: true);
+              if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF065F46),
+                    content: Text("تمت إضافة القارئ «$name» بنجاح!"),
+                  ),
+                );
+              }
+            },
+            child: const Text("إضافة وحفظ"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMiniPlayer(AppThemeColor theme) {
     final surahObj = QuranData.surahs.firstWhere(
       (s) => s.number == _currentPlayingSurahNumber,
       orElse: () => QuranData.surahs[0],
     );
-    final reciter = _reciters.firstWhere((r) => r['id'] == _currentReciterId);
+    final reciter = QuranAudioRecitersService.getReciterById(_currentReciterId);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -572,7 +1057,7 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Text(
-                      reciter['name']!,
+                      reciter.name,
                       style: TextStyle(color: theme.accent, fontSize: 12),
                       overflow: TextOverflow.ellipsis,
                     ),

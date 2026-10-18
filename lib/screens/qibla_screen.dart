@@ -230,50 +230,63 @@ class _QiblaScreenState extends State<QiblaScreen> {
                       ),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Column(
-                          children: [
-                            Text(
-                              isAr
-                                  ? "زاوية القبلة (${widget.currentWilaya.nameAr})"
-                                  : "${LanguageService.tr('qibla_angle')} ($wilayaName)",
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              isAr
-                                  ? "${qiblaBearing.toStringAsFixed(1)}° شرقاً"
-                                  : "${qiblaBearing.toStringAsFixed(1)}° ${LanguageService.tr('east_direction')}",
-                              style: TextStyle(
-                                color: isAligned ? const Color(0xFF34D399) : Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isAr
+                                    ? "زاوية القبلة (${widget.currentWilaya.nameAr})"
+                                    : "${LanguageService.tr('qibla_angle')} ($wilayaName)",
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                isAr
+                                    ? "${qiblaBearing.toStringAsFixed(1)}° شرقاً"
+                                    : "${qiblaBearing.toStringAsFixed(1)}° ${LanguageService.tr('east_direction')}",
+                                style: TextStyle(
+                                  color: isAligned ? const Color(0xFF34D399) : Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
-                        Container(height: 35, width: 1, color: const Color(0xFF334155)),
-                        Column(
-                          children: [
-                            Text(
-                              isAr
-                                  ? "المسافة إلى مكة"
-                                  : LanguageService.tr('distance_to_makkah'),
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              isAr
-                                  ? "${distanceKm.toStringAsFixed(0)} كم"
-                                  : "${distanceKm.toStringAsFixed(0)} ${LanguageService.tr('km_unit')}",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        Container(height: 38, width: 1, color: const Color(0xFF334155), margin: const EdgeInsets.symmetric(horizontal: 8)),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isAr
+                                    ? "المسافة إلى مكة"
+                                    : LanguageService.tr('distance_to_makkah'),
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                isAr
+                                    ? "${distanceKm.toStringAsFixed(0)} كم"
+                                    : "${distanceKm.toStringAsFixed(0)} ${LanguageService.tr('km_unit')}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

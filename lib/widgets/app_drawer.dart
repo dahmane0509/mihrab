@@ -121,11 +121,17 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                         const SizedBox(height: 6),
                         Text(
                           isAr ? "محراب" : LanguageService.tr('drawer_brand'),
-                          style: GoogleFonts.cairo(
+                          style: GoogleFonts.alexandria(
                             color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 2.0,
+                            shadows: const [
+                              Shadow(
+                                color: Color(0x6600E5FF),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 2),

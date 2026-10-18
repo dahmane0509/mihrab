@@ -19,10 +19,10 @@ class SilentModeService {
   static Future<bool> isDndAccessGranted() async {
     try {
       final res = await _channel.invokeMethod<bool>('isDndAccessGranted');
-      return res ?? true;
+      return res ?? false;
     } catch (e) {
       debugPrint("isDndAccessGranted error: $e");
-      return true;
+      return false;
     }
   }
 
@@ -58,18 +58,21 @@ class SilentModeService {
     }
   }
 
-  /// Automatically silence phone for [durationMinutes] (default 25 min) during prayer
-  static Future<bool> enableMosqueSilentMode({int durationMinutes = 25}) async {
+  /// Automatically silence phone for [durationMinutes] (default from prefs or 25 min) during prayer
+  static Future<bool> enableMosqueSilentMode({int? durationMinutes}) async {
     final prefs = await SharedPreferences.getInstance();
     final isEnabled = prefs.getBool('auto_silent_mode') ?? true;
     if (!isEnabled) return false;
 
+    final targetMode = prefs.getString('mosque_silent_type') ?? 'silent';
+    final targetDuration = durationMinutes ?? prefs.getInt('mosque_silent_duration') ?? 25;
+
     try {
-      final success = await setRingerMode('silent');
+      final success = await setRingerMode(targetMode);
       if (success) {
         _isSilentActive = true;
         _restoreTimer?.cancel();
-        _restoreTimer = Timer(Duration(minutes: durationMinutes), () async {
+        _restoreTimer = Timer(Duration(minutes: targetDuration), () async {
           await restoreNormalMode();
         });
         return true;
@@ -97,9 +100,11 @@ class SilentModeService {
   }
 
   /// Test silent mode for [durationSeconds] then automatically restore normal mode
-  static Future<bool> testSilentMode({int durationSeconds = 4}) async {
+  static Future<bool> testSilentMode({int durationSeconds = 5}) async {
     try {
-      final success = await setRingerMode('silent');
+      final prefs = await SharedPreferences.getInstance();
+      final targetMode = prefs.getString('mosque_silent_type') ?? 'silent';
+      final success = await setRingerMode(targetMode);
       if (success) {
         Timer(Duration(seconds: durationSeconds), () async {
           await setRingerMode('normal');

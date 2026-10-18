@@ -819,10 +819,10 @@ class AppTranslations {
       'it': 'Personalizza Voce Adhan per Ogni Preghiera',
     },
     'settings_default_adhan_header': {
-      'ar': 'صوت الأذان الافتراضي العام',
-      'en': 'Default General Adhan Sound',
-      'fr': 'Son d\'Adhan Général par Défaut',
-      'it': 'Suono Predefinito dell\'Adhan',
+      'ar': 'صوت الأذان',
+      'en': 'Adhan Sound',
+      'fr': 'Son de l\'Adhan',
+      'it': 'Suono dell\'Adhan',
     },
     'settings_select_adhan_dialog_title': {
       'ar': 'اختر صوت أذان',
@@ -1423,6 +1423,78 @@ class AppTranslations {
       'es': 'Traducción verificada',
       'de': 'Verifizierte Übersetzung',
       'tr': 'Doğrulanmış Tercüme',
+    },
+
+    // Support, Feedback & App Updates
+    'settings_support_header': {
+      'ar': 'التحديثات والتطوير والدعم',
+      'en': 'Updates & Community Support',
+      'fr': 'Mises à jour et Support',
+    },
+    'settings_check_updates_title': {
+      'ar': 'التحقق من التحديثات',
+      'en': 'Check for Updates',
+      'fr': 'Vérifier les mises à jour',
+    },
+    'settings_check_updates_subtitle': {
+      'ar': 'فحص أحدث إصدار لمحراب وتحديثات أصوات الأذان والمواقيت',
+      'en': 'Check for the latest Mihrab release, Adhan sounds, and prayer fixes',
+      'fr': 'Vérifier la dernière version de Mihrab, appels de prière et horaires',
+    },
+    'settings_report_bug_title': {
+      'ar': 'بلّغ عن خطأ',
+      'en': 'Report a Bug',
+      'fr': 'Signaler un bug',
+    },
+    'settings_report_bug_subtitle': {
+      'ar': 'مساعدتنا في إصلاح أي مشكلة تقنية أو خلل في الأذان والتنبيهات',
+      'en': 'Help us fix technical issues, notification bugs, or audio errors',
+      'fr': 'Aidez-nous à corriger les anomalies techniques ou de notification',
+    },
+    'settings_suggest_feature_title': {
+      'ar': 'اقترح ميزة جديدة',
+      'en': 'Request a Feature',
+      'fr': 'Suggérer une fonctionnalité',
+    },
+    'settings_suggest_feature_subtitle': {
+      'ar': 'شاركنا أفكارك لتطوير محراب وإضافة قراء أو خدمات إسلامية جديدة',
+      'en': 'Share your ideas to improve Mihrab or request new reciters and features',
+      'fr': 'Partagez vos idées pour enrichir Mihrab ou suggérer de nouveaux récitateurs',
+    },
+    'settings_current_version': {
+      'ar': 'الإصدار الحالي',
+      'en': 'Current Version',
+      'fr': 'Version actuelle',
+    },
+    'settings_latest_version_dialog_title': {
+      'ar': 'تطبيق محراب محدث بالكامل',
+      'en': 'Mihrab is Up to Date',
+      'fr': 'Mihrab est à jour',
+    },
+    'settings_latest_version_dialog_msg': {
+      'ar': 'أنت تستخدم أحدث إصدار متوفر لتطبيق محراب مع جميع الميزات المحدثة.',
+      'en': 'You are already using the latest available release of Mihrab with all active features.',
+      'fr': 'Vous utilisez déjà la dernière version disponible de Mihrab avec toutes ses fonctionnalités.',
+    },
+    'settings_update_available_title': {
+      'ar': 'يتوفر إصدار جديد لمحراب!',
+      'en': 'New Update Available!',
+      'fr': 'Nouvelle mise à jour disponible !',
+    },
+    'settings_update_now_btn': {
+      'ar': 'تحديث الآن',
+      'en': 'Update Now',
+      'fr': 'Mettre à jour',
+    },
+    'settings_check_now_btn': {
+      'ar': 'فحص الآن',
+      'en': 'Check Now',
+      'fr': 'Vérifier',
+    },
+    'settings_checking_updates': {
+      'ar': 'جاري التحقق من التحديثات...',
+      'en': 'Checking for updates...',
+      'fr': 'Vérification des mises à jour...',
     },
   };
 
