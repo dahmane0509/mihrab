@@ -14,6 +14,8 @@ import 'package:geolocator/geolocator.dart';
 import '../services/language_service.dart';
 import '../services/app_update_service.dart';
 import '../services/app_support_service.dart';
+import '../services/clock_style_service.dart';
+import '../services/home_widget_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -1479,6 +1481,118 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             ),
             const SizedBox(height: 24),
 
+            // Clock Style Selection Section
+            _buildSectionHeader(
+              LanguageService.languageCode == 'ar' ? "شكل الساعة في الواجهة الرئيسية" : "Main Screen Clock Style",
+              Icons.schedule_rounded,
+              activeTheme.accent,
+            ),
+            const SizedBox(height: 8),
+            ValueListenableBuilder<String>(
+              valueListenable: ClockStyleService.currentStyle,
+              builder: (context, activeClockStyle, _) {
+                final isAr = LanguageService.languageCode == 'ar';
+                final styles = [
+                  {
+                    'id': 'digital',
+                    'title': isAr ? "الساعة الرقمية الحديثة (Digital)" : "Modern Digital Clock",
+                    'desc': isAr ? "عرض أرقام إلكترونية عريضة بتوهج زمردي خفيف وعدّاد للثواني" : "Bold digital readout with subtle glow and seconds counter",
+                    'icon': Icons.pin_invoke_rounded,
+                  },
+                  {
+                    'id': 'analog',
+                    'title': isAr ? "الساعة الكلاسيكية بالعقارب (Analog)" : "Classic Analog Dial",
+                    'desc': isAr ? "قرص دائري ملكي بعقارب ذهبية وتتبع لحركة الوقت والمواقيت" : "Royal circular dial with gold hands and prayer arc",
+                    'icon': Icons.access_time_filled_rounded,
+                  },
+                  {
+                    'id': 'minimalist',
+                    'title': isAr ? "ساعة بسيطة ناعمة بالأرقام العربية (Minimalist)" : "Minimalist Arabic Clock",
+                    'desc': isAr ? "أرقام مشرقية أصيلة (١٢، ٣، ٦، ٩) بهدوء بصري وتصميم راقٍ" : "Eastern Arabic numerals with serene and clean aesthetics",
+                    'icon': Icons.looks_one_rounded,
+                  },
+                ];
+
+                return Material(
+                  color: activeTheme.cardBackground,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAr ? "اختر نمط الساعة المفضّل لعرضه في شاشة الصلاة القادمة:" : "Select your preferred clock style on the main screen:",
+                          style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                        ),
+                        const SizedBox(height: 12),
+                        Column(
+                          children: styles.map((s) {
+                            final styleId = s['id'] as String;
+                            final isSelected = styleId == activeClockStyle;
+                            final icon = s['icon'] as IconData;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: Material(
+                                color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                    color: isSelected ? activeTheme.accent : const Color(0xFF334155),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? activeTheme.primary.withValues(alpha: 0.3)
+                                          : Colors.white10,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      icon,
+                                      color: isSelected ? activeTheme.accent : Colors.white70,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    s['title'] as String,
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    s['desc'] as String,
+                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                  ),
+                                  trailing: isSelected
+                                      ? Icon(Icons.check_circle_rounded, color: activeTheme.accent, size: 22)
+                                      : const Icon(Icons.radio_button_unchecked, color: Colors.white24, size: 20),
+                                  onTap: () {
+                                    AppFeedback.select();
+                                    ClockStyleService.setStyle(styleId);
+                                  },
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+
               // 2. Location & GPS Settings
               _buildSectionHeader("الموقع والتحديد التلقائي", Icons.location_on, activeTheme.accent),
               const SizedBox(height: 8),
@@ -1867,6 +1981,181 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Dedicated Adhan Testing & Diagnostics Section
+              _buildSectionHeader("اختبار وتجربة الأذان", Icons.hearing_rounded, activeTheme.accent),
+              const SizedBox(height: 8),
+              Material(
+                color: activeTheme.cardBackground,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "اختبر عمل الأذان والإشعارات والتنبيه بدقة للتأكد من وصول النداء في وقته:",
+                        style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.4),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Test Button 1: Play / Stop Selected Adhan
+                      ValueListenableBuilder<bool>(
+                        valueListenable: AdhanAudioService.isPlayingNotifier,
+                        builder: (context, isAudioPlaying, _) {
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: activeTheme.accent,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: const Icon(Icons.volume_up_rounded, size: 20),
+                                  label: const Text(
+                                    "سماع صوت الأذان المختار",
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                  onPressed: () async {
+                                    AppFeedback.tap();
+                                    final ok = await AdhanAudioService.playAdhan(soundId: _adhanSound);
+                                    if (!context.mounted) return;
+                                    if (!ok) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          backgroundColor: Color(0xFF1E293B),
+                                          content: Text("يتطلب الاستماع للأذان بصوت المؤذن اتصالاً بالإنترنت أو استخدام الأذان المدمج 📶"),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          backgroundColor: Color(0xFF065F46),
+                                          duration: Duration(seconds: 4),
+                                          content: Text("يرتفع الآن صوت الأذان المبارك في الهاتف 🕌"),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              if (isAudioPlaying) ...[
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.6)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: const Icon(Icons.stop_circle_outlined, size: 20),
+                                  label: const Text("إيقاف", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  onPressed: () {
+                                    AppFeedback.tap();
+                                    AdhanAudioService.stopAdhan();
+                                  },
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Test Button 2: Immediate Prayer Notification
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: Icon(Icons.notifications_active_rounded, color: activeTheme.accent, size: 20),
+                          label: const Text(
+                            "تجربة تنبيه وإشعار الأذان الفوري 🔔",
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () async {
+                            AppFeedback.tap();
+                            final wilaya = AlgeriaWilayas.getWilayaByCode(_wilayaCode);
+                            final enabled = await PrayerNotificationService.testAdhanNotification(
+                              prayerName: "الظهر",
+                              prayerKey: "dhuhr",
+                              communeName: wilaya.nameAr,
+                            );
+                            if (!context.mounted) return;
+                            if (!enabled) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: const Color(0xFF991B1B),
+                                  content: const Text("⚠️ إشعارات التطبيق معطلة في الهاتف! اضغط لتفعيلها"),
+                                  action: SnackBarAction(
+                                    label: "تفعيل",
+                                    textColor: Colors.white,
+                                    onPressed: () => PrayerNotificationService.openNotificationSettings(),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  backgroundColor: Color(0xFF065F46),
+                                  duration: Duration(seconds: 4),
+                                  content: Text("تم إطلاق إشعار وصوت أذان صلاة الظهر تجريبياً 🕌"),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Test Button 3: Sleep / Doze Mode Alarm (10s)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF93C5FD),
+                            side: const BorderSide(color: Color(0xFF3B82F6), width: 1.2),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.screen_lock_portrait_rounded, size: 19),
+                          label: const Text(
+                            "تجربة في وضع السبات (بعد 10 ثوانٍ) ⏳",
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () async {
+                            AppFeedback.tap();
+                            await PrayerNotificationService.scheduleTestSleepAdhan(
+                              delaySeconds: 10,
+                              prayerName: "الظهر",
+                            );
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Color(0xFF1E3A8A),
+                                duration: Duration(seconds: 7),
+                                content: Text(
+                                  "⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.",
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -2278,12 +2567,18 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               ),
               const SizedBox(height: 24),
 
-              // Test Adhan & Notification Card
+              // Home Screen Widget Card
+              _buildSectionHeader(
+                LanguageService.languageCode == 'ar' ? "ويدجت الشاشة الرئيسية" : "Home Screen Widget",
+                Icons.widgets_rounded,
+                activeTheme.accent,
+              ),
+              const SizedBox(height: 8),
               Material(
-                color: const Color(0xFF064E3B).withValues(alpha: 0.35),
+                color: activeTheme.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+                  side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -2294,10 +2589,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              color: activeTheme.accent.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.notifications_active, color: Color(0xFF34D399), size: 24),
+                            child: Icon(Icons.widgets_rounded, color: activeTheme.accent, size: 24),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -2305,12 +2600,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  LanguageService.tr('settings_test_adhan_title'),
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                                  LanguageService.languageCode == 'ar' ? "تثبيت ويدجت الصلاة على الشاشة" : "Add Prayer Widget to Home Screen",
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  LanguageService.tr('settings_test_adhan_desc'),
+                                  LanguageService.languageCode == 'ar'
+                                      ? "تابع مواقيت الصلاة القادمة والعد التنازلي من شاشة هاتفك مباشرة"
+                                      : "View upcoming prayer countdown directly on your Android home screen",
                                   style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                                 ),
                               ],
@@ -2319,52 +2616,25 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                         ],
                       ),
                       const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF10B981),
-                                foregroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              icon: const Icon(Icons.play_arrow, size: 20),
-                              label: Text(LanguageService.tr('settings_test_adhan_btn'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              onPressed: () async {
-                                await PrayerNotificationService.testAdhanNotification(
-                                  prayerName: "الظهر",
-                                  prayerKey: "dhuhr",
-                                  communeName: currentWilaya.nameAr,
-                                );
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF064E3B),
-                                    content: Text("تم إطلاق إشعار وأذان صلاة الظهر في ${currentWilaya.nameAr} 🕌"),
-                                    action: SnackBarAction(
-                                      label: "إيقاف",
-                                      textColor: const Color(0xFFFDE68A),
-                                      onPressed: () => AdhanAudioService.stopAdhan(),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: activeTheme.accent,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.redAccent,
-                              side: const BorderSide(color: Colors.redAccent),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                            ),
-                            icon: const Icon(Icons.stop, size: 18),
-                            label: const Text("إيقاف"),
-                            onPressed: () => AdhanAudioService.stopAdhan(),
+                          icon: const Icon(Icons.add_to_home_screen_rounded, size: 20),
+                          label: Text(
+                            LanguageService.languageCode == 'ar' ? "إضافة الويدجت للشاشة الرئيسية 📱" : "Add Widget to Home Screen",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                           ),
-                        ],
+                          onPressed: () async {
+                            AppFeedback.tap();
+                            await HomeWidgetService.showWidgetInstructionsDialog(context, theme: activeTheme);
+                          },
+                        ),
                       ),
                     ],
                   ),

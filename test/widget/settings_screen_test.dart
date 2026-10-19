@@ -62,8 +62,10 @@ void main() {
     await tester.pump();
     expect(ThemeService.currentTheme.value.id, equals('emerald'));
 
-    // Scroll down to reveal Adhan sounds section
-    await tester.drag(find.byType(ListView), const Offset(0, -1400));
+    // Scroll down to reveal Adhan sounds section reliably
+    await tester.drag(find.byType(ListView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -800));
     await tester.pumpAndSettle();
 
     final adhanFinder = find.textContaining('أذان جامع الجزائر');

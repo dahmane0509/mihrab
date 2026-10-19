@@ -37,14 +37,11 @@ void main() {
 
     await tester.pump();
 
-    // Verify location label and next prayer title
+    // Verify prayer tracker exists on clean screen
+    expect(find.text('متتبع الصلوات اليومية'), findsOneWidget);
     expect(find.textContaining('ولاية ${wilaya.nameAr}'), findsWidgets);
     expect(find.textContaining('الصلاة القادمة'), findsWidgets);
     expect(find.textContaining(commune.nameAr), findsWidgets);
-
-    // Verify audio action buttons exist
-    expect(find.text('سماع الصوت'), findsOneWidget);
-    expect(find.text('إيقاف الصوت'), findsOneWidget);
 
     // Test Open Drawer callback
     final menuButton = find.byIcon(Icons.menu);
@@ -87,8 +84,7 @@ void main() {
 
     // Verify translated elements
     expect(find.textContaining('Next Prayer'), findsWidgets);
-    expect(find.text('Play Sound'), findsOneWidget);
-    expect(find.text('Stop Audio'), findsOneWidget);
+    expect(find.text('Daily Prayer Tracker'), findsOneWidget);
     expect(find.textContaining(commune.nameFr), findsWidgets);
 
     // Reset language back to Arabic and unmount

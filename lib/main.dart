@@ -20,6 +20,8 @@ import 'services/app_feedback.dart';
 import 'services/location_service.dart';
 import 'services/language_service.dart';
 import 'services/quran_audio_reciters_service.dart';
+import 'services/clock_style_service.dart';
+import 'services/prayer_tracker_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,8 @@ void main() async {
   await Future.wait([
     LanguageService.init(),
     ThemeService.init(),
+    ClockStyleService.init(),
+    PrayerTrackerService.init(),
     PrayerService.loadSettings(),
     QuranAudioRecitersService.init(),
   ]);

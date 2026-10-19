@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/algeria_wilayas.dart';
@@ -12,6 +11,9 @@ import '../services/app_feedback.dart';
 import '../services/prayer_notification_service.dart';
 import '../services/language_service.dart';
 import '../data/world_cities.dart';
+import '../widgets/mihrab_clock_widget.dart';
+import '../widgets/prayer_tracker_card.dart';
+import '../services/home_widget_service.dart';
 
 class NextPrayerScreen extends StatefulWidget {
   final Wilaya currentWilaya;
@@ -74,6 +76,13 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
           AlgeriaCommunes.allCommunes[0];
     }
     _todayTimes = PrayerService.calculateTimesForCommune(commune, _currentTime);
+    final nextInfo = _getNextPrayerInfo();
+    HomeWidgetService.updateWidget(
+      prayerName: nextInfo['nameAr'] ?? nextInfo['name'] ?? '',
+      prayerTime: nextInfo['time'] ?? '',
+      remaining: nextInfo['remaining'] ?? '',
+      location: commune.nameAr,
+    );
   }
 
   @override
@@ -400,17 +409,12 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Islamic Analog Clock
+                    // Islamic Clock (Supports Analog, Digital, Minimalist)
                     Center(
-                      child: SizedBox(
-                        width: 195,
-                        height: 195,
-                        child: CustomPaint(
-                          painter: ModernAnalogClockPainter(
-                            dateTime: _currentTime,
-                            prayerTimes: _todayTimes,
-                          ),
-                        ),
+                      child: MihrabClockWidget(
+                        dateTime: _currentTime,
+                        prayerTimes: _todayTimes,
+                        isAr: isAr,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -445,7 +449,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           ),
                           const SizedBox(height: 6),
 
-                          // Time Text - 24-hour format (e.g. 16:09) per user request
+                          // Time Text - 24-hour format (e.g. 16:09)
                           Text(
                             next['time'] ?? "",
                             style: TextStyle(
@@ -469,182 +473,14 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               style: const TextStyle(color: Color(0xFFFDE68A), fontWeight: FontWeight.bold, fontSize: 13.5),
                             ),
                           ),
-                          const SizedBox(height: 14),
-
-                          // Audio Action Buttons - Completely centered with symmetrical equal widths
-                          Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 360),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: theme.accent,
-                                        foregroundColor: Colors.black,
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                                      ),
-                                      icon: const Icon(Icons.volume_up, size: 18),
-                                      label: Text(
-                                        isAr ? "سماع الصوت" : LanguageService.tr('play_adhan_audio'),
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                      onPressed: () async {
-                                        AppFeedback.tap();
-                                        final ok = await AdhanAudioService.playAdhan();
-                                        if (!context.mounted) return;
-                                        if (!ok) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              backgroundColor: Color(0xFF1E293B),
-                                              content: Text("يتطلب الاستماع للأذان الحقيقي بصوت المؤذن اتصالاً بالإنترنت 📶"),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor: const Color(0xFF065F46),
-                                              duration: const Duration(seconds: 4),
-                                              content: const Text("يرتفع الآن صوت الأذان المبارك بصوت المؤذن 🕌"),
-                                              action: SnackBarAction(
-                                                label: isAr ? "إيقاف" : LanguageService.tr('stop_audio'),
-                                                textColor: const Color(0xFFFDE68A),
-                                                onPressed: () {
-                                                  AppFeedback.tap();
-                                                  AdhanAudioService.stopAdhan();
-                                                },
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        side: BorderSide(color: theme.accent.withValues(alpha: 0.6), width: 1.2),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                                      ),
-                                      icon: const Icon(Icons.stop_circle_outlined, size: 18),
-                                      label: Text(
-                                        isAr ? "إيقاف الصوت" : LanguageService.tr('stop_audio'),
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      onPressed: () {
-                                        AppFeedback.tap();
-                                        AdhanAudioService.stopAdhan();
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            backgroundColor: const Color(0xFF1E293B),
-                                            duration: const Duration(seconds: 1),
-                                            content: Text(
-                                              isAr ? "تم إيقاف الصوت" : LanguageService.tr('stop_audio'),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Center(
-                            child: TextButton.icon(
-                              style: TextButton.styleFrom(
-                                foregroundColor: theme.accent,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                              ),
-                              icon: const Icon(Icons.notification_important, size: 18),
-                              label: Text(
-                                isAr ? "تجربة تنبيه وإشعار الأذان 🔔" : "Test Prayer Alert & Notification",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              onPressed: () async {
-                                AppFeedback.tap();
-                                final prayerKey = next['key'] ?? 'dhuhr';
-                                final prayerName = next['name'] ?? 'الظهر';
-                                final enabled = await PrayerNotificationService.testAdhanNotification(
-                                  prayerName: prayerName,
-                                  prayerKey: prayerKey,
-                                  communeName: widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr,
-                                );
-                                if (!context.mounted) return;
-                                if (!enabled) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: const Color(0xFF991B1B),
-                                      content: const Text("⚠️ إشعارات التطبيق معطلة في الهاتف! اضغط لتفعيلها"),
-                                      action: SnackBarAction(
-                                        label: "تفعيل",
-                                        textColor: Colors.white,
-                                        onPressed: () => PrayerNotificationService.openNotificationSettings(),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: const Color(0xFF065F46),
-                                      duration: const Duration(seconds: 4),
-                                      content: Text("تم إطلاق إشعار وصوت أذان صلاة $prayerName 🕌"),
-                                      action: SnackBarAction(
-                                        label: isAr ? "إيقاف" : "Stop",
-                                        textColor: const Color(0xFFFDE68A),
-                                        onPressed: () => AdhanAudioService.stopAdhan(),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.white.withValues(alpha: 0.35)),
-                                foregroundColor: Colors.white70,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                              ),
-                              icon: const Icon(Icons.screen_lock_portrait, size: 17),
-                              label: Text(
-                                isAr ? "تجربة في وضع السبات (بعد 10 ثوانٍ) ⏳" : "Test in Sleep Mode (10s)",
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              onPressed: () async {
-                                AppFeedback.tap();
-                                final prayerName = next['name'] ?? 'الظهر';
-                                await PrayerNotificationService.scheduleTestSleepAdhan(
-                                  delaySeconds: 10,
-                                  prayerName: prayerName,
-                                );
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Color(0xFF1E3A8A),
-                                    duration: Duration(seconds: 7),
-                                    content: Text(
-                                      "⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.",
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
                         ],
                       ),
                     ),
-                    // Removed _buildQuickPrayersRow completely per user request (Image 2)
+                    const SizedBox(height: 16),
+
+                    // Daily Prayer Tracker with Streak Badge
+                    PrayerTrackerCard(isAr: isAr),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -653,115 +489,5 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
         );
       },
     );
-  }
-}
-
-class ModernAnalogClockPainter extends CustomPainter {
-  final DateTime dateTime;
-  final Map<String, dynamic> prayerTimes;
-
-  ModernAnalogClockPainter({required this.dateTime, required this.prayerTimes});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    final bgPaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Color(0xFF0F254E), Color(0xFF071224), Color(0xFF030712)],
-        stops: [0.0, 0.75, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-    canvas.drawCircle(center, radius, bgPaint);
-
-    final ringPaint = Paint()
-      ..color = const Color(0xFFD4AF37)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.8;
-    canvas.drawCircle(center, radius - 2, ringPaint);
-
-    final innerRimPaint = Paint()
-      ..color = const Color(0xFFD4AF37).withValues(alpha: 0.25)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawCircle(center, radius - 9, innerRimPaint);
-
-    final arcPaint = Paint()
-      ..shader = const SweepGradient(
-        colors: [Color(0xFF10B981), Color(0xFFF59E0B), Color(0xFFEF4444)],
-      ).createShader(Rect.fromCircle(center: center, radius: radius))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5.5
-      ..strokeCap = StrokeCap.round;
-
-    final sweepAngle = (dateTime.minute / 60.0) * math.pi;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - 4.5),
-      -math.pi / 2,
-      sweepAngle,
-      false,
-      arcPaint,
-    );
-
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    for (int i = 1; i <= 12; i++) {
-      final angle = (i * 30.0 - 90.0) * (math.pi / 180.0);
-      final numRadius = radius - 22;
-      final x = center.dx + numRadius * math.cos(angle);
-      final y = center.dy + numRadius * math.sin(angle);
-
-      textPainter.text = TextSpan(
-        text: "$i",
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - textPainter.height / 2));
-    }
-
-    final hour = dateTime.hour % 12;
-    final hourAngle = ((hour + dateTime.minute / 60.0) * 30.0 - 90.0) * (math.pi / 180.0);
-    final hourPaint = Paint()
-      ..color = const Color(0xFFD4AF37)
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round;
-    final hourEnd = Offset(
-      center.dx + (radius * 0.5) * math.cos(hourAngle),
-      center.dy + (radius * 0.5) * math.sin(hourAngle),
-    );
-    canvas.drawLine(center, hourEnd, hourPaint);
-
-    final minAngle = ((dateTime.minute + dateTime.second / 60.0) * 6.0 - 90.0) * (math.pi / 180.0);
-    final minPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2.8
-      ..strokeCap = StrokeCap.round;
-    final minEnd = Offset(
-      center.dx + (radius * 0.72) * math.cos(minAngle),
-      center.dy + (radius * 0.72) * math.sin(minAngle),
-    );
-    canvas.drawLine(center, minEnd, minPaint);
-
-    final secAngle = (dateTime.second * 6.0 - 90.0) * (math.pi / 180.0);
-    final secPaint = Paint()
-      ..color = const Color(0xFF38BDF8)
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round;
-    final secEnd = Offset(
-      center.dx + (radius * 0.85) * math.cos(secAngle),
-      center.dy + (radius * 0.85) * math.sin(secAngle),
-    );
-    canvas.drawLine(center, secEnd, secPaint);
-
-    final pinPaint = Paint()..color = const Color(0xFFD4AF37);
-    canvas.drawCircle(center, 5, pinPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant ModernAnalogClockPainter oldDelegate) {
-    return oldDelegate.dateTime.second != dateTime.second;
   }
 }

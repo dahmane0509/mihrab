@@ -9,6 +9,8 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.app.NotificationManager
 import android.media.AudioManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import androidx.core.app.NotificationManagerCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -215,6 +217,36 @@ class MainActivity : FlutterActivity() {
                         result.success(modeStr)
                     } catch (e: Exception) {
                         result.success("normal")
+                    }
+                }
+                "updateWidget" -> {
+                    try {
+                        val prayerName = call.argument<String>("prayerName") ?: "الصلاة القادمة"
+                        val prayerTime = call.argument<String>("prayerTime") ?: "--:--"
+                        val remaining = call.argument<String>("remaining") ?: ""
+                        val location = call.argument<String>("location") ?: ""
+                        MihrabWidgetProvider.updateWidgetData(this, prayerName, prayerTime, remaining, location)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+                "pinWidget" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            val appWidgetManager = getSystemService(AppWidgetManager::class.java)
+                            val myProvider = ComponentName(this, MihrabWidgetProvider::class.java)
+                            if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                                appWidgetManager.requestPinAppWidget(myProvider, null, null)
+                                result.success(true)
+                            } else {
+                                result.success(false)
+                            }
+                        } else {
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        result.success(false)
                     }
                 }
                 else -> result.notImplemented()
