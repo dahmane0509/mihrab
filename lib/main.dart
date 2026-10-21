@@ -23,6 +23,7 @@ import 'services/quran_audio_reciters_service.dart';
 import 'services/clock_style_service.dart';
 import 'services/prayer_tracker_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/verse_audio_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +52,7 @@ void main() async {
 void _initBackgroundServices() {
   Future.microtask(() async {
     try {
+      await VerseAudioService.init();
       await AdhanAudioService.init();
       await AutoAdhkarService.initialize();
       await PrayerNotificationService.initialize();

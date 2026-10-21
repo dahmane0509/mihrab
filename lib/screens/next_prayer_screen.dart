@@ -14,6 +14,8 @@ import '../data/world_cities.dart';
 import '../widgets/mihrab_clock_widget.dart';
 import '../widgets/prayer_tracker_card.dart';
 import '../services/home_widget_service.dart';
+import '../services/verse_audio_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NextPrayerScreen extends StatefulWidget {
   final Wilaya currentWilaya;
@@ -407,7 +409,169 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
+
+                    // Mihrab Holy Quran Verse Card with Recitation Control
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.cardBackground,
+                            theme.darkPrimary.withValues(alpha: 0.75),
+                          ],
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: theme.accent.withValues(alpha: 0.35),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.accent.withValues(alpha: 0.08),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header row with title & audio button
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: theme.accent.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.menu_book_rounded, color: theme.accent, size: 15),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    isAr ? "آية مِحْراب" : (lang == 'fr' ? "Verset du Mihrab" : "Mihrab Verse"),
+                                    style: TextStyle(
+                                      color: theme.accent,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // Interactive Audio Recitation Button with live state
+                              ValueListenableBuilder<bool>(
+                                valueListenable: VerseAudioService.isPlayingNotifier,
+                                builder: (context, isPlaying, _) {
+                                  return Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        AppFeedback.tap();
+                                        VerseAudioService.toggleVerse();
+                                      },
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 250),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isPlaying
+                                              ? const Color(0xFFD4AF37).withValues(alpha: 0.25)
+                                              : Colors.white.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: isPlaying ? const Color(0xFFD4AF37) : Colors.white24,
+                                            width: 1.2,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              isPlaying ? Icons.pause_circle_filled_rounded : Icons.volume_up_rounded,
+                                              color: isPlaying ? const Color(0xFFFDE68A) : theme.accent,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              isPlaying
+                                                  ? (isAr ? "إيقاف" : (lang == 'fr' ? "Pause" : "Pause"))
+                                                  : (isAr ? "استماع" : (lang == 'fr' ? "Écouter" : "Play")),
+                                              style: TextStyle(
+                                                color: isPlaying ? const Color(0xFFFDE68A) : Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Holy Verse in beautiful Uthmani Arabic script with full Tashkeel
+                          Text(
+                            "﴿فَنَادَتْهُ الْمَلَائِكَةُ وَهُوَ قَائِمٌ يُصَلِّي فِي الْمِحْرَابِ أَنَّ اللَّهَ يُبَشِّرُكَ بِيَحْيَىٰ﴾",
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            style: GoogleFonts.amiri(
+                              color: const Color(0xFFFDE68A),
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              height: 1.8,
+                              shadows: [
+                                Shadow(
+                                  color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          // Surah Reference & Reciter Attribution
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                lang == 'fr' ? "[Sourate Âl-'Imrân : 39]" : "[سورة آل عمران: 39]",
+                                style: const TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text("•", style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                              const SizedBox(width: 8),
+                              Text(
+                                lang == 'fr' ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
+                                style: TextStyle(
+                                  color: theme.accent.withValues(alpha: 0.85),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
                     // Islamic Clock (Supports Analog, Digital, Minimalist)
                     Center(

@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../main.dart';
+import '../services/verse_audio_service.dart';
+import '../services/language_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,10 +35,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   // Shimmer / light sheen controller
   late AnimationController _sheenController;
 
-  // Audio player for Sheikh Abdul Basit recitation
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription<void>? _playerCompleteSub;
   bool _navigated = false;
-  Timer? _maxTimer;
+  Timer? _safetyTimer;
 
   @override
   void initState() {
@@ -112,37 +112,37 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _entranceController.forward();
 
     // Play Sheikh Abdul Basit recitation of Surah Ali 'Imran verse 39
-    _playRecitationAudio();
+    _playVerseAudio();
   }
 
-  Future<void> _playRecitationAudio() async {
-    try {
-      await _audioPlayer.setReleaseMode(ReleaseMode.stop);
-      await _audioPlayer.setVolume(1.0);
-      await _audioPlayer.play(AssetSource('audio/abdulbasit_3_39.mp3'));
+  Future<void> _playVerseAudio() async {
+    // Start local recitation audio
+    await VerseAudioService.playVerse();
 
-      // When recitation finishes, smoothly navigate to home
-      _audioPlayer.onPlayerComplete.listen((_) {
-        _navigateToHome();
-      });
-    } catch (e) {
-      debugPrint("Recitation audio playback error: $e");
-    }
+    // Listen for completion: when recitation finishes naturally, transition to home smoothly
+    _playerCompleteSub = VerseAudioService.player.onPlayerComplete.listen((_) {
+      _navigateToHome(stopAudio: false);
+    });
 
-    // Safety timeout: transition after 14 seconds if audio keeps playing or completes
-    _maxTimer = Timer(const Duration(seconds: 14), () {
-      _navigateToHome();
+    // High upper-bound safety timer (35 seconds) in case of silent or muted device
+    _safetyTimer = Timer(const Duration(seconds: 35), () {
+      _navigateToHome(stopAudio: false);
     });
   }
 
-  void _navigateToHome() {
+  /// Transition to MainHomeScreen.
+  /// Note: [stopAudio] defaults to false so the Quran recitation continues smoothly
+  /// into the Home Screen without abrupt cut-off!
+  void _navigateToHome({bool stopAudio = false}) {
     if (_navigated) return;
     _navigated = true;
 
-    _maxTimer?.cancel();
-    try {
-      _audioPlayer.stop();
-    } catch (_) {}
+    _safetyTimer?.cancel();
+    _playerCompleteSub?.cancel();
+
+    if (stopAudio) {
+      VerseAudioService.stopVerse();
+    }
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
@@ -159,11 +159,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   void dispose() {
-    _maxTimer?.cancel();
-    try {
-      _audioPlayer.stop();
-      _audioPlayer.dispose();
-    } catch (_) {}
+    _safetyTimer?.cancel();
+    _playerCompleteSub?.cancel();
     _entranceController.dispose();
     _breathingController.dispose();
     _rotationController.dispose();
@@ -174,12 +171,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final isFr = LanguageService.languageCode == 'fr';
+    final skipLabel = isFr ? "Passer ❯" : "تخطي ❯";
 
     return Scaffold(
       backgroundColor: const Color(0xFF071224), // Royal deep navy matching logo
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: _navigateToHome, // Tap anywhere to skip directly
+        onTap: () => _navigateToHome(stopAudio: false), // Tap anywhere to proceed without cutting audio
         child: Stack(
           children: [
             // Background ambient radial lights
@@ -226,68 +225,73 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Subtle audio indicator badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F1E36).withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.volume_up_rounded, color: Color(0xFFD4AF37), size: 15),
-                        const SizedBox(width: 6),
-                        Text(
-                          "الشيخ عبد الباسط عبد الصمد",
-                          style: GoogleFonts.cairo(
-                            color: const Color(0xFFE2E8F0),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                  // Audio status badge
+                  ValueListenableBuilder<bool>(
+                    valueListenable: VerseAudioService.isPlayingNotifier,
+                    builder: (context, isPlaying, _) {
+                      return GestureDetector(
+                        onTap: () {
+                          VerseAudioService.toggleVerse();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F1E36).withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isPlaying
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.white24,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isPlaying ? Icons.volume_up_rounded : Icons.volume_mute_rounded,
+                                color: isPlaying ? const Color(0xFFD4AF37) : Colors.white60,
+                                size: 15,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isFr ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
+                                style: GoogleFonts.cairo(
+                                  color: const Color(0xFFE2E8F0),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
 
-                  // Skip Button
+                  // Skip Button (تخطي / Passer)
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: _navigateToHome,
+                      onTap: () => _navigateToHome(stopAudio: false),
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: Colors.white.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
                             width: 1,
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "تخطي",
-                              style: GoogleFonts.cairo(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              color: Colors.white,
-                              size: 11,
-                            ),
-                          ],
+                        child: Text(
+                          skipLabel,
+                          style: GoogleFonts.cairo(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -383,7 +387,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
                                 // Surah Reference
                                 Text(
-                                  "[سورة آل عمران: 39]",
+                                  isFr ? "[Sourate Âl-'Imrân : 39]" : "[سورة آل عمران: 39]",
                                   style: GoogleFonts.cairo(
                                     color: const Color(0xFF94A3B8),
                                     fontSize: 11.5,
@@ -584,7 +588,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                       ),
                                     ),
                                     child: Text(
-                                      "مواقيت الصلاة والقرآن",
+                                      isFr ? "Horaires de Prière & Coran" : "مواقيت الصلاة والقرآن",
                                       style: GoogleFonts.cairo(
                                         color: Colors.white,
                                         fontSize: 12.5,
