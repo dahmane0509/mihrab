@@ -561,13 +561,13 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         isAr: isAr,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
-                    // Next Prayer Countdown Card
+                    // Next Prayer Countdown Card (Compact vertical layout)
                     Container(
                       width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 6.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      margin: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 4.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -575,54 +575,67 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           begin: Alignment.topRight,
                           end: Alignment.bottomLeft,
                         ),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: theme.accent.withValues(alpha: 0.35), width: 1.5),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: theme.accent.withValues(alpha: 0.35), width: 1.2),
                         boxShadow: [
                           BoxShadow(
                             color: theme.accent.withValues(alpha: 0.12),
-                            blurRadius: 16,
-                            spreadRadius: 2,
+                            blurRadius: 14,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            isAr
-                                ? "الصلاة القادمة: صلاة ${next['name']}"
-                                : "${LanguageService.tr('tab_next_prayer')}: ${next['name']}",
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              isAr
+                                  ? "الصلاة القادمة: صلاة ${next['name']}"
+                                  : "${LanguageService.tr('tab_next_prayer')}: ${next['name']}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 3),
 
                           // Time Text - 24-hour format (e.g. 16:09)
                           Text(
                             next['time'] ?? "",
                             style: TextStyle(
                               color: theme.accent,
-                              fontSize: 38,
+                              fontSize: 27,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 2.0,
+                              height: 1.15,
+                              letterSpacing: 1.5,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 3),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
                               isAr
                                   ? "متبقي: ${next['remaining']}"
                                   : "${LanguageService.tr('remaining_prefix')}: ${next['remaining']}",
-                              style: const TextStyle(color: Color(0xFFFDE68A), fontWeight: FontWeight.bold, fontSize: 13.5),
+                              style: const TextStyle(
+                                color: Color(0xFFFDE68A),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Daily Prayer Tracker with Streak Badge
                     PrayerTrackerCard(isAr: isAr),
