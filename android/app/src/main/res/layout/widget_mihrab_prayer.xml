@@ -5,10 +5,10 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
     android:orientation="vertical"
-    android:padding="14dp"
+    android:padding="12dp"
     android:gravity="center">
 
-    <!-- Top header: App title & Location -->
+    <!-- Top header: Location & App Title -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,7 +23,7 @@
             android:text="مِحْراب • مواقيت الصلاة"
             android:textColor="#94A3B8"
             android:textSize="11sp"
-            android:singleLine="true"
+            android:maxLines="1"
             android:ellipsize="end" />
 
         <TextView
@@ -35,12 +35,14 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <View
+    <!-- Safe Divider using ImageView (supported by RemoteViews) -->
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="6dp"
-        android:background="#22FFFFFF" />
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="#22FFFFFF"
+        android:contentDescription="@null" />
 
     <!-- Center: Next Prayer Name & Time -->
     <TextView
@@ -49,7 +51,7 @@
         android:layout_height="wrap_content"
         android:text="الصلاة القادمة: الظهر"
         android:textColor="#FFFFFF"
-        android:textSize="14sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
 
     <TextView
@@ -58,17 +60,18 @@
         android:layout_height="wrap_content"
         android:text="12:45"
         android:textColor="#D4AF37"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.05" />
+        android:textSize="26sp"
+        android:textStyle="bold" />
 
-    <!-- Bottom: Remaining countdown text -->
+    <!-- Bottom: Remaining countdown badge text -->
     <TextView
         android:id="@+id/widget_remaining"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:background="#33000000"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
         android:paddingTop="2dp"

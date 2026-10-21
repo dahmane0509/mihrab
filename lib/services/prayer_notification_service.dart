@@ -10,6 +10,7 @@ import '../data/world_cities.dart';
 import 'adhan_audio_service.dart';
 import 'prayer_service.dart';
 import 'silent_mode_service.dart';
+import 'home_widget_service.dart';
 
 /// Service responsible for notifying and playing Adhan audio when prayer times arrive.
 class PrayerNotificationService {
@@ -25,12 +26,12 @@ class PrayerNotificationService {
 
   static const AndroidNotificationChannel prayerChannel =
       AndroidNotificationChannel(
-    'mihrab_adhan_channel_v7',
+    'mihrab_adhan_channel_v9',
     'أذان ومواقيت الصلاة',
     description: 'تنبيهات وأذان الصلوات الخمس في موعدها الدقيق بصوت الأذان الكامل والتنبيه الصوتي',
     importance: Importance.max,
     playSound: true,
-    sound: RawResourceAndroidNotificationSound('adhan'),
+    sound: RawResourceAndroidNotificationSound('athan'),
     enableVibration: true,
     audioAttributesUsage: AudioAttributesUsage.alarm,
   );
@@ -140,10 +141,12 @@ class PrayerNotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
         // Clean up older channels once
-        final cleaned = prefs.getBool('legacy_channels_cleaned_v7') ?? false;
+        final cleaned = prefs.getBool('legacy_channels_cleaned_v9') ?? false;
         if (!cleaned) {
           try {
             await Future.wait([
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v8'),
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v7'),
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v6'),
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v5'),
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v4'),
@@ -151,7 +154,7 @@ class PrayerNotificationService {
               androidPlugin.deleteNotificationChannel(channelId: 'prayer_adhan_channel_v2'),
               androidPlugin.deleteNotificationChannel(channelId: 'prayer_channel_high'),
             ]);
-            await prefs.setBool('legacy_channels_cleaned_v7', true);
+            await prefs.setBool('legacy_channels_cleaned_v9', true);
           } catch (_) {}
         }
 
@@ -320,12 +323,11 @@ class PrayerNotificationService {
               prayerChannel.name,
               channelDescription: prayerChannel.description,
               importance: Importance.max,
-              priority: Priority.max,
+              priority: Priority.high,
               ticker: "حان موعد صلاة $prayerName",
               icon: '@mipmap/ic_launcher',
               category: AndroidNotificationCategory.alarm,
-              fullScreenIntent: true,
-              sound: const RawResourceAndroidNotificationSound('adhan'),
+              sound: const RawResourceAndroidNotificationSound('athan'),
               playSound: true,
               enableVibration: true,
               audioAttributesUsage: AudioAttributesUsage.alarm,
@@ -347,23 +349,16 @@ class PrayerNotificationService {
                 body: "حان موعد أذان صلاة $prayerName في ${commune.nameAr} وما جاورها. حيّ على الصلاة، حيّ على الفلاح.",
                 scheduledDate: scheduledDate,
                 notificationDetails: NotificationDetails(android: androidDetails),
-                androidScheduleMode: AndroidScheduleMode.alarmClock,
+                androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
               );
-            } catch (_) {
-              try {
-                await _notifications.zonedSchedule(
-                  id: notifIdCounter++,
-                  title: "الله أكبر، الله أكبر 🕌 - حان الآن موعد صلاة $prayerName",
-                  body: "حان موعد أذان صلاة $prayerName في ${commune.nameAr} وما جاورها. حيّ على الصلاة، حيّ على الفلاح.",
-                  scheduledDate: scheduledDate,
-                  notificationDetails: NotificationDetails(android: androidDetails),
-                  androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-                );
-              } catch (_) {}
+            } catch (e) {
+              debugPrint("zonedSchedule error: $e");
             }
           }
         }
       }
+      // Update native home screen widget with current prayer times
+      await HomeWidgetService.updateFromCurrentPrayerTimes();
     } catch (e) {
       debugPrint("scheduleAllPrayerNotifications error: $e");
     }
@@ -449,12 +444,11 @@ class PrayerNotificationService {
         prayerChannel.name,
         channelDescription: prayerChannel.description,
         importance: Importance.max,
-        priority: Priority.max,
+        priority: Priority.high,
         ticker: "حان موعد صلاة $prayerName",
         icon: '@mipmap/ic_launcher',
         category: AndroidNotificationCategory.alarm,
-        fullScreenIntent: true,
-        sound: const RawResourceAndroidNotificationSound('adhan'),
+        sound: const RawResourceAndroidNotificationSound('athan'),
         playSound: true,
         enableVibration: true,
         audioAttributesUsage: AudioAttributesUsage.alarm,
@@ -476,6 +470,7 @@ class PrayerNotificationService {
         body: "حان الآن موعد أذان صلاة $prayerName في $communeName وما جاورها. حيّ على الصلاة، حيّ على الفلاح.",
         notificationDetails: notifDetails,
       );
+      await HomeWidgetService.updateFromCurrentPrayerTimes();
     } catch (e) {
       debugPrint("Failed to display adhan notification: $e");
     }
@@ -517,12 +512,11 @@ class PrayerNotificationService {
       prayerChannel.name,
       channelDescription: prayerChannel.description,
       importance: Importance.max,
-      priority: Priority.max,
+      priority: Priority.high,
       ticker: "تجربة أذان صلاة $prayerName في وضع السبات",
       icon: '@mipmap/ic_launcher',
       category: AndroidNotificationCategory.alarm,
-      fullScreenIntent: true,
-      sound: const RawResourceAndroidNotificationSound('adhan'),
+      sound: const RawResourceAndroidNotificationSound('athan'),
       playSound: true,
       enableVibration: true,
       audioAttributesUsage: AudioAttributesUsage.alarm,
@@ -544,17 +538,8 @@ class PrayerNotificationService {
         body: "تجربة تنبيه الأذان في وضع السبات وقفل الشاشة تعمل بنجاح 🌟",
         scheduledDate: scheduledDate,
         notificationDetails: NotificationDetails(android: androidDetails),
-        androidScheduleMode: AndroidScheduleMode.alarmClock,
-      );
-    } catch (_) {
-      await _notifications.zonedSchedule(
-        id: 9999,
-        title: "الله أكبر، الله أكبر 🕌 - حان موعد صلاة $prayerName",
-        body: "تجربة تنبيه الأذان في وضع السبات وقفل الشاشة تعمل بنجاح 🌟",
-        scheduledDate: scheduledDate,
-        notificationDetails: NotificationDetails(android: androidDetails),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
-    }
+    } catch (_) {}
   }
 }

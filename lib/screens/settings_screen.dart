@@ -45,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   // Mosque silent mode settings
   bool _isDndGranted = false;
+  bool _isBatteryOptimizationIgnored = true;
   String _mosqueSilentType = 'silent'; // 'silent' or 'vibrate'
   int _mosqueSilentDuration = 25;
   bool _isTestingSilent = false;
@@ -173,6 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkDndPermission();
+      _checkBatteryPermission();
     }
   }
 
@@ -185,10 +187,20 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     }
   }
 
+  Future<void> _checkBatteryPermission() async {
+    final ignored = await PrayerNotificationService.isBatteryOptimizationIgnored();
+    if (mounted) {
+      setState(() {
+        _isBatteryOptimizationIgnored = ignored;
+      });
+    }
+  }
+
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final dndOk = await SilentModeService.isDndAccessGranted();
     final customAdhans = await AdhanAudioService.getCustomAdhans();
+    final batteryIgnored = await PrayerNotificationService.isBatteryOptimizationIgnored();
 
     var savedAdhan = prefs.getString('adhan_sound') ?? "algeria_grand_mosque";
     if (savedAdhan == 'afasy') {
@@ -198,6 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
     setState(() {
       _isDndGranted = dndOk;
+      _isBatteryOptimizationIgnored = batteryIgnored;
       _customAdhansList = customAdhans;
       _adhanSound = savedAdhan;
       _mosqueSilentType = prefs.getString('mosque_silent_type') ?? 'silent';
@@ -2152,6 +2165,105 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               ),
                             );
                           },
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Samsung Galaxy & Android Battery Optimization Exemption Card
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _isBatteryOptimizationIgnored
+                                ? const Color(0xFF059669)
+                                : const Color(0xFFF59E0B),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.battery_charging_full_rounded,
+                                  color: _isBatteryOptimizationIgnored
+                                      ? const Color(0xFF10B981)
+                                      : const Color(0xFFF59E0B),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    "استثناء تحسين البطارية (سامسونج وأندرويد)",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: _isBatteryOptimizationIgnored
+                                        ? const Color(0xFF065F46)
+                                        : const Color(0xFF78350F),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _isBatteryOptimizationIgnored ? "مُستثنى ✓" : "مطلوب ⚠️",
+                                    style: TextStyle(
+                                      color: _isBatteryOptimizationIgnored
+                                          ? const Color(0xFF34D399)
+                                          : const Color(0xFFFBBF24),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "توقف هواتف سامسونج التطبيقات في الخلفية تلقائياً لتوفير الطاقة، مما قد يعطل الأذان عند قفل الشاشة. يرجى تفعيل الاستثناء لضمان الرنين دائماً.",
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 11.5,
+                                height: 1.45,
+                              ),
+                            ),
+                            if (!_isBatteryOptimizationIgnored) ...[
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFD4AF37),
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                  ),
+                                  icon: const Icon(Icons.bolt_rounded, size: 18),
+                                  label: const Text(
+                                    "إعفاء التطبيق من تحسين البطارية الآن",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    AppFeedback.tap();
+                                    await PrayerNotificationService.requestIgnoreBatteryOptimizations();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],

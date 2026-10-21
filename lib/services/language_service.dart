@@ -111,12 +111,25 @@ class LanguageService {
 
       _rebuildSupportedLanguages();
 
-      // Load saved active language
+      // Load saved active language or auto-detect on first launch
       final savedLang = prefs.getString(_prefKey);
       if (savedLang != null && isSupported(savedLang)) {
         currentLocale.value = Locale(savedLang);
       } else {
-        currentLocale.value = const Locale('ar');
+        // Auto-detect device system language
+        final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
+        final devCode = deviceLocale.languageCode.toLowerCase();
+        String initialLang;
+        if (devCode.startsWith('fr')) {
+          initialLang = 'fr';
+        } else if (devCode.startsWith('ar')) {
+          initialLang = 'ar';
+        } else {
+          initialLang = 'en';
+        }
+
+        currentLocale.value = Locale(initialLang);
+        await prefs.setString(_prefKey, initialLang);
       }
     } catch (_) {
       _rebuildSupportedLanguages();

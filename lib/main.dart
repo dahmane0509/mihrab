@@ -22,6 +22,7 @@ import 'services/language_service.dart';
 import 'services/quran_audio_reciters_service.dart';
 import 'services/clock_style_service.dart';
 import 'services/prayer_tracker_service.dart';
+import 'services/home_widget_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ void _initBackgroundServices() {
       await AdhanAudioService.init();
       await AutoAdhkarService.initialize();
       await PrayerNotificationService.initialize();
+      await HomeWidgetService.updateFromCurrentPrayerTimes();
     } catch (e) {
       debugPrint("Background services init note: $e");
     }
@@ -142,8 +144,73 @@ class _MainHomeScreenState extends State<MainHomeScreen> with WidgetsBindingObse
       final enabled = await PrayerNotificationService.checkNotificationsEnabled();
       if (!enabled && mounted) {
         _showNotificationPermissionDialog();
+      } else {
+        final batteryIgnored = await PrayerNotificationService.isBatteryOptimizationIgnored();
+        if (!batteryIgnored && mounted) {
+          final prefs = await SharedPreferences.getInstance();
+          final asked = prefs.getBool('battery_optimization_prompted') ?? false;
+          if (!asked) {
+            await prefs.setBool('battery_optimization_prompted', true);
+            if (mounted) {
+              _showBatteryOptimizationDialog();
+            }
+          }
+        }
       }
     }
+  }
+
+  void _showBatteryOptimizationDialog() {
+    final isAr = LanguageService.languageCode == 'ar';
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F254E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.battery_charging_full_rounded, color: Color(0xFFD4AF37), size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isAr ? "استثناء تحسين البطارية" : "Battery Optimization",
+                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          isAr
+              ? "لضمان رنين الأذان في موعده الدقيق حتى أثناء قفل الشاشة أو وضع السكون، يرجى استثناء تطبيق «محراب» من تحسين البطارية."
+              : "To guarantee on-time Adhan playback even when the screen is locked, please exempt Mihrab from battery optimization.",
+          style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13.5, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(isAr ? "لاحقاً" : "Later", style: const TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await PrayerNotificationService.requestIgnoreBatteryOptimizations();
+            },
+            child: Text(
+              isAr ? "استثناء الآن" : "Exempt Now",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showNotificationPermissionDialog() {

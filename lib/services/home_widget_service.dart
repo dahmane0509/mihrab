@@ -1,8 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/theme_service.dart';
 import '../services/language_service.dart';
+import '../services/prayer_service.dart';
+import '../data/algeria_communes.dart';
+import '../data/world_cities.dart';
 
 /// Service managing communication with the native Android Home Screen Widget
 class HomeWidgetService {
@@ -26,6 +30,87 @@ class HomeWidgetService {
       });
     } catch (e) {
       debugPrint("HomeWidgetService updateWidget error: $e");
+    }
+  }
+
+  /// Automatically calculates next prayer and pushes it to native Home Widget
+  static Future<void> updateFromCurrentPrayerTimes() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final wilayaCode = prefs.getInt('selected_wilaya') ?? 16;
+      final communeId = prefs.getInt('selected_commune_id');
+
+      Commune commune;
+      if (wilayaCode >= 1000) {
+        final city = WorldCitiesData.getCityByCode(wilayaCode);
+        commune = (city != null
+            ? Commune(
+                id: city.code,
+                wilayaCode: city.code,
+                nameAr: city.nameAr,
+                nameFr: city.nameFr,
+                latitude: city.latitude,
+                longitude: city.longitude,
+                type: city.countryAr,
+              )
+            : AlgeriaCommunes.allCommunes[0]);
+      } else {
+        commune = (communeId != null ? AlgeriaCommunes.getCommuneById(communeId) : null) ??
+            AlgeriaCommunes.getCommunesByWilaya(wilayaCode).firstOrNull ??
+            AlgeriaCommunes.allCommunes[0];
+      }
+
+      final now = DateTime.now();
+      final times = PrayerService.calculateTimesForCommuneResult(
+        commune: commune,
+        date: now,
+      );
+
+      final prayers = [
+        {'nameAr': 'الفجر', 'time': times.fajr},
+        {'nameAr': 'الظهر', 'time': times.dhuhr},
+        {'nameAr': 'العصر', 'time': times.asr},
+        {'nameAr': 'المغرب', 'time': times.maghrib},
+        {'nameAr': 'العشاء', 'time': times.isha},
+      ];
+
+      Map<String, dynamic>? nextPrayer;
+      Duration? minDiff;
+
+      for (var p in prayers) {
+        final pTime = p['time'] as DateTime;
+        if (now.isBefore(pTime)) {
+          nextPrayer = p;
+          minDiff = pTime.difference(now);
+          break;
+        }
+      }
+
+      if (nextPrayer == null) {
+        final tomorrowTimes = PrayerService.calculateTimesForCommuneResult(
+          commune: commune,
+          date: now.add(const Duration(days: 1)),
+        );
+        nextPrayer = {'nameAr': 'الفجر', 'time': tomorrowTimes.fajr};
+        minDiff = tomorrowTimes.fajr.difference(now);
+      }
+
+      final pTime = nextPrayer['time'] as DateTime;
+      final timeStr =
+          "${pTime.hour.toString().padLeft(2, '0')}:${pTime.minute.toString().padLeft(2, '0')}";
+      final h = minDiff!.inHours;
+      final m = minDiff.inMinutes % 60;
+      final remainingStr = h > 0 ? "متبقي $h س و $m د" : "متبقي $m دقيقة";
+
+      await updateWidget(
+        prayerName: nextPrayer['nameAr'] as String,
+        prayerTime: timeStr,
+        remaining: remainingStr,
+        location: commune.nameAr,
+      );
+    } catch (e) {
+      debugPrint("updateFromCurrentPrayerTimes error: $e");
     }
   }
 
