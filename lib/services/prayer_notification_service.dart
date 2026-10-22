@@ -26,7 +26,7 @@ class PrayerNotificationService {
 
   static const AndroidNotificationChannel prayerChannel =
       AndroidNotificationChannel(
-    'mihrab_adhan_channel_v9',
+    'mihrab_adhan_channel_v10',
     'أذان ومواقيت الصلاة',
     description: 'تنبيهات وأذان الصلوات الخمس في موعدها الدقيق بصوت الأذان الكامل والتنبيه الصوتي',
     importance: Importance.max,
@@ -133,6 +133,8 @@ class PrayerNotificationService {
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           if (response.actionId == 'stop_adhan') {
             AdhanAudioService.stopAdhan();
+          } else {
+            wakeScreen();
           }
         },
       );
@@ -141,10 +143,11 @@ class PrayerNotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
         // Clean up older channels once
-        final cleaned = prefs.getBool('legacy_channels_cleaned_v9') ?? false;
+        final cleaned = prefs.getBool('legacy_channels_cleaned_v10') ?? false;
         if (!cleaned) {
           try {
             await Future.wait([
+              androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v9'),
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v8'),
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v7'),
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v6'),
@@ -154,7 +157,7 @@ class PrayerNotificationService {
               androidPlugin.deleteNotificationChannel(channelId: 'prayer_adhan_channel_v2'),
               androidPlugin.deleteNotificationChannel(channelId: 'prayer_channel_high'),
             ]);
-            await prefs.setBool('legacy_channels_cleaned_v9', true);
+            await prefs.setBool('legacy_channels_cleaned_v10', true);
           } catch (_) {}
         }
 
@@ -332,6 +335,7 @@ class PrayerNotificationService {
               enableVibration: true,
               audioAttributesUsage: AudioAttributesUsage.alarm,
               visibility: NotificationVisibility.public,
+              fullScreenIntent: true,
               actions: const [
                 AndroidNotificationAction(
                   'stop_adhan',
@@ -453,6 +457,7 @@ class PrayerNotificationService {
         enableVibration: true,
         audioAttributesUsage: AudioAttributesUsage.alarm,
         visibility: NotificationVisibility.public,
+        fullScreenIntent: true,
         actions: const [
           AndroidNotificationAction(
             'stop_adhan',
@@ -498,6 +503,14 @@ class PrayerNotificationService {
     return areEnabled;
   }
 
+  /// Wakes the screen via native MethodChannel
+  static Future<void> wakeScreen() async {
+    try {
+      const channel = MethodChannel('com.mihrab.algeria.mihrab_app/settings');
+      await channel.invokeMethod('wakeScreen');
+    } catch (_) {}
+  }
+
   /// Schedule a test notification and alarm after [delaySeconds] (for testing Doze/sleep mode)
   static Future<void> scheduleTestSleepAdhan({
     int delaySeconds = 10,
@@ -521,6 +534,7 @@ class PrayerNotificationService {
       enableVibration: true,
       audioAttributesUsage: AudioAttributesUsage.alarm,
       visibility: NotificationVisibility.public,
+      fullScreenIntent: true,
       actions: const [
         AndroidNotificationAction(
           'stop_adhan',
@@ -538,8 +552,19 @@ class PrayerNotificationService {
         body: "تجربة تنبيه الأذان في وضع السبات وقفل الشاشة تعمل بنجاح 🌟",
         scheduledDate: scheduledDate,
         notificationDetails: NotificationDetails(android: androidDetails),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.alarmClock,
       );
-    } catch (_) {}
+    } catch (_) {
+      try {
+        await _notifications.zonedSchedule(
+          id: 9999,
+          title: "الله أكبر، الله أكبر 🕌 - حان موعد صلاة $prayerName",
+          body: "تجربة تنبيه الأذان في وضع السبات وقفل الشاشة تعمل بنجاح 🌟",
+          scheduledDate: scheduledDate,
+          notificationDetails: NotificationDetails(android: androidDetails),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        );
+      } catch (_) {}
+    }
   }
 }

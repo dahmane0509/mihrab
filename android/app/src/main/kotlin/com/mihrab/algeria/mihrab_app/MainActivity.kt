@@ -12,6 +12,9 @@ import android.media.AudioManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import androidx.core.app.NotificationManagerCompat
+import android.app.NotificationChannel
+import android.media.AudioAttributes
+import android.graphics.Color
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -21,6 +24,71 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        wakeScreenUp()
+        createPrayerNotificationChannel()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        wakeScreenUp()
+    }
+
+    private fun wakeScreenUp() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+                val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
+                keyguardManager?.requestDismissKeyguard(this, null)
+            } else {
+                @Suppress("DEPRECATION")
+                window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                )
+            }
+
+            val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+            val wakeLock = powerManager?.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE,
+                "mihrab:AdhanWakeLock"
+            )
+            wakeLock?.acquire(15000L)
+        } catch (_: Exception) {}
+    }
+
+    private fun createPrayerNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val channelId = "mihrab_adhan_channel_v10"
+                val channelName = "أذان ومواقيت الصلاة"
+                val channelDesc = "تنبيهات وأذان الصلوات الخمس في موعدها الدقيق بصوت الأذان الكامل والتنبيه الصوتي"
+                val importance = NotificationManager.IMPORTANCE_HIGH
+                val channel = NotificationChannel(channelId, channelName, importance).apply {
+                    description = channelDesc
+                    enableLights(true)
+                    lightColor = Color.GREEN
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 1000, 500, 1000, 500, 1000)
+                    lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                    setBypassDnd(true)
+
+                    val soundUri = Uri.parse("android.resource://$packageName/raw/athan")
+                    val audioAttributes = AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .build()
+                    setSound(soundUri, audioAttributes)
+                }
+
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.createNotificationChannel(channel)
+            } catch (e: Exception) {
+                // Ignore fallback
+            }
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -73,15 +141,35 @@ class MainActivity : FlutterActivity() {
                 "requestIgnoreBatteryOptimizations" -> {
                     try {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                data = Uri.parse("package:$packageName")
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            try {
+                                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = Uri.parse("package:$packageName")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                                result.success(true)
+                                return@setMethodCallHandler
+                            } catch (e1: Exception) {
+                                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                                result.success(true)
+                                return@setMethodCallHandler
                             }
-                            startActivity(intent)
                         }
                         result.success(true)
                     } catch (e: Exception) {
-                        result.success(false)
+                        try {
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", packageName, null)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e2: Exception) {
+                            result.success(false)
+                        }
                     }
                 }
                 "canScheduleExactAlarms" -> {
@@ -237,6 +325,10 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.success(false)
                     }
+                }
+                "wakeScreen" -> {
+                    wakeScreenUp()
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }
