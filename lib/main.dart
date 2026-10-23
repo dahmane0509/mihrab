@@ -1,3 +1,4 @@
+import 'services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -40,6 +41,7 @@ void main() async {
     PrayerTrackerService.init(),
     PrayerService.loadSettings(),
     QuranAudioRecitersService.init(),
+    NotificationService.init(),
   ]);
 
   // Launch Flutter UI immediately to dismiss OS native splash screen instantly
@@ -300,10 +302,8 @@ class _MainHomeScreenState extends State<MainHomeScreen> with WidgetsBindingObse
       _selectedCommune = commune;
     });
 
-    PrayerNotificationService.scheduleAllPrayerNotifications();
-
-    if (!hasSavedWilaya) {
-      _tryAutoDetectLocation();
+    if (commune != null) {
+      NotificationService.schedulePrayersForCommune(commune);
     }
   }
 
@@ -326,9 +326,10 @@ class _MainHomeScreenState extends State<MainHomeScreen> with WidgetsBindingObse
       _selectedWilaya = wilaya;
       _selectedCommune = commune;
     });
-    PrayerNotificationService.scheduleAllPrayerNotifications();
+    if (commune != null) {
+      NotificationService.schedulePrayersForCommune(commune);
+    }
   }
-
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
   }
