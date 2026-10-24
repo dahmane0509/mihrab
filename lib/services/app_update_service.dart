@@ -36,11 +36,11 @@ class AppUpdateInfo {
 /// Service to check current app version against remote releases/endpoints
 class AppUpdateService {
   static const String defaultReleaseEndpoint =
-      'https://api.github.com/repos/amir0509/mihrab/releases/latest';
+      'https://api.github.com/repos/dahmane0509/mihrab/releases/latest';
   static const String defaultFallbackEndpoint =
-      'https://raw.githubusercontent.com/amir0509/mihrab/main/version.json';
+      'https://raw.githubusercontent.com/dahmane0509/mihrab/main/version.json';
   static const String defaultWebReleaseUrl =
-      'https://github.com/amir0509/mihrab/releases';
+      'https://github.com/dahmane0509/mihrab/releases';
 
   /// Compare two semantic version strings (e.g. "1.1.0" > "1.0.0")
   static bool isVersionNewer(String latest, String current) {
