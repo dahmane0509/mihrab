@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/athan,@raw/adhan,@raw/notification,@raw/takbeer,@drawable/*,@mipmap/*,@layout/widget_mihrab_prayer,@xml/mihrab_widget_info"
+    tools:shrinkMode="safe" />
