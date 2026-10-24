@@ -1,3 +1,4 @@
+// Updated v1.0.1
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -44,7 +45,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "البوابة الرسمية للبث المباشر لإذاعة القرآن الجزائرية والتلاوات",
       location: "الجزائر العاصمة 🇩🇿",
       audioStreamUrl: "https://qurango.net/radio/salma",
-      videoWebUrl: "https://my.radioalgerie.dz/coran",
+      videoWebUrl: "https://qurango.net/radio/salma",
       icon: Icons.radio,
     ),
     LiveChannel(
@@ -62,7 +63,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "تلاوات متواصلة على مدار 24 ساعة بأصوات كبار قراء العالم الإسلامي",
       location: "العالم الإسلامي 🕌",
       audioStreamUrl: "https://qurango.net/radio/mix",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.headphones,
     ),
     LiveChannel(
@@ -71,7 +72,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "تلاوات خاشعة ومجودة على مدار الساعة للصوت الباكي",
       location: "مصر والعالم الإسلامي 🎙️",
       audioStreamUrl: "https://qurango.net/radio/mohammed_siddiq_alminshawi",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.record_voice_over,
     ),
     LiveChannel(
@@ -80,7 +81,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "تلاوات محكمة ومتقنة على مدار الساعة لشيخ المقارئ المصرية",
       location: "مصر والعالم الإسلامي 🎙️",
       audioStreamUrl: "https://qurango.net/radio/mahmoud_khalil_alhussary",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.menu_book,
     ),
     LiveChannel(
@@ -89,7 +90,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "تلاوات ندية خاشعة لإمام وخطيب المسجد الحرام",
       location: "مكة المكرمة 🕋",
       audioStreamUrl: "https://qurango.net/radio/maher",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.mosque,
     ),
     LiveChannel(
@@ -98,7 +99,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "تلاوات مرتلة عذبة متواصلة على مدار اليوم",
       location: "العالم الإسلامي 🎙️",
       audioStreamUrl: "https://qurango.net/radio/ahmad_alajmy",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.auto_awesome,
     ),
     LiveChannel(
@@ -107,7 +108,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "بث متواصل لسورة البقرة لطرد الشياطين وبركة البيوت",
       location: "بث متواصل 📖",
       audioStreamUrl: "https://qurango.net/radio/albaqarah",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.star_border,
     ),
     LiveChannel(
@@ -116,7 +117,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "آيات الرقية الشرعية والأدعية النبوية للشفاء والحفظ",
       location: "بث متواصل 🛡️",
       audioStreamUrl: "https://qurango.net/radio/roqiah",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.health_and_safety,
     ),
     LiveChannel(
@@ -125,7 +126,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "حصن المسلم وأذكار اليوم والليلة بأصوات ندية",
       location: "بث متواصل 📿",
       audioStreamUrl: "https://qurango.net/radio/athkar_sabah",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.wb_sunny,
     ),
     LiveChannel(
@@ -134,7 +135,7 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       subtitle: "المختصر في تفسير القرآن الكريم وتوضيح معاني الآيات",
       location: "الإذاعة التعليمية 📖",
       audioStreamUrl: "https://qurango.net/radio/mukhtasartafsir",
-      videoWebUrl: "https://mp3quran.net/ar/radio",
+      videoWebUrl: "https://qurango.net/radio/mix",
       icon: Icons.library_books,
     ),
   ];
