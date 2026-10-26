@@ -1,10 +1,9 @@
-// Updated v1.0.1
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'adhan_audio_service.dart';
-
+import 'prayer_notification_service.dart';
 
 /// Dedicated service for playing the Mihrab Quran verse recitation
 /// (Surah Ali 'Imran: 39) smoothly across Splash and Home Screen without cut-off.
@@ -14,17 +13,29 @@ class VerseAudioService {
   // مفتاح حفظ اختيار المستخدم للتلاوة الافتتاحية
   static const String _keyRecitationEnabled = 'enable_startup_recitation';
 
+  /// Reactive notifier for whether startup recitation is enabled by the user
+  static final ValueNotifier<bool> recitationEnabledNotifier = ValueNotifier<bool>(true);
+
   // حفظ حالة القفل (تفعيل / إيقاف)
   static Future<void> setRecitationEnabled(bool isEnabled) async {
+    recitationEnabledNotifier.value = isEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyRecitationEnabled, isEnabled);
+    if (!isEnabled) {
+      await stopVerse();
+    }
   }
 
   // قراءة حالة القفل (القيمة الافتراضية true)
   static Future<bool> isRecitationEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyRecitationEnabled) ?? true;
+    final enabled = prefs.getBool(_keyRecitationEnabled) ?? true;
+    recitationEnabledNotifier.value = enabled;
+    return enabled;
   }
+
+  /// Stop current recitation (alias for stopVerse)
+  static Future<void> stop() => stopVerse();
 
   /// Reactive notifier for UI components (play/pause state)
   static final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
@@ -41,6 +52,7 @@ class VerseAudioService {
   static Future<void> init() async {
     if (_isInitialized) return;
     _isInitialized = true;
+    recitationEnabledNotifier.value = await isRecitationEnabled();
 
     try {
       await _player.setReleaseMode(ReleaseMode.stop);
@@ -90,7 +102,7 @@ class VerseAudioService {
   /// Play verse audio from local assets (supporting both user-placed file and standard asset)
   static Future<bool> playVerse({bool restartIfPlaying = false}) async {
     await init();
-    // 1. فحص هل أوقف المستخدم التلاوة من زر القفل في الإعدادات
+    // 1. فحص هل أوقف المستخدم التلاوة من الإعدادات
     final isEnabled = await isRecitationEnabled();
     if (!isEnabled) {
       return false;
@@ -98,6 +110,14 @@ class VerseAudioService {
 
     // 2. فحص هل الأذان يعمل حالياً لمنع تداخل الصوتين معاً
     if (AdhanAudioService.isPlayingNotifier.value) {
+      debugPrint("VerseAudioService: Recitation skipped because Adhan is actively playing");
+      return false;
+    }
+
+    // 3. فحص هل تم فتح التطبيق عبر إشعار صلاة
+    final fromNotif = await PrayerNotificationService.wasLaunchedFromNotification();
+    if (fromNotif) {
+      debugPrint("VerseAudioService: Startup recitation skipped because app launched via prayer notification");
       return false;
     }
 

@@ -231,6 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       _autoSilentMode = prefs.getBool('auto_silent_mode') ?? true;
       _useGpsAuto = prefs.getBool('use_gps_auto') ?? false;
       _iqamahReminder = prefs.getBool('iqamah_reminder') ?? true;
+      _startupRecitation = prefs.getBool('enable_startup_recitation') ?? true;
       _autoAdhkar = prefs.getBool('auto_adhkar_enabled') ?? AutoAdhkarService.isEnabled;
       _adhkarInterval = prefs.getInt('auto_adhkar_interval') ?? AutoAdhkarService.intervalMinutes;
 
@@ -2338,7 +2339,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             value: _startupRecitation,
-                            activeColor: activeTheme.primary,
+                            activeThumbColor: activeTheme.primary,
                             title: const Text("تلاوة بداية التطبيق", style: TextStyle(color: Colors.white, fontSize: 14)),
                             subtitle: const Text("تشغيل آية المحراب بصوت الشيخ عبد الباسط عند فتح التطبيق", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                             onChanged: (val) {

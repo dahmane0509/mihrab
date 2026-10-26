@@ -19,6 +19,24 @@ class PrayerNotificationService {
   static Timer? _prayerMonitorTimer;
   static String? _lastTriggeredKey;
   static bool _isInitialized = false;
+  static bool _launchedViaNotification = false;
+  static bool get launchedViaNotification => _launchedViaNotification;
+
+  /// Returns whether the app was opened from a prayer notification tap
+  static Future<bool> wasLaunchedFromNotification() async {
+    if (_launchedViaNotification) return true;
+    if (!_isInitialized) return false;
+    try {
+      final details = await _notifications.getNotificationAppLaunchDetails();
+      if (details?.didNotificationLaunchApp == true) {
+        _launchedViaNotification = true;
+        return true;
+      }
+    } catch (e) {
+      debugPrint("wasLaunchedFromNotification note: $e");
+    }
+    return false;
+  }
 
   /// Reactive notifier indicating whether system notifications are enabled
   static final ValueNotifier<bool> notificationsEnabledNotifier =
@@ -131,6 +149,7 @@ class PrayerNotificationService {
       await _notifications.initialize(
         settings: initSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
+          _launchedViaNotification = true;
           if (response.actionId == 'stop_adhan') {
             AdhanAudioService.stopAdhan();
           } else {

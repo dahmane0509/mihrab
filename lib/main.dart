@@ -268,7 +268,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> with WidgetsBindingObse
 
   Future<void> _loadSavedLocation() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasSavedWilaya = prefs.containsKey('selected_wilaya');
     final savedCode = prefs.getInt('selected_wilaya') ?? 16;
     final savedCommuneId = prefs.getInt('selected_commune_id');
 
