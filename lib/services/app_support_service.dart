@@ -53,7 +53,7 @@ class AppSupportService {
 
   /// Retrieves device diagnostics safely across all platforms
   static Future<DeviceDiagnostics> getDeviceDiagnostics() async {
-    String appVer = '1.0.0';
+    String appVer = '1.0.2';
     String buildNum = '1';
     try {
       final pkg = await PackageInfo.fromPlatform();

@@ -579,10 +579,10 @@ class AppTranslations {
       'it': 'Lingue (20 lingue mondiali), tema e avvisi adhan',
     },
     'drawer_about_sub': {
-      'ar': 'الإصدار 1.0.0 (الجزائر - 1541 بلدية والقرى والمداشر)',
-      'en': 'Version 1.0.0 (Algeria & Worldwide Cities)',
-      'fr': 'Version 1.0.0 (Algérie & Villes du Monde)',
-      'it': 'Versione 1.0.0 (Algeria e Città del Mondo)',
+      'ar': 'الإصدار 1.0.2 (الجزائر - 1541 بلدية والقرى والمداشر)',
+      'en': 'Version 1.0.2 (Algeria & Worldwide Cities)',
+      'fr': 'Version 1.0.2 (Algérie & Villes du Monde)',
+      'it': 'Versione 1.0.2 (Algeria e Città del Mondo)',
     },
     'drawer_app_language': {
       'ar': 'لغة التطبيق',
@@ -1131,10 +1131,10 @@ class AppTranslations {
       'it': 'Applicazione Mihrab • Orari di Preghiera e Sacro Corano',
     },
     'settings_about_version': {
-      'ar': 'الإصدار 1.0.0 (الجزائر) • مجاني 100% وبدون أي إعلانات',
-      'en': 'Version 1.0.0 (Algeria) • 100% Free & No Ads',
-      'fr': 'Version 1.0.0 (Algérie) • 100% Gratuit et Sans Publicités',
-      'it': 'Versione 1.0.0 (Algeria) • 100% Gratuito e Senza Pubblicità',
+      'ar': 'الإصدار 1.0.2 (الجزائر) • مجاني 100% وبدون أي إعلانات',
+      'en': 'Version 1.0.2 (Algeria) • 100% Free & No Ads',
+      'fr': 'Version 1.0.2 (Algérie) • 100% Gratuit et Sans Publicités',
+      'it': 'Versione 1.0.2 (Algeria) • 100% Gratuito e Senza Pubblicità',
     },
 
     // World Cities & Location Selection

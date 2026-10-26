@@ -295,7 +295,7 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                     ),
                     subtitle: Text(
                       isAr
-                          ? "الإصدار 1.0.0 (الجزائر - 1541 بلدية والقرى والمداشر)"
+                          ? "الإصدار 1.0.2 (الجزائر - 1541 بلدية والقرى والمداشر)"
                           : LanguageService.tr('drawer_about_sub'),
                       style: const TextStyle(color: Colors.white38, fontSize: 11),
                     ),
@@ -305,7 +305,7 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                       showAboutDialog(
                         context: context,
                         applicationName: isAr ? "مِحْرَاب" : LanguageService.tr('app_name'),
-                        applicationVersion: isAr ? "1.0.0 (الجزائر)" : "1.0.0",
+                        applicationVersion: isAr ? "1.0.2 (الجزائر)" : "1.0.2",
                         applicationLegalese: isAr
                             ? "تطبيق إسلامي شامل للجزائر: مواقيت الصلاة لجميع البلديات والقرى والمداشر، القرآن الكريم قراءة واستماعاً، البث المباشر، وبوصلة القبلة."
                             : (langCode == 'fr'

@@ -43,7 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   bool _useGpsAuto = false;
   
   // Missing variables added to fix build errors
-  String _appVersionString = "1.0.0";
+  String _appVersionString = "1.0.2";
   bool _autoAdhkar = false;
   int _adhkarInterval = 15;
 

@@ -135,7 +135,7 @@ class VerseAudioService {
 
       // Check if mihrab_verse.mp3 asset is loadable
       try {
-        await rootBundle.load('assets/audio/mihrab_verse.mp3');
+        await rootBundle.load('audio/mihrab_verse.mp3');
         await _player.play(AssetSource('audio/mihrab_verse.mp3'));
         played = true;
       } catch (_) {

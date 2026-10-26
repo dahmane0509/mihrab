@@ -43,7 +43,7 @@ class AppUpdateService {
   static const String defaultWebReleaseUrl =
       'https://github.com/dahmane0509/mihrab/releases';
 
-  /// Compare two semantic version strings (e.g. "1.1.0" > "1.0.0")
+  /// Compare two semantic version strings (e.g. "1.1.0" > "1.0.2")
   static bool isVersionNewer(String latest, String current) {
     try {
       final cleanLatest = latest.replaceAll(RegExp(r'[^0-9.]'), '');
@@ -78,7 +78,7 @@ class AppUpdateService {
       return PackageInfo(
         appName: 'مِحْراب',
         packageName: 'com.mihrab.algeria.mihrab_app',
-        version: '1.0.0',
+        version: '1.0.2',
         buildNumber: '1',
         buildSignature: '',
       );

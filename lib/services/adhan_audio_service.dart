@@ -183,7 +183,7 @@ class AdhanAudioService {
     AdhanSoundItem(
       id: "takbeer_only",
       name: "تكبيرات الأذان والعيد (المسجد الحرام)",
-      url: "assets/audio/takbeer.wav",
+      url: "audio/takbeer.wav",
       desc: "تكبيرات الحرم المكي الشريف فقط دون بقية الأذان",
       isDefault: true,
     ),
