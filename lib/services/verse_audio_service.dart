@@ -1,12 +1,30 @@
+// Updated v1.0.1
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'adhan_audio_service.dart';
+
 
 /// Dedicated service for playing the Mihrab Quran verse recitation
 /// (Surah Ali 'Imran: 39) smoothly across Splash and Home Screen without cut-off.
 class VerseAudioService {
   static final AudioPlayer _player = AudioPlayer();
   static bool _isInitialized = false;
+  // مفتاح حفظ اختيار المستخدم للتلاوة الافتتاحية
+  static const String _keyRecitationEnabled = 'enable_startup_recitation';
+
+  // حفظ حالة القفل (تفعيل / إيقاف)
+  static Future<void> setRecitationEnabled(bool isEnabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyRecitationEnabled, isEnabled);
+  }
+
+  // قراءة حالة القفل (القيمة الافتراضية true)
+  static Future<bool> isRecitationEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyRecitationEnabled) ?? true;
+  }
 
   /// Reactive notifier for UI components (play/pause state)
   static final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
@@ -72,6 +90,16 @@ class VerseAudioService {
   /// Play verse audio from local assets (supporting both user-placed file and standard asset)
   static Future<bool> playVerse({bool restartIfPlaying = false}) async {
     await init();
+    // 1. فحص هل أوقف المستخدم التلاوة من زر القفل في الإعدادات
+    final isEnabled = await isRecitationEnabled();
+    if (!isEnabled) {
+      return false;
+    }
+
+    // 2. فحص هل الأذان يعمل حالياً لمنع تداخل الصوتين معاً
+    if (AdhanAudioService.isPlayingNotifier.value) {
+      return false;
+    }
 
     if (isPlayingNotifier.value && !restartIfPlaying) {
       return true;

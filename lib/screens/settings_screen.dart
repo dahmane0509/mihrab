@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/verse_audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/algeria_wilayas.dart';
 import '../services/theme_service.dart';
@@ -37,11 +38,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   String _adhanSound = "algeria_grand_mosque";
   int _advanceReminderMinutes = 15;
   bool _autoSilentMode = true;
-  bool _useGpsAuto = false;
   bool _iqamahReminder = true;
+  bool _startupRecitation = true;
+  bool _useGpsAuto = false;
+  
+  // Missing variables added to fix build errors
+  String _appVersionString = "1.0.0";
   bool _autoAdhkar = false;
   int _adhkarInterval = 15;
-  String _appVersionString = "1.0.0";
 
   // Mosque silent mode settings
   bool _isDndGranted = false;
@@ -158,6 +162,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   @override
   void initState() {
     super.initState();
+    VerseAudioService.isRecitationEnabled().then((val) {
+      if (mounted) {
+        setState(() {
+          _startupRecitation = val;
+        });
+      }
+    });
     WidgetsBinding.instance.addObserver(this);
     _wilayaCode = widget.selectedWilayaCode;
     _checkDndPermission();
@@ -1429,1508 +1440,1518 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   // 1. Theme Color Customization Section
                   _buildSectionHeader(LanguageService.tr('settings_theme_header'), Icons.palette, activeTheme.accent),
                   const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LanguageService.tr('settings_theme_prompt'),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
                     ),
-                    const SizedBox(height: 12),
-                    Column(
-                      children: ThemeService.availableThemes.map((theme) {
-                        final isSelected = theme.id == activeTheme.id;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Material(
-                            color: isSelected ? theme.darkPrimary : const Color(0xFF0F172A),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: isSelected ? theme.accent : const Color(0xFF334155),
-                                width: isSelected ? 1.5 : 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            LanguageService.tr('settings_theme_prompt'),
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          const SizedBox(height: 12),
+                          Column(
+                            children: ThemeService.availableThemes.map((theme) {
+                              final isSelected = theme.id == activeTheme.id;
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: Material(
+                                  color: isSelected ? theme.darkPrimary : const Color(0xFF0F172A),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                      color: isSelected ? theme.accent : const Color(0xFF334155),
+                                      width: isSelected ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: ListTile(
+                                    leading: Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        color: theme.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      theme.nameAr,
+                                      style: TextStyle(
+                                        color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    trailing: isSelected
+                                        ? Icon(Icons.check_circle, color: theme.accent, size: 20)
+                                        : null,
+                                    onTap: () {
+                                      ThemeService.setTheme(theme);
+                                    },
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Clock Style Selection Section
+                  _buildSectionHeader(
+                    LanguageService.languageCode == 'ar' ? "شكل الساعة في الواجهة الرئيسية" : "Main Screen Clock Style",
+                    Icons.schedule_rounded,
+                    activeTheme.accent,
+                  ),
+                  const SizedBox(height: 8),
+                  ValueListenableBuilder<String>(
+                    valueListenable: ClockStyleService.currentStyle,
+                    builder: (context, activeClockStyle, _) {
+                      final isAr = LanguageService.languageCode == 'ar';
+                      final styles = [
+                        {
+                          'id': 'digital',
+                          'title': isAr ? "الساعة الرقمية الحديثة (Digital)" : "Modern Digital Clock",
+                          'desc': isAr ? "عرض أرقام إلكترونية عريضة بتوهج زمردي خفيف وعدّاد للثواني" : "Bold digital readout with subtle glow and seconds counter",
+                          'icon': Icons.pin_invoke_rounded,
+                        },
+                        {
+                          'id': 'analog',
+                          'title': isAr ? "الساعة الكلاسيكية بالعقارب (Analog)" : "Classic Analog Dial",
+                          'desc': isAr ? "قرص دائري ملكي بعقارب ذهبية وتتبع لحركة الوقت والمواقيت" : "Royal circular dial with gold hands and prayer arc",
+                          'icon': Icons.access_time_filled_rounded,
+                        },
+                        {
+                          'id': 'minimalist',
+                          'title': isAr ? "ساعة بسيطة ناعمة بالأرقام العربية (Minimalist)" : "Minimalist Arabic Clock",
+                          'desc': isAr ? "أرقام مشرقية أصيلة (١٢، ٣، ٦، ٩) بهدوء بصري وتصميم راقٍ" : "Eastern Arabic numerals with serene and clean aesthetics",
+                          'icon': Icons.looks_one_rounded,
+                        },
+                      ];
+
+                      return Material(
+                        color: activeTheme.cardBackground,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isAr ? "اختر نمط الساعة المفضّل لعرضه في شاشة الصلاة القادمة:" : "Select your preferred clock style on the main screen:",
+                                style: const TextStyle(color: Colors.white, fontSize: 13.5),
                               ),
-                            ),
-                            child: ListTile(
-                            leading: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: theme.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                              const SizedBox(height: 12),
+                              Column(
+                                children: styles.map((s) {
+                                  final styleId = s['id'] as String;
+                                  final isSelected = styleId == activeClockStyle;
+                                  final icon = s['icon'] as IconData;
+
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: Material(
+                                      color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(
+                                          color: isSelected ? activeTheme.accent : const Color(0xFF334155),
+                                          width: isSelected ? 1.5 : 1,
+                                        ),
+                                      ),
+                                      child: ListTile(
+                                        leading: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? activeTheme.primary.withValues(alpha: 0.3)
+                                                : Colors.white10,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            icon,
+                                            color: isSelected ? activeTheme.accent : Colors.white70,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          s['title'] as String,
+                                          style: TextStyle(
+                                            color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          s['desc'] as String,
+                                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                        ),
+                                        trailing: isSelected
+                                            ? Icon(Icons.check_circle_rounded, color: activeTheme.accent, size: 22)
+                                            : const Icon(Icons.radio_button_unchecked, color: Colors.white24, size: 20),
+                                        onTap: () {
+                                          AppFeedback.select();
+                                          ClockStyleService.setStyle(styleId);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            ),
-                            title: Text(
-                              theme.nameAr,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                            ),
-                            trailing: isSelected
-                                ? Icon(Icons.check_circle, color: theme.accent, size: 20)
-                                : null,
-                            onTap: () {
-                              ThemeService.setTheme(theme);
-                            },
+                            ],
                           ),
                         ),
                       );
-                    }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Clock Style Selection Section
-            _buildSectionHeader(
-              LanguageService.languageCode == 'ar' ? "شكل الساعة في الواجهة الرئيسية" : "Main Screen Clock Style",
-              Icons.schedule_rounded,
-              activeTheme.accent,
-            ),
-            const SizedBox(height: 8),
-            ValueListenableBuilder<String>(
-              valueListenable: ClockStyleService.currentStyle,
-              builder: (context, activeClockStyle, _) {
-                final isAr = LanguageService.languageCode == 'ar';
-                final styles = [
-                  {
-                    'id': 'digital',
-                    'title': isAr ? "الساعة الرقمية الحديثة (Digital)" : "Modern Digital Clock",
-                    'desc': isAr ? "عرض أرقام إلكترونية عريضة بتوهج زمردي خفيف وعدّاد للثواني" : "Bold digital readout with subtle glow and seconds counter",
-                    'icon': Icons.pin_invoke_rounded,
-                  },
-                  {
-                    'id': 'analog',
-                    'title': isAr ? "الساعة الكلاسيكية بالعقارب (Analog)" : "Classic Analog Dial",
-                    'desc': isAr ? "قرص دائري ملكي بعقارب ذهبية وتتبع لحركة الوقت والمواقيت" : "Royal circular dial with gold hands and prayer arc",
-                    'icon': Icons.access_time_filled_rounded,
-                  },
-                  {
-                    'id': 'minimalist',
-                    'title': isAr ? "ساعة بسيطة ناعمة بالأرقام العربية (Minimalist)" : "Minimalist Arabic Clock",
-                    'desc': isAr ? "أرقام مشرقية أصيلة (١٢، ٣، ٦، ٩) بهدوء بصري وتصميم راقٍ" : "Eastern Arabic numerals with serene and clean aesthetics",
-                    'icon': Icons.looks_one_rounded,
-                  },
-                ];
-
-                return Material(
-                  color: activeTheme.cardBackground,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
+                    },
                   ),
-                  child: Padding(
+                  const SizedBox(height: 24),
+
+                  // 2. Location & GPS Settings
+                  _buildSectionHeader("الموقع والتحديد التلقائي", Icons.location_on, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.location_city, color: Color(0xFF10B981)),
+                            title: const Text("الولاية المحددة حالياً", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: Text("ولاية ${currentWilaya.code} - ${currentWilaya.nameAr} (${currentWilaya.nameFr})",
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                          ),
+                          const Divider(color: Color(0xFF334155)),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _useGpsAuto,
+                            activeThumbColor: activeTheme.primary,
+                            title: const Text("التحديد التلقائي للموقع (GPS)", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: const Text("كشف الولاية والبلدية بدقة عبر الأقمار الصناعية وحساب المواقيت آلياً",
+                                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            onChanged: (val) async {
+                              setState(() {
+                                _useGpsAuto = val;
+                              });
+                              _savePreference('use_gps_auto', val);
+                              if (val) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Color(0xFF064E3B),
+                                    content: Text("جاري كشف موقعك وتحديد ولايتك..."),
+                                  ),
+                                );
+                                final detected = await LocationService.detectLocation();
+                                if (!context.mounted) return;
+                                if (detected != null) {
+                                  setState(() {
+                                    _wilayaCode = detected.wilaya.code;
+                                  });
+                                  widget.onWilayaChanged(detected.wilaya.code);
+                                  _savePreference('selected_wilaya', detected.wilaya.code);
+                                  _savePreference('selected_commune_id', detected.commune.id);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: const Color(0xFF064E3B),
+                                      content: Text("تم تحديد موقعك بدقة: بلدية ${detected.commune.nameAr} (ولاية ${detected.wilaya.nameAr})"),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 3. Calculation Method & Juristic Madhab
+                  _buildSectionHeader(LanguageService.tr('settings_calc_header'), Icons.calculate, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Container(
                     padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: activeTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(LanguageService.tr('settings_calc_prompt'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            itemHeight: null,
+                            value: _calculationMethod,
+                            underline: const SizedBox(),
+                            dropdownColor: const Color(0xFF1E293B),
+                            selectedItemBuilder: (context) {
+                              return CalculationMethod.values.map((method) {
+                                return Container(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    method.localizedName(LanguageService.languageCode),
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                                    maxLines: 2,
+                                    softWrap: true,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                            items: CalculationMethod.values.map((method) {
+                              return DropdownMenuItem<String>(
+                                value: method.id,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    method.localizedName(LanguageService.languageCode),
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                                    softWrap: true,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _calculationMethod = val);
+                                _savePreference('calculation_method', val);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(LanguageService.tr('settings_madhab_prompt'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            itemHeight: null,
+                            value: _juristicMethod,
+                            underline: const SizedBox(),
+                            dropdownColor: const Color(0xFF1E293B),
+                            selectedItemBuilder: (context) {
+                              return JuristicMethod.values.map((jur) {
+                                return Container(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    jur.localizedName(LanguageService.languageCode),
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                                    maxLines: 2,
+                                    softWrap: true,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                            items: JuristicMethod.values.map((jur) {
+                              return DropdownMenuItem<String>(
+                                value: jur.id,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    jur.localizedName(LanguageService.languageCode),
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                                    softWrap: true,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _juristicMethod = val);
+                                _savePreference('juristic_method', val);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 4. Mosque Synchronization (Manual Offsets)
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.mosque, color: activeTheme.accent, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          LanguageService.tr('settings_sync_mosque_header'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: activeTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isAr ? "اختر نمط الساعة المفضّل لعرضه في شاشة الصلاة القادمة:" : "Select your preferred clock style on the main screen:",
-                          style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                          LanguageService.tr('settings_sync_mosque_desc'),
+                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, height: 1.5),
                         ),
                         const SizedBox(height: 12),
-                        Column(
-                          children: styles.map((s) {
-                            final styleId = s['id'] as String;
-                            final isSelected = styleId == activeClockStyle;
-                            final icon = s['icon'] as IconData;
+                        _buildAdjustmentCounter("صلاة الفجر", _adjFajr, (v) {
+                          setState(() => _adjFajr = v);
+                          _savePreference('adj_fajr', v);
+                        }, activeTheme),
+                        _buildAdjustmentCounter("الشروق", _adjSunrise, (v) {
+                          setState(() => _adjSunrise = v);
+                          _savePreference('adj_sunrise', v);
+                        }, activeTheme),
+                        _buildAdjustmentCounter("صلاة الظهر", _adjDhuhr, (v) {
+                          setState(() => _adjDhuhr = v);
+                          _savePreference('adj_dhuhr', v);
+                        }, activeTheme),
+                        _buildAdjustmentCounter("صلاة العصر", _adjAsr, (v) {
+                          setState(() => _adjAsr = v);
+                          _savePreference('adj_asr', v);
+                        }, activeTheme),
+                        _buildAdjustmentCounter("صلاة المغرب", _adjMaghrib, (v) {
+                          setState(() => _adjMaghrib = v);
+                          _savePreference('adj_maghrib', v);
+                        }, activeTheme),
+                        _buildAdjustmentCounter("صلاة العشاء", _adjIsha, (v) {
+                          setState(() => _adjIsha = v);
+                          _savePreference('adj_isha', v);
+                        }, activeTheme),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
+                  // 5. Per-Prayer Adhan Sound Customization
+                  _buildSectionHeader(LanguageService.tr('settings_custom_adhan_header'), Icons.music_note, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          for (var entry in [
+                            {'key': 'fajr', 'name': 'صلاة الفجر'},
+                            {'key': 'dhuhr', 'name': 'صلاة الظهر'},
+                            {'key': 'asr', 'name': 'صلاة العصر'},
+                            {'key': 'maghrib', 'name': 'صلاة المغرب'},
+                            {'key': 'isha', 'name': 'صلاة العشاء'},
+                          ])
+                            Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
                               child: Material(
-                                color: isSelected ? activeTheme.darkPrimary : const Color(0xFF0F172A),
+                                color: const Color(0xFF0F172A),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
-                                    color: isSelected ? activeTheme.accent : const Color(0xFF334155),
-                                    width: isSelected ? 1.5 : 1,
-                                  ),
+                                  side: const BorderSide(color: Color(0xFF334155)),
                                 ),
                                 child: ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? activeTheme.primary.withValues(alpha: 0.3)
-                                          : Colors.white10,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      icon,
-                                      color: isSelected ? activeTheme.accent : Colors.white70,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    s['title'] as String,
-                                    style: TextStyle(
-                                      color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                                  title: Text(entry['name']!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                                   subtitle: Text(
-                                    s['desc'] as String,
-                                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                    AdhanAudioService.adhanNames[_prayerAdhanSounds[entry['key']]] ?? "أذان معتمد",
+                                    style: TextStyle(color: activeTheme.accent, fontSize: 12),
                                   ),
-                                  trailing: isSelected
-                                      ? Icon(Icons.check_circle_rounded, color: activeTheme.accent, size: 22)
-                                      : const Icon(Icons.radio_button_unchecked, color: Colors.white24, size: 20),
-                                  onTap: () {
-                                    AppFeedback.select();
-                                    ClockStyleService.setStyle(styleId);
-                                  },
+                                  trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 14),
+                                  onTap: () => _showPerPrayerAdhanDialog(entry['key']!, entry['name']!, activeTheme),
                                 ),
                               ),
-                            );
-                          }).toList(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  _buildSectionHeader(LanguageService.tr('settings_default_adhan_header'), Icons.volume_up, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      children: [
+                        RadioGroup<String>(
+                          groupValue: _adhanSound,
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _adhanSound = val;
+                              });
+                              _savePreference('adhan_sound', val);
+                            }
+                          },
+                          child: Column(
+                            children: _adhanSoundsList.map((sound) {
+                              final isSelected = sound['id'] == _adhanSound;
+                              final isCustom = sound['isCustom'] == "true";
+                              return RadioListTile<String>(
+                                value: sound['id']!,
+                                activeColor: activeTheme.primary,
+                                title: Text(
+                                  sound['name']!,
+                                  style: TextStyle(
+                                    color: isSelected ? activeTheme.accent : Colors.white,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  sound['desc']!,
+                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                ),
+                                secondary: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37)),
+                                      tooltip: "استماع لعينة الصوت",
+                                      onPressed: () {
+                                        AdhanAudioService.playAdhan(soundId: sound['id']!);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: const Color(0xFF064E3B),
+                                            duration: const Duration(seconds: 4),
+                                            content: Text("جاري تشغيل عينة ${sound['name']}"),
+                                            action: SnackBarAction(
+                                              label: "إيقاف",
+                                              textColor: const Color(0xFFFDE68A),
+                                              onPressed: () => AdhanAudioService.stopAdhan(),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    if (isCustom)
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                        tooltip: "حذف هذا الأذان",
+                                        onPressed: () async {
+                                          await AdhanAudioService.deleteAdhan(sound['id']!);
+                                          await _loadPreferences();
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                backgroundColor: const Color(0xFF7F1D1D),
+                                                content: Text("تم حذف «${sound['name']}» من القائمة."),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const Divider(color: Color(0xFF334155), height: 1),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: activeTheme.accent,
+                                side: BorderSide(color: activeTheme.primary.withValues(alpha: 0.6)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: const Icon(Icons.add_circle_outline, size: 20),
+                              label: const Text(
+                                "إضافة صوت أذان آخر ➕",
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                              ),
+                              onPressed: () => _showAddAdhanModal(activeTheme),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-              // 2. Location & GPS Settings
-              _buildSectionHeader("الموقع والتحديد التلقائي", Icons.location_on, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                  children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.location_city, color: Color(0xFF10B981)),
-                      title: const Text("الولاية المحددة حالياً", style: TextStyle(color: Colors.white, fontSize: 14)),
-                      subtitle: Text("ولاية ${currentWilaya.code} - ${currentWilaya.nameAr} (${currentWilaya.nameFr})",
-                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                  // Dedicated Adhan Testing & Diagnostics Section
+                  _buildSectionHeader("اختبار وتجربة الأذان", Icons.hearing_rounded, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
                     ),
-                    const Divider(color: Color(0xFF334155)),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _useGpsAuto,
-                      activeThumbColor: activeTheme.primary,
-                      title: const Text("التحديد التلقائي للموقع (GPS)", style: TextStyle(color: Colors.white, fontSize: 14)),
-                      subtitle: const Text("كشف الولاية والبلدية بدقة عبر الأقمار الصناعية وحساب المواقيت آلياً",
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                      onChanged: (val) async {
-                        setState(() {
-                          _useGpsAuto = val;
-                        });
-                        _savePreference('use_gps_auto', val);
-                        if (val) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: Color(0xFF064E3B),
-                              content: Text("جاري كشف موقعك وتحديد ولايتك..."),
-                            ),
-                          );
-                          final detected = await LocationService.detectLocation();
-                          if (!context.mounted) return;
-                          if (detected != null) {
-                            setState(() {
-                              _wilayaCode = detected.wilaya.code;
-                            });
-                            widget.onWilayaChanged(detected.wilaya.code);
-                            _savePreference('selected_wilaya', detected.wilaya.code);
-                            _savePreference('selected_commune_id', detected.commune.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: const Color(0xFF064E3B),
-                                content: Text("تم تحديد موقعك بدقة: بلدية ${detected.commune.nameAr} (ولاية ${detected.wilaya.nameAr})"),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-              // 3. Calculation Method & Juristic Madhab
-              _buildSectionHeader(LanguageService.tr('settings_calc_header'), Icons.calculate, activeTheme.accent),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: activeTheme.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(LanguageService.tr('settings_calc_prompt'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF334155)),
-                      ),
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        itemHeight: null,
-                        value: _calculationMethod,
-                        underline: const SizedBox(),
-                        dropdownColor: const Color(0xFF1E293B),
-                        selectedItemBuilder: (context) {
-                          return CalculationMethod.values.map((method) {
-                            return Container(
-                              alignment: AlignmentDirectional.centerStart,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                method.localizedName(LanguageService.languageCode),
-                                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
-                                maxLines: 2,
-                                softWrap: true,
-                              ),
-                            );
-                          }).toList();
-                        },
-                        items: CalculationMethod.values.map((method) {
-                          return DropdownMenuItem<String>(
-                            value: method.id,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                method.localizedName(LanguageService.languageCode),
-                                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
-                                softWrap: true,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _calculationMethod = val);
-                            _savePreference('calculation_method', val);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(LanguageService.tr('settings_madhab_prompt'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF334155)),
-                      ),
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        itemHeight: null,
-                        value: _juristicMethod,
-                        underline: const SizedBox(),
-                        dropdownColor: const Color(0xFF1E293B),
-                        selectedItemBuilder: (context) {
-                          return JuristicMethod.values.map((jur) {
-                            return Container(
-                              alignment: AlignmentDirectional.centerStart,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                jur.localizedName(LanguageService.languageCode),
-                                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
-                                maxLines: 2,
-                                softWrap: true,
-                              ),
-                            );
-                          }).toList();
-                        },
-                        items: JuristicMethod.values.map((jur) {
-                          return DropdownMenuItem<String>(
-                            value: jur.id,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                jur.localizedName(LanguageService.languageCode),
-                                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
-                                softWrap: true,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _juristicMethod = val);
-                            _savePreference('juristic_method', val);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 4. Mosque Synchronization (Manual Offsets)
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.mosque, color: activeTheme.accent, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      LanguageService.tr('settings_sync_mosque_header'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: activeTheme.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LanguageService.tr('settings_sync_mosque_desc'),
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, height: 1.5),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildAdjustmentCounter("صلاة الفجر", _adjFajr, (v) {
-                      setState(() => _adjFajr = v);
-                      _savePreference('adj_fajr', v);
-                    }, activeTheme),
-                    _buildAdjustmentCounter("الشروق", _adjSunrise, (v) {
-                      setState(() => _adjSunrise = v);
-                      _savePreference('adj_sunrise', v);
-                    }, activeTheme),
-                    _buildAdjustmentCounter("صلاة الظهر", _adjDhuhr, (v) {
-                      setState(() => _adjDhuhr = v);
-                      _savePreference('adj_dhuhr', v);
-                    }, activeTheme),
-                    _buildAdjustmentCounter("صلاة العصر", _adjAsr, (v) {
-                      setState(() => _adjAsr = v);
-                      _savePreference('adj_asr', v);
-                    }, activeTheme),
-                    _buildAdjustmentCounter("صلاة المغرب", _adjMaghrib, (v) {
-                      setState(() => _adjMaghrib = v);
-                      _savePreference('adj_maghrib', v);
-                    }, activeTheme),
-                    _buildAdjustmentCounter("صلاة العشاء", _adjIsha, (v) {
-                      setState(() => _adjIsha = v);
-                      _savePreference('adj_isha', v);
-                    }, activeTheme),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 5. Per-Prayer Adhan Sound Customization
-              _buildSectionHeader(LanguageService.tr('settings_custom_adhan_header'), Icons.music_note, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                  children: [
-                    for (var entry in [
-                      {'key': 'fajr', 'name': 'صلاة الفجر'},
-                      {'key': 'dhuhr', 'name': 'صلاة الظهر'},
-                      {'key': 'asr', 'name': 'صلاة العصر'},
-                      {'key': 'maghrib', 'name': 'صلاة المغرب'},
-                      {'key': 'isha', 'name': 'صلاة العشاء'},
-                    ])
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: Material(
-                          color: const Color(0xFF0F172A),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFF334155)),
-                          ),
-                          child: ListTile(
-                          title: Text(entry['name']!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                          subtitle: Text(
-                            AdhanAudioService.adhanNames[_prayerAdhanSounds[entry['key']]] ?? "أذان معتمد",
-                            style: TextStyle(color: activeTheme.accent, fontSize: 12),
-                          ),
-                          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 14),
-                          onTap: () => _showPerPrayerAdhanDialog(entry['key']!, entry['name']!, activeTheme),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-              _buildSectionHeader(LanguageService.tr('settings_default_adhan_header'), Icons.volume_up, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                child: Column(
-                  children: [
-                    RadioGroup<String>(
-                      groupValue: _adhanSound,
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _adhanSound = val;
-                          });
-                          _savePreference('adhan_sound', val);
-                        }
-                      },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        children: _adhanSoundsList.map((sound) {
-                          final isSelected = sound['id'] == _adhanSound;
-                          final isCustom = sound['isCustom'] == "true";
-                          return RadioListTile<String>(
-                            value: sound['id']!,
-                            activeColor: activeTheme.primary,
-                            title: Text(
-                              sound['name']!,
-                              style: TextStyle(
-                                color: isSelected ? activeTheme.accent : Colors.white,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 14,
-                              ),
-                            ),
-                            subtitle: Text(
-                              sound['desc']!,
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                            ),
-                            secondary: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37)),
-                                  tooltip: "استماع لعينة الصوت",
-                                  onPressed: () {
-                                    AdhanAudioService.playAdhan(soundId: sound['id']!);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: const Color(0xFF064E3B),
-                                        duration: const Duration(seconds: 4),
-                                        content: Text("جاري تشغيل عينة ${sound['name']}"),
-                                        action: SnackBarAction(
-                                          label: "إيقاف",
-                                          textColor: const Color(0xFFFDE68A),
-                                          onPressed: () => AdhanAudioService.stopAdhan(),
-                                        ),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "اختبر عمل الأذان والإشعارات والتنبيه بدقة للتأكد من وصول النداء في وقته:",
+                            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.4),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Test Button 1: Play / Stop Selected Adhan
+                          ValueListenableBuilder<bool>(
+                            valueListenable: AdhanAudioService.isPlayingNotifier,
+                            builder: (context, isAudioPlaying, _) {
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: activeTheme.accent,
+                                        foregroundColor: Colors.black,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                    );
-                                  },
-                                ),
-                                if (isCustom)
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                                    tooltip: "حذف هذا الأذان",
-                                    onPressed: () async {
-                                      await AdhanAudioService.deleteAdhan(sound['id']!);
-                                      await _loadPreferences();
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            backgroundColor: const Color(0xFF7F1D1D),
-                                            content: Text("تم حذف «${sound['name']}» من القائمة."),
-                                          ),
-                                        );
-                                      }
-                                    },
+                                      icon: const Icon(Icons.volume_up_rounded, size: 20),
+                                      label: const Text(
+                                        "سماع صوت الأذان المختار",
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                      onPressed: () async {
+                                        AppFeedback.tap();
+                                        final ok = await AdhanAudioService.playAdhan(soundId: _adhanSound);
+                                        if (!context.mounted) return;
+                                        if (!ok) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              backgroundColor: Color(0xFF1E293B),
+                                              content: Text("يتطلب الاستماع للأذان بصوت المؤذن اتصالاً بالإنترنت أو استخدام الأذان المدمج 📶"),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              backgroundColor: Color(0xFF065F46),
+                                              duration: Duration(seconds: 4),
+                                              content: Text("يرتفع الآن صوت الأذان المبارك في الهاتف 🕌"),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
                                   ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const Divider(color: Color(0xFF334155), height: 1),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: activeTheme.accent,
-                            side: BorderSide(color: activeTheme.primary.withValues(alpha: 0.6)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon: const Icon(Icons.add_circle_outline, size: 20),
-                          label: const Text(
-                            "إضافة صوت أذان آخر ➕",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                          ),
-                          onPressed: () => _showAddAdhanModal(activeTheme),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Dedicated Adhan Testing & Diagnostics Section
-              _buildSectionHeader("اختبار وتجربة الأذان", Icons.hearing_rounded, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "اختبر عمل الأذان والإشعارات والتنبيه بدقة للتأكد من وصول النداء في وقته:",
-                        style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.4),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Test Button 1: Play / Stop Selected Adhan
-                      ValueListenableBuilder<bool>(
-                        valueListenable: AdhanAudioService.isPlayingNotifier,
-                        builder: (context, isAudioPlaying, _) {
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: activeTheme.accent,
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  icon: const Icon(Icons.volume_up_rounded, size: 20),
-                                  label: const Text(
-                                    "سماع صوت الأذان المختار",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                  ),
-                                  onPressed: () async {
-                                    AppFeedback.tap();
-                                    final ok = await AdhanAudioService.playAdhan(soundId: _adhanSound);
-                                    if (!context.mounted) return;
-                                    if (!ok) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          backgroundColor: Color(0xFF1E293B),
-                                          content: Text("يتطلب الاستماع للأذان بصوت المؤذن اتصالاً بالإنترنت أو استخدام الأذان المدمج 📶"),
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          backgroundColor: Color(0xFF065F46),
-                                          duration: Duration(seconds: 4),
-                                          content: Text("يرتفع الآن صوت الأذان المبارك في الهاتف 🕌"),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                              if (isAudioPlaying) ...[
-                                const SizedBox(width: 8),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.6)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  icon: const Icon(Icons.stop_circle_outlined, size: 20),
-                                  label: const Text("إيقاف", style: TextStyle(fontWeight: FontWeight.bold)),
-                                  onPressed: () {
-                                    AppFeedback.tap();
-                                    AdhanAudioService.stopAdhan();
-                                  },
-                                ),
-                              ],
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Test Button 2: Immediate Prayer Notification
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon: Icon(Icons.notifications_active_rounded, color: activeTheme.accent, size: 20),
-                          label: const Text(
-                            "تجربة تنبيه وإشعار الأذان الفوري 🔔",
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () async {
-                            AppFeedback.tap();
-                            final wilaya = AlgeriaWilayas.getWilayaByCode(_wilayaCode);
-                            final enabled = await PrayerNotificationService.testAdhanNotification(
-                              prayerName: "الظهر",
-                              prayerKey: "dhuhr",
-                              communeName: wilaya.nameAr,
-                            );
-                            if (!context.mounted) return;
-                            if (!enabled) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: const Color(0xFF991B1B),
-                                  content: const Text("⚠️ إشعارات التطبيق معطلة في الهاتف! اضغط لتفعيلها"),
-                                  action: SnackBarAction(
-                                    label: "تفعيل",
-                                    textColor: Colors.white,
-                                    onPressed: () => PrayerNotificationService.openNotificationSettings(),
-                                  ),
-                                ),
+                                  if (isAudioPlaying) ...[
+                                    const SizedBox(width: 8),
+                                    OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.white,
+                                        side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.6)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      icon: const Icon(Icons.stop_circle_outlined, size: 20),
+                                      label: const Text("إيقاف", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      onPressed: () {
+                                        AppFeedback.tap();
+                                        AdhanAudioService.stopAdhan();
+                                      },
+                                    ),
+                                  ],
+                                ],
                               );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  backgroundColor: Color(0xFF065F46),
-                                  duration: Duration(seconds: 4),
-                                  content: Text("تم إطلاق إشعار وصوت أذان صلاة الظهر تجريبياً 🕌"),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+                            },
+                          ),
+                          const SizedBox(height: 10),
 
-                      // Test Button 3: Sleep / Doze Mode Alarm (10s)
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF93C5FD),
-                            side: const BorderSide(color: Color(0xFF3B82F6), width: 1.2),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon: const Icon(Icons.screen_lock_portrait_rounded, size: 19),
-                          label: const Text(
-                            "تجربة في وضع السبات (بعد 10 ثوانٍ) ⏳",
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () async {
-                            AppFeedback.tap();
-                            await PrayerNotificationService.scheduleTestSleepAdhan(
-                              delaySeconds: 10,
-                              prayerName: "الظهر",
-                            );
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                backgroundColor: Color(0xFF1E3A8A),
-                                duration: Duration(seconds: 7),
-                                content: Text(
-                                  "⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.",
-                                ),
+                          // Test Button 2: Immediate Prayer Notification
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Samsung Galaxy & Android Battery Optimization Exemption Card
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: _isBatteryOptimizationIgnored
-                                ? const Color(0xFF059669)
-                                : const Color(0xFFF59E0B),
-                            width: 1.2,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.battery_charging_full_rounded,
-                                  color: _isBatteryOptimizationIgnored
-                                      ? const Color(0xFF10B981)
-                                      : const Color(0xFFF59E0B),
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    "استثناء تحسين البطارية (سامسونج وأندرويد)",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
+                              icon: Icon(Icons.notifications_active_rounded, color: activeTheme.accent, size: 20),
+                              label: const Text(
+                                "تجربة تنبيه وإشعار الأذان الفوري 🔔",
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () async {
+                                AppFeedback.tap();
+                                final wilaya = AlgeriaWilayas.getWilayaByCode(_wilayaCode);
+                                final enabled = await PrayerNotificationService.testAdhanNotification(
+                                  prayerName: "الظهر",
+                                  prayerKey: "dhuhr",
+                                  communeName: wilaya.nameAr,
+                                );
+                                if (!context.mounted) return;
+                                if (!enabled) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: const Color(0xFF991B1B),
+                                      content: const Text("⚠️ إشعارات التطبيق معطلة في الهاتف! اضغط لتفعيلها"),
+                                      action: SnackBarAction(
+                                        label: "تفعيل",
+                                        textColor: Colors.white,
+                                        onPressed: () => PrayerNotificationService.openNotificationSettings(),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: _isBatteryOptimizationIgnored
-                                        ? const Color(0xFF065F46)
-                                        : const Color(0xFF78350F),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _isBatteryOptimizationIgnored ? "مُستثنى ✓" : "مطلوب ⚠️",
-                                    style: TextStyle(
-                                      color: _isBatteryOptimizationIgnored
-                                          ? const Color(0xFF34D399)
-                                          : const Color(0xFFFBBF24),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      backgroundColor: Color(0xFF065F46),
+                                      duration: Duration(seconds: 4),
+                                      content: Text("تم إطلاق إشعار وصوت أذان صلاة الظهر تجريبياً 🕌"),
                                     ),
-                                  ),
-                                ),
-                              ],
+                                  );
+                                }
+                              },
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              "توقف هواتف سامسونج التطبيقات في الخلفية تلقائياً لتوفير الطاقة، مما قد يعطل الأذان عند قفل الشاشة. يرجى تفعيل الاستثناء لضمان الرنين دائماً.",
-                              style: TextStyle(
-                                color: Color(0xFF94A3B8),
-                                fontSize: 11.5,
-                                height: 1.45,
-                              ),
-                            ),
-                            if (!_isBatteryOptimizationIgnored) ...[
-                              const SizedBox(height: 10),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFD4AF37),
-                                    foregroundColor: Colors.black,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                  ),
-                                  icon: const Icon(Icons.bolt_rounded, size: 18),
-                                  label: const Text(
-                                    "إعفاء التطبيق من تحسين البطارية الآن",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12.5,
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    AppFeedback.tap();
-                                    await PrayerNotificationService.requestIgnoreBatteryOptimizations();
-                                  },
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 7. Advance Reminder & Iqamah
-              _buildSectionHeader("التنبيه المسبق ووقت الإقامة", Icons.alarm, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "تنبيه هادئ قبل الأذان للاستعداد والوضوء:",
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      children: [0, 5, 10, 15, 20, 30].map((mins) {
-                        final isSelected = _advanceReminderMinutes == mins;
-                        return ChoiceChip(
-                          label: Text(mins == 0 ? "بدون تنبيه" : "$mins دقيقة"),
-                          selected: isSelected,
-                          selectedColor: activeTheme.primary,
-                          backgroundColor: const Color(0xFF0F172A),
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : const Color(0xFF94A3B8),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
-                          onSelected: (_) {
-                            setState(() {
-                              _advanceReminderMinutes = mins;
-                            });
-                            _savePreference('advance_reminder_minutes', mins);
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(color: Color(0xFF334155)),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _iqamahReminder,
-                      activeThumbColor: activeTheme.primary,
-                      title: const Text("تنبيه وقت الإقامة", style: TextStyle(color: Colors.white, fontSize: 14)),
-                      subtitle: const Text("إشعار لطيف عند حلول وقت إقامة الصلاة في المسجد", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                      onChanged: (val) {
-                        setState(() => _iqamahReminder = val);
-                        _savePreference('iqamah_reminder', val);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+                          const SizedBox(height: 10),
 
-              // 8. Smart Mosque Mode & Auto Silent
-              _buildSectionHeader(LanguageService.tr('auto_silent_mode'), Icons.volume_off, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _autoSilentMode,
-                        activeThumbColor: activeTheme.primary,
-                        title: const Text(
-                          "كتم صوت الهاتف تلقائياً أثناء الصلاة",
-                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: const Text(
-                          "تحويل الهاتف لوضع الصامت تلقائياً بعد الأذان أثناء صلاة الجماعة في المسجد وإعادته بعدها.",
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                        ),
-                        onChanged: (val) async {
-                          if (val) {
-                            final hasAccess = await SilentModeService.isDndAccessGranted();
-                            if (!hasAccess && context.mounted) {
-                              _showDndPermissionDialog(activeTheme);
-                            }
-                          }
-                          setState(() {
-                            _autoSilentMode = val;
-                          });
-                          _savePreference('auto_silent_mode', val);
-                        },
-                      ),
+                          // Test Button 3: Sleep / Doze Mode Alarm (10s)
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF93C5FD),
+                                side: const BorderSide(color: Color(0xFF3B82F6), width: 1.2),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: const Icon(Icons.screen_lock_portrait_rounded, size: 19),
+                              label: const Text(
+                                "تجربة في وضع السبات (بعد 10 ثوانٍ) ⏳",
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () async {
+                                AppFeedback.tap();
+                                await PrayerNotificationService.scheduleTestSleepAdhan(
+                                  delaySeconds: 10,
+                                  prayerName: "الظهر",
+                                );
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Color(0xFF1E3A8A),
+                                    duration: Duration(seconds: 7),
+                                    content: Text(
+                                      "⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.",
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 14),
 
-                      if (_autoSilentMode) ...[
-                        const SizedBox(height: 8),
-                        // DND Permission Alert or Badge
-                        if (!_isDndGranted)
+                          // Samsung Galaxy & Android Battery Optimization Exemption Card
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0x28EF4444),
-                              border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
-                              borderRadius: BorderRadius.circular(12),
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: _isBatteryOptimizationIgnored
+                                    ? const Color(0xFF059669)
+                                    : const Color(0xFFF59E0B),
+                                width: 1.2,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Row(
+                                Row(
                                   children: [
-                                    Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 20),
-                                    SizedBox(width: 8),
-                                    Expanded(
+                                    Icon(
+                                      Icons.battery_charging_full_rounded,
+                                      color: _isBatteryOptimizationIgnored
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFFF59E0B),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
                                       child: Text(
-                                        "إذن كتم الصوت غير ممنوح في نظام أندرويد",
-                                        style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 13),
+                                        "استثناء تحسين البطارية (سامسونج وأندرويد)",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: _isBatteryOptimizationIgnored
+                                            ? const Color(0xFF065F46)
+                                            : const Color(0xFF78350F),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        _isBatteryOptimizationIgnored ? "مُستثنى ✓" : "مطلوب ⚠️",
+                                        style: TextStyle(
+                                          color: _isBatteryOptimizationIgnored
+                                              ? const Color(0xFF34D399)
+                                              : const Color(0xFFFBBF24),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 const Text(
-                                  "لكي يعمل الكتم التلقائي بنجاح، يجب منح التطبيق إذن «الوصول إلى عدم الإزعاج» من إعدادات الهاتف.",
-                                  style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.4),
+                                  "توقف هواتف سامسونج التطبيقات في الخلفية تلقائياً لتوفير الطاقة، مما قد يعطل الأذان عند قفل الشاشة. يرجى تفعيل الاستثناء لضمان الرنين دائماً.",
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11.5,
+                                    height: 1.45,
+                                  ),
                                 ),
-                                const SizedBox(height: 10),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFDC2626),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                if (!_isBatteryOptimizationIgnored) ...[
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFD4AF37),
+                                        foregroundColor: Colors.black,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                      ),
+                                      icon: const Icon(Icons.bolt_rounded, size: 18),
+                                      label: const Text(
+                                        "إعفاء التطبيق من تحسين البطارية الآن",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12.5,
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        AppFeedback.tap();
+                                        await PrayerNotificationService.requestIgnoreBatteryOptimizations();
+                                      },
                                     ),
-                                    icon: const Icon(Icons.settings, size: 16),
-                                    label: const Text(
-                                      "منح إذن كتم الصوت في إعدادات النظام ⚙️",
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 7. Advance Reminder & Iqamah
+                  _buildSectionHeader("التنبيه المسبق ووقت الإقامة", Icons.alarm, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "تنبيه هادئ قبل الأذان للاستعداد والوضوء:",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            children: [0, 5, 10, 15, 20, 30].map((mins) {
+                              final isSelected = _advanceReminderMinutes == mins;
+                              return ChoiceChip(
+                                label: Text(mins == 0 ? "بدون تنبيه" : "$mins دقيقة"),
+                                selected: isSelected,
+                                selectedColor: activeTheme.primary,
+                                backgroundColor: const Color(0xFF0F172A),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _advanceReminderMinutes = mins;
+                                  });
+                                  _savePreference('advance_reminder_minutes', mins);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(color: Color(0xFF334155)),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _iqamahReminder,
+                            activeThumbColor: activeTheme.primary,
+                            title: const Text("تنبيه وقت الإقامة", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: const Text("إشعار لطيف عند حلول وقت إقامة الصلاة في المسجد", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            onChanged: (val) {
+                              setState(() => _iqamahReminder = val);
+                              _savePreference('iqamah_reminder', val);
+                            },
+                          ),
+                          const Divider(color: Color(0xFF334155)),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _startupRecitation,
+                            activeColor: activeTheme.primary,
+                            title: const Text("تلاوة بداية التطبيق", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: const Text("تشغيل آية المحراب بصوت الشيخ عبد الباسط عند فتح التطبيق", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            onChanged: (val) {
+                              setState(() => _startupRecitation = val);
+                              VerseAudioService.setRecitationEnabled(val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 8. Smart Mosque Mode & Auto Silent
+                  _buildSectionHeader(LanguageService.tr('auto_silent_mode'), Icons.volume_off, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _autoSilentMode,
+                            activeThumbColor: activeTheme.primary,
+                            title: const Text(
+                              "كتم صوت الهاتف تلقائياً أثناء الصلاة",
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: const Text(
+                              "تحويل الهاتف لوضع الصامت تلقائياً بعد الأذان أثناء صلاة الجماعة في المسجد وإعادته بعدها.",
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            ),
+                            onChanged: (val) async {
+                              if (val) {
+                                final hasAccess = await SilentModeService.isDndAccessGranted();
+                                if (!hasAccess && context.mounted) {
+                                  _showDndPermissionDialog(activeTheme);
+                                }
+                              }
+                              setState(() {
+                                _autoSilentMode = val;
+                              });
+                              _savePreference('auto_silent_mode', val);
+                            },
+                          ),
+                          if (_autoSilentMode) ...[
+                            const SizedBox(height: 8),
+                            // DND Permission Alert or Badge
+                            if (!_isDndGranted)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x28EF4444),
+                                  border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 20),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            "إذن كتم الصوت غير ممنوح في نظام أندرويد",
+                                            style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 13),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    onPressed: () async {
-                                      await SilentModeService.openDndSettings();
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      "لكي يعمل الكتم التلقائي بنجاح، يجب منح التطبيق إذن «الوصول إلى عدم الإزعاج» من إعدادات الهاتف.",
+                                      style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.4),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFFDC2626),
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                        ),
+                                        icon: const Icon(Icons.settings, size: 16),
+                                        label: const Text(
+                                          "منح إذن كتم الصوت في إعدادات النظام ⚙️",
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                        onPressed: () async {
+                                          await SilentModeService.openDndSettings();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x1F10B981),
+                                  border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "إذن كتم الصوت مفعّل في النظام - الوضع الصامت جاهز للعمل.",
+                                        style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 14),
+                            const Divider(color: Color(0xFF334155), height: 1),
+                            const SizedBox(height: 12),
+
+                            // Mode selection: Silent or Vibrate
+                            const Text(
+                              "نوع الوضع أثناء الصلاة:",
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Center(child: Text("صامت تماماً 🔕")),
+                                    selected: _mosqueSilentType == 'silent',
+                                    selectedColor: activeTheme.primary,
+                                    backgroundColor: const Color(0xFF0F172A),
+                                    labelStyle: TextStyle(
+                                      color: _mosqueSilentType == 'silent' ? Colors.white : const Color(0xFF94A3B8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    onSelected: (_) {
+                                      setState(() => _mosqueSilentType = 'silent');
+                                      _savePreference('mosque_silent_type', 'silent');
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Center(child: Text("اهتزاز فقط 📳")),
+                                    selected: _mosqueSilentType == 'vibrate',
+                                    selectedColor: activeTheme.primary,
+                                    backgroundColor: const Color(0xFF0F172A),
+                                    labelStyle: TextStyle(
+                                      color: _mosqueSilentType == 'vibrate' ? Colors.white : const Color(0xFF94A3B8),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    onSelected: (_) {
+                                      setState(() => _mosqueSilentType = 'vibrate');
+                                      _savePreference('mosque_silent_type', 'vibrate');
                                     },
                                   ),
                                 ),
                               ],
                             ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0x1F10B981),
-                              border: Border.all(color: const Color(0xFF10B981), width: 0.8),
-                              borderRadius: BorderRadius.circular(10),
+
+                            const SizedBox(height: 14),
+                            // Duration selection: 15, 20, 25, 30 min
+                            const Text(
+                              "مدة كتم الصوت بعد الأذان:",
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    "إذن كتم الصوت مفعّل في النظام - الوضع الصامت جاهز للعمل.",
-                                    style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: [15, 20, 25, 30].map((mins) {
+                                final isSel = _mosqueSilentDuration == mins;
+                                return ChoiceChip(
+                                  label: Text("$mins دقيقة"),
+                                  selected: isSel,
+                                  selectedColor: activeTheme.primary,
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  labelStyle: TextStyle(
+                                    color: isSel ? Colors.white : const Color(0xFF94A3B8),
+                                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 12,
                                   ),
-                                ),
-                              ],
+                                  onSelected: (_) {
+                                    setState(() => _mosqueSilentDuration = mins);
+                                    _savePreference('mosque_silent_duration', mins);
+                                  },
+                                );
+                              }).toList(),
                             ),
-                          ),
 
-                        const SizedBox(height: 14),
-                        const Divider(color: Color(0xFF334155), height: 1),
-                        const SizedBox(height: 12),
-
-                        // Mode selection: Silent or Vibrate
-                        const Text(
-                          "نوع الوضع أثناء الصلاة:",
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Center(child: Text("صامت تماماً 🔕")),
-                                selected: _mosqueSilentType == 'silent',
-                                selectedColor: activeTheme.primary,
-                                backgroundColor: const Color(0xFF0F172A),
-                                labelStyle: TextStyle(
-                                  color: _mosqueSilentType == 'silent' ? Colors.white : const Color(0xFF94A3B8),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                            const SizedBox(height: 16),
+                            // Test silent mode button
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF38BDF8),
+                                  side: const BorderSide(color: Color(0xFF0284C7)),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
-                                onSelected: (_) {
-                                  setState(() => _mosqueSilentType = 'silent');
-                                  _savePreference('mosque_silent_type', 'silent');
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Center(child: Text("اهتزاز فقط 📳")),
-                                selected: _mosqueSilentType == 'vibrate',
-                                selectedColor: activeTheme.primary,
-                                backgroundColor: const Color(0xFF0F172A),
-                                labelStyle: TextStyle(
-                                  color: _mosqueSilentType == 'vibrate' ? Colors.white : const Color(0xFF94A3B8),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                icon: _isTestingSilent
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)),
+                                      )
+                                    : const Icon(Icons.phonelink_ring_rounded, size: 18),
+                                label: Text(
+                                  _isTestingSilent
+                                      ? "جاري التجربة (الهاتف مكتوم الآن)..."
+                                      : "تجربة كتم الصوت الآن (لمدة 5 ثوانٍ) 🧪",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                                 ),
-                                onSelected: (_) {
-                                  setState(() => _mosqueSilentType = 'vibrate');
-                                  _savePreference('mosque_silent_type', 'vibrate');
-                                },
+                                onPressed: _isTestingSilent
+                                    ? null
+                                    : () async {
+                                        final granted = await SilentModeService.isDndAccessGranted();
+                                        if (!granted) {
+                                          if (context.mounted) _showDndPermissionDialog(activeTheme);
+                                          return;
+                                        }
+                                        setState(() => _isTestingSilent = true);
+                                        final success = await SilentModeService.testSilentMode(durationSeconds: 5);
+                                        if (context.mounted) {
+                                          if (success) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                backgroundColor: Color(0xFF064E3B),
+                                                duration: Duration(seconds: 5),
+                                                content: Text("🔕 تم كتم الهاتف بنجاح! سيتم إرجاع الصوت تلقائياً بعد 5 ثوانٍ..."),
+                                              ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                backgroundColor: Color(0xFF7F1D1D),
+                                                content: Text("⚠️ تعذر كتم الصوت، يرجى التحقق من إذن عدم الإزعاج في إعدادات الهاتف."),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                        await Future<void>.delayed(const Duration(seconds: 5));
+                                        if (mounted) setState(() => _isTestingSilent = false);
+                                      },
                               ),
                             ),
                           ],
-                        ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-                        const SizedBox(height: 14),
-                        // Duration selection: 15, 20, 25, 30 min
-                        const Text(
-                          "مدة كتم الصوت بعد الأذان:",
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          children: [15, 20, 25, 30].map((mins) {
-                            final isSel = _mosqueSilentDuration == mins;
-                            return ChoiceChip(
-                              label: Text("$mins دقيقة"),
-                              selected: isSel,
-                              selectedColor: activeTheme.primary,
-                              backgroundColor: const Color(0xFF0F172A),
-                              labelStyle: TextStyle(
-                                color: isSel ? Colors.white : const Color(0xFF94A3B8),
-                                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) {
-                                setState(() => _mosqueSilentDuration = mins);
-                                _savePreference('mosque_silent_duration', mins);
-                              },
-                            );
-                          }).toList(),
-                        ),
-
-                        const SizedBox(height: 16),
-                        // Test silent mode button
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF38BDF8),
-                              side: const BorderSide(color: Color(0xFF0284C7)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  // 9. Auto Adhkar On-Screen Notifications
+                  _buildSectionHeader("أذكار الشاشة التلقائية", Icons.auto_awesome, activeTheme.accent),
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _autoAdhkar,
+                            activeThumbColor: activeTheme.primary,
+                            title: const Text(
+                              "تفعيل أذكار الشاشة التلقائية",
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                             ),
-                            icon: _isTestingSilent
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)),
-                                  )
-                                : const Icon(Icons.phonelink_ring_rounded, size: 18),
-                            label: Text(
-                              _isTestingSilent
-                                  ? "جاري التجربة (الهاتف مكتوم الآن)..."
-                                  : "تجربة كتم الصوت الآن (لمدة 5 ثوانٍ) 🧪",
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                            subtitle: const Text(
+                              "إظهار ذكر أو دعاء مأثور على شاشة الهاتف دورياً أثناء استخدام الهاتف لتظل رطباً بذكر الله",
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                             ),
-                            onPressed: _isTestingSilent
-                                ? null
-                                : () async {
-                                    final granted = await SilentModeService.isDndAccessGranted();
-                                    if (!granted) {
-                                      if (context.mounted) _showDndPermissionDialog(activeTheme);
-                                      return;
-                                    }
-                                    setState(() => _isTestingSilent = true);
-                                    final success = await SilentModeService.testSilentMode(durationSeconds: 5);
-                                    if (context.mounted) {
-                                      if (success) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            backgroundColor: Color(0xFF064E3B),
-                                            duration: Duration(seconds: 5),
-                                            content: Text("🔕 تم كتم الهاتف بنجاح! سيتم إرجاع الصوت تلقائياً بعد 5 ثوانٍ..."),
-                                          ),
-                                        );
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            backgroundColor: Color(0xFF7F1D1D),
-                                            content: Text("⚠️ تعذر كتم الصوت، يرجى التحقق من إذن عدم الإزعاج في إعدادات الهاتف."),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                    await Future<void>.delayed(const Duration(seconds: 5));
-                                    if (mounted) setState(() => _isTestingSilent = false);
+                            onChanged: (val) async {
+                              setState(() => _autoAdhkar = val);
+                              AutoAdhkarService.isEnabled = val;
+                              await AutoAdhkarService.saveSettings();
+                              if (val && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Color(0xFF065F46),
+                                    content: Text("تم تفعيل أذكار الشاشة التلقائية 📿"),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          if (_autoAdhkar) ...[
+                            const Divider(color: Color(0xFF334155)),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "فترة التكرار الزمني:",
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: [5, 10, 15, 30, 60].map((mins) {
+                                final isSel = _adhkarInterval == mins;
+                                return ChoiceChip(
+                                  label: Text("كل $mins دقيقة"),
+                                  selected: isSel,
+                                  selectedColor: activeTheme.primary,
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  labelStyle: TextStyle(
+                                    color: isSel ? Colors.white : const Color(0xFF94A3B8),
+                                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 12,
+                                  ),
+                                  onSelected: (_) async {
+                                    setState(() => _adhkarInterval = mins);
+                                    AutoAdhkarService.intervalMinutes = mins;
+                                    await AutoAdhkarService.saveSettings();
                                   },
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 9. Auto Adhkar On-Screen Notifications
-              _buildSectionHeader("أذكار الشاشة التلقائية", Icons.auto_awesome, activeTheme.accent),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _autoAdhkar,
-                        activeThumbColor: activeTheme.primary,
-                        title: const Text(
-                          "تفعيل أذكار الشاشة التلقائية",
-                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: const Text(
-                          "إظهار ذكر أو دعاء مأثور على شاشة الهاتف دورياً أثناء استخدام الهاتف لتظل رطباً بذكر الله",
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                        ),
-                        onChanged: (val) async {
-                          setState(() => _autoAdhkar = val);
-                          AutoAdhkarService.isEnabled = val;
-                          await AutoAdhkarService.saveSettings();
-                          if (val && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                backgroundColor: Color(0xFF065F46),
-                                content: Text("تم تفعيل أذكار الشاشة التلقائية 📿"),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      if (_autoAdhkar) ...[
-                        const Divider(color: Color(0xFF334155)),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "فترة التكرار الزمني:",
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          children: [5, 10, 15, 30, 60].map((mins) {
-                            final isSel = _adhkarInterval == mins;
-                            return ChoiceChip(
-                              label: Text("كل $mins دقيقة"),
-                              selected: isSel,
-                              selectedColor: activeTheme.primary,
-                              backgroundColor: const Color(0xFF0F172A),
-                              labelStyle: TextStyle(
-                                color: isSel ? Colors.white : const Color(0xFF94A3B8),
-                                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) async {
-                                setState(() => _adhkarInterval = mins);
-                                AutoAdhkarService.intervalMinutes = mins;
-                                await AutoAdhkarService.saveSettings();
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.6)),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                          icon: Icon(Icons.settings_suggest, color: activeTheme.accent, size: 18),
-                          label: const Text("تخصيص مكتبة الأذكار وإضافة أدعية خاصة"),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(builder: (_) => const AutoAdhkarScreen()),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Home Screen Widget Card
-              _buildSectionHeader(
-                LanguageService.languageCode == 'ar' ? "ويدجت الشاشة الرئيسية" : "Home Screen Widget",
-                Icons.widgets_rounded,
-                activeTheme.accent,
-              ),
-              const SizedBox(height: 8),
-              Material(
-                color: activeTheme.cardBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: activeTheme.accent.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
+                                );
+                              }).toList(),
                             ),
-                            child: Icon(Icons.widgets_rounded, color: activeTheme.accent, size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  LanguageService.languageCode == 'ar' ? "تثبيت ويدجت الصلاة على الشاشة" : "Add Prayer Widget to Home Screen",
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  LanguageService.languageCode == 'ar'
-                                      ? "تابع مواقيت الصلاة القادمة والعد التنازلي من شاشة هاتفك مباشرة"
-                                      : "View upcoming prayer countdown directly on your Android home screen",
-                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: activeTheme.accent,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          icon: const Icon(Icons.add_to_home_screen_rounded, size: 20),
-                          label: Text(
-                            LanguageService.languageCode == 'ar' ? "إضافة الويدجت للشاشة الرئيسية 📱" : "Add Widget to Home Screen",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
-                          onPressed: () async {
-                            AppFeedback.tap();
-                            await HomeWidgetService.showWidgetInstructionsDialog(context, theme: activeTheme);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Background & Battery Optimization Guidance Card
-              Material(
-                color: const Color(0xFF1E293B),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Color(0xFF38BDF8), width: 1.2),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.battery_charging_full, color: Color(0xFF38BDF8), size: 24),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              LanguageService.tr('settings_battery_header'),
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        LanguageService.tr('settings_battery_desc'),
-                        style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.6),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
+                          ],
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF38BDF8),
-                                side: const BorderSide(color: Color(0xFF38BDF8)),
+                                side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.6)),
+                                foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
                               ),
-                              icon: const Icon(Icons.settings, size: 16),
-                              label: Text(LanguageService.tr('settings_battery_btn'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                              onPressed: () async {
-                                AppFeedback.select();
-                                await Geolocator.openAppSettings();
+                              icon: Icon(Icons.settings_suggest, color: activeTheme.accent, size: 18),
+                              label: const Text("تخصيص مكتبة الأذكار وإضافة أدعية خاصة"),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(builder: (_) => const AutoAdhkarScreen()),
+                                );
                               },
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 30),
+                  const SizedBox(height: 24),
 
-              // Updates, Feedback & Support Section
-              _buildSectionHeader(
-                LanguageService.tr('settings_support_header'),
-                Icons.volunteer_activism_rounded,
-                activeTheme.accent,
-              ),
-              const SizedBox(height: 14),
-
-              // Feature 1: Check for Updates
-              _buildSupportTile(
-                icon: Icons.system_update_alt_rounded,
-                iconColor: const Color(0xFF38BDF8),
-                title: LanguageService.tr('settings_check_updates_title'),
-                subtitle: activeLocale.languageCode == 'ar'
-                    ? "الإصدار الحالي: v$_appVersionString • فحص أحدث إصدار وتحديثات الأذان"
-                    : "${LanguageService.tr('settings_current_version')}: v$_appVersionString • ${LanguageService.tr('settings_check_updates_subtitle')}",
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF38BDF8).withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
+                  // Home Screen Widget Card
+                  _buildSectionHeader(
+                    LanguageService.languageCode == 'ar' ? "ويدجت الشاشة الرئيسية" : "Home Screen Widget",
+                    Icons.widgets_rounded,
+                    activeTheme.accent,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.refresh_rounded, color: Color(0xFF38BDF8), size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        LanguageService.tr('settings_check_now_btn'),
-                        style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                onTap: () async {
-                  AppFeedback.select();
-                  await AppUpdateService.showUpdateDialog(context, theme: activeTheme);
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // Feature 2: Report a Bug
-              _buildSupportTile(
-                icon: Icons.bug_report_rounded,
-                iconColor: const Color(0xFFF43F5E),
-                title: LanguageService.tr('settings_report_bug_title'),
-                subtitle: LanguageService.tr('settings_report_bug_subtitle'),
-                trailing: Icon(
-                  LanguageService.isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
-                  color: Colors.white38,
-                  size: 22,
-                ),
-                onTap: () async {
-                  AppFeedback.select();
-                  await AppSupportService.showBugReportSheet(context, theme: activeTheme);
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // Feature 3: Request a Feature
-              _buildSupportTile(
-                icon: Icons.lightbulb_outline_rounded,
-                iconColor: activeTheme.accent,
-                title: LanguageService.tr('settings_suggest_feature_title'),
-                subtitle: LanguageService.tr('settings_suggest_feature_subtitle'),
-                trailing: Icon(Icons.auto_awesome_rounded, color: activeTheme.accent, size: 20),
-                onTap: () async {
-                  AppFeedback.select();
-                  await AppSupportService.showFeatureRequestSheet(context, theme: activeTheme);
-                },
-              ),
-              const SizedBox(height: 30),
-
-              // About Section with New Logo
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 88,
-                      height: 88,
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            blurRadius: 15,
+                  const SizedBox(height: 8),
+                  Material(
+                    color: activeTheme.cardBackground,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: activeTheme.accent.withValues(alpha: 0.3)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: activeTheme.accent.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.widgets_rounded, color: activeTheme.accent, size: 24),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      LanguageService.languageCode == 'ar' ? "تثبيت ويدجت الصلاة على الشاشة" : "Add Prayer Widget to Home Screen",
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      LanguageService.languageCode == 'ar'
+                                          ? "تابع مواقيت الصلاة القادمة والعد التنازلي من شاشة هاتفك مباشرة"
+                                          : "View upcoming prayer countdown directly on your Android home screen",
+                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: activeTheme.accent,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              icon: const Icon(Icons.add_to_home_screen_rounded, size: 20),
+                              label: Text(
+                                LanguageService.languageCode == 'ar' ? "إضافة الويدجت للشاشة الرئيسية 📱" : "Add Widget to Home Screen",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              onPressed: () async {
+                                AppFeedback.tap();
+                                await HomeWidgetService.showWidgetInstructionsDialog(context, theme: activeTheme);
+                              },
+                            ),
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.asset(
-                          'assets/icon/app_icon.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.mosque, color: Colors.white, size: 44),
-                        ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Background & Battery Optimization Guidance Card
+                  Material(
+                    color: const Color(0xFF1E293B),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(color: Color(0xFF38BDF8), width: 1.2),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.battery_charging_full, color: Color(0xFF38BDF8), size: 24),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  LanguageService.tr('settings_battery_header'),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            LanguageService.tr('settings_battery_desc'),
+                            style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.6),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF38BDF8),
+                                    side: const BorderSide(color: Color(0xFF38BDF8)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  icon: const Icon(Icons.settings, size: 16),
+                                  label: Text(LanguageService.tr('settings_battery_btn'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  onPressed: () async {
+                                    AppFeedback.select();
+                                    await Geolocator.openAppSettings();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "تطبيق مِحْراب • مواقيت الصلاة والقرآن",
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Updates, Feedback & Support Section
+                  _buildSectionHeader(
+                    LanguageService.tr('settings_support_header'),
+                    Icons.volunteer_activism_rounded,
+                    activeTheme.accent,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Feature 1: Check for Updates
+                  _buildSupportTile(
+                    icon: Icons.system_update_alt_rounded,
+                    iconColor: const Color(0xFF38BDF8),
+                    title: LanguageService.tr('settings_check_updates_title'),
+                    subtitle: activeLocale.languageCode == 'ar'
+                        ? "الإصدار الحالي: v$_appVersionString • فحص أحدث إصدار وتحديثات الأذان"
+                        : "${LanguageService.tr('settings_current_version')}: v$_appVersionString • ${LanguageService.tr('settings_check_updates_subtitle')}",
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38BDF8).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.refresh_rounded, color: Color(0xFF38BDF8), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            LanguageService.tr('settings_check_now_btn'),
+                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "الإصدار $_appVersionString (الجزائر) • مجاني 100% وبدون أي إعلانات",
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    onTap: () async {
+                      AppFeedback.select();
+                      await AppUpdateService.showUpdateDialog(context, theme: activeTheme);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Feature 2: Report a Bug
+                  _buildSupportTile(
+                    icon: Icons.bug_report_rounded,
+                    iconColor: const Color(0xFFF43F5E),
+                    title: LanguageService.tr('settings_report_bug_title'),
+                    subtitle: LanguageService.tr('settings_report_bug_subtitle'),
+                    trailing: Icon(
+                      LanguageService.isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                      color: Colors.white38,
+                      size: 22,
                     ),
-                  ],
-                ),
+                    onTap: () async {
+                      AppFeedback.select();
+                      await AppSupportService.showBugReportSheet(context, theme: activeTheme);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Feature 3: Request a Feature
+                  _buildSupportTile(
+                    icon: Icons.lightbulb_outline_rounded,
+                    iconColor: activeTheme.accent,
+                    title: LanguageService.tr('settings_suggest_feature_title'),
+                    subtitle: LanguageService.tr('settings_suggest_feature_subtitle'),
+                    trailing: Icon(Icons.auto_awesome_rounded, color: activeTheme.accent, size: 20),
+                    onTap: () async {
+                      AppFeedback.select();
+                      await AppSupportService.showFeatureRequestSheet(context, theme: activeTheme);
+                    },
+                  ),
+                  const SizedBox(height: 30),
+
+                  // About Section with New Logo
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 88,
+                          height: 88,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                blurRadius: 15,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Image.asset(
+                              'assets/icon/app_icon.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.mosque, color: Colors.white, size: 44),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          "تطبيق مِحْراب • مواقيت الصلاة والقرآن",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "الإصدار $_appVersionString (الجزائر) • مجاني 100% وبدون أي إعلانات",
+                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
               ),
-              const SizedBox(height: 30),
-            ],
-          ),
+            );
+          },
         );
       },
     );
-  },
-);
   }
 
   Widget _buildSupportTile({
