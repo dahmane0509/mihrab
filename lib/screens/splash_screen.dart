@@ -695,17 +695,28 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           ),
                           const SizedBox(width: 5),
                           // Compact Switch directly toggling & persisting recitation preference
+                          // Styled with high-contrast bright red (#EF4444 / #FF0000) for track, thumb, and border
                           SizedBox(
-                            width: 32,
-                            height: 18,
+                            width: 34,
+                            height: 19,
                             child: FittedBox(
                               fit: BoxFit.contain,
                               child: Switch(
                                 value: active,
-                                activeThumbColor: const Color(0xFFD4AF37),
-                                activeTrackColor: const Color(0xFFD4AF37).withValues(alpha: 0.35),
-                                inactiveThumbColor: Colors.white54,
-                                inactiveTrackColor: Colors.white12,
+                                thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return const Color(0xFFFF0000);
+                                  }
+                                  return const Color(0xFFEF4444);
+                                }),
+                                trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return const Color(0xFFEF4444).withValues(alpha: 0.55);
+                                  }
+                                  return const Color(0xFFEF4444).withValues(alpha: 0.25);
+                                }),
+                                trackOutlineColor: WidgetStateProperty.all(const Color(0xFFEF4444)),
+                                trackOutlineWidth: WidgetStateProperty.all(1.5),
                                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 onChanged: (val) => _toggleRecitationSetting(val),
                               ),
