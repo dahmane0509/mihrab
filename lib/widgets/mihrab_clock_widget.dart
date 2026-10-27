@@ -41,8 +41,8 @@ class MihrabClockWidget extends StatelessWidget {
   // 1. Classic Analog Clock
   Widget _buildAnalogClock(BuildContext context, AppThemeColor theme) {
     return SizedBox(
-      width: 195,
-      height: 195,
+      width: 132,
+      height: 132,
       child: CustomPaint(
         painter: ModernAnalogClockPainter(
           dateTime: dateTime,
@@ -200,8 +200,8 @@ class MihrabClockWidget extends StatelessWidget {
   // 3. Minimalist Arabic Numerals Clock
   Widget _buildMinimalistClock(BuildContext context, AppThemeColor theme) {
     return SizedBox(
-      width: 195,
-      height: 195,
+      width: 132,
+      height: 132,
       child: CustomPaint(
         painter: MinimalistArabicClockPainter(
           dateTime: dateTime,

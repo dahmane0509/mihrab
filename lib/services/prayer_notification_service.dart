@@ -449,6 +449,7 @@ class PrayerNotificationService {
     required String communeName,
     bool playVoice = true,
   }) async {
+    if (AdhanAudioService.isPlayingNotifier.value) { try { await _notifications.cancelAll(); } catch (_) {} return; }
     markTriggeredToday(prayerKey);
 
     // 1. Play Adhan Voice through loudspeaker and full volume when app is open

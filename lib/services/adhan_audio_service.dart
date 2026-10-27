@@ -1,3 +1,4 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
@@ -364,6 +365,8 @@ class AdhanAudioService {
   /// Plays authentic human Adhan recording immediately.
   /// IMPORTANT: Immediately calls VerseAudioService.stop() to prevent overlap!
   static Future<bool> playAdhan({String? soundId}) async {
+    try { await VerseAudioService.stopVerse(); } catch (_) {}
+    try { await FlutterLocalNotificationsPlugin().cancelAll(); } catch (_) {}
     try {
       // 1. Immediately stop any Quran recitation before playing Adhan
       await VerseAudioService.stop();
@@ -440,6 +443,8 @@ class AdhanAudioService {
 
   /// Plays adhan assigned specifically for a prayer name
   static Future<bool> playAdhanForPrayer(String prayerKey) async {
+    try { await VerseAudioService.stopVerse(); } catch (_) {}
+    try { await FlutterLocalNotificationsPlugin().cancelAll(); } catch (_) {}
     final soundId = await getSoundForPrayer(prayerKey);
     return playAdhan(soundId: soundId);
   }
@@ -469,6 +474,7 @@ class AdhanAudioService {
 
   /// Stop any currently playing audio
   static Future<void> stopAdhan() async {
+    try { await FlutterLocalNotificationsPlugin().cancelAll(); } catch (_) {}
     try {
       await _player.stop();
       await _chimePlayer.stop();

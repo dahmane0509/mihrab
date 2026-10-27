@@ -130,13 +130,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
   }
 
   void _triggerPrayerAdhanAlert(String prayerName, String prayerKey) {
+    VerseAudioService.stopVerse();
     if (const bool.fromEnvironment('FLUTTER_TEST')) return;
-
-    PrayerNotificationService.triggerAdhanNotification(
-      prayerName: prayerName,
-      prayerKey: prayerKey,
-      communeName: widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr,
-    );
 
     showDialog<void>(
       context: context,
@@ -155,7 +150,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
               SizedBox(width: 10),
               Text(
                 "حان الآن موعد الصلاة",
-                style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -165,9 +160,9 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
               Text(
                 "الله أكبر الله أكبر\nحان الآن موعد أذان صلاة $prayerName حسب التوقيت المحلي لـ $locName 🕌",
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.6),
+                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 5),
               const Text(
                 "«حَيَّ عَلَى الصَّلَاةِ، حَيَّ عَلَى الْفَلَاحِ»",
                 style: TextStyle(color: Color(0xFFFDE68A), fontWeight: FontWeight.bold, fontSize: 14),
@@ -375,7 +370,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                 ],
               ),
               body: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6),
                 child: Column(
                   children: [
                     // Dates card - Perfectly centered per user request
@@ -409,13 +404,13 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 5),
 
                     // Mihrab Holy Quran Verse Card with Recitation Control
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 6.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -449,9 +444,9 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             textDirection: TextDirection.rtl,
                             style: GoogleFonts.amiri(
                               color: const Color(0xFFFDE68A),
-                              fontSize: 15,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              height: 1.8,
+                              height: 1.3,
                               shadows: [
                                 Shadow(
                                   color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
@@ -461,7 +456,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 3),
 
                           // Attribution with Wrap to guarantee zero overflow
                           Wrap(
@@ -495,7 +490,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             ],
                           ),
 
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 3),
 
                           // Interactive Audio Recitation Button with live state
                           ValueListenableBuilder<bool>(
@@ -551,7 +546,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 3),
 
                     // Islamic Clock (Supports Analog, Digital, Minimalist)
                     Center(
@@ -561,7 +556,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         isAr: isAr,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 3),
 
                     // Next Prayer Countdown Card (Compact vertical layout)
                     Container(
@@ -635,11 +630,11 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 5),
 
                     // Daily Prayer Tracker with Streak Badge
                     PrayerTrackerCard(isAr: isAr),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 5),
                   ],
                 ),
               ),

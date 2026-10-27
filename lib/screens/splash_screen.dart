@@ -320,7 +320,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                 position: _verseSlideAnimation,
                                 child: Container(
                                   margin: const EdgeInsets.symmetric(horizontal: 20),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF0B192E).withValues(alpha: 0.8),
                                     borderRadius: BorderRadius.circular(18),
@@ -582,7 +582,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
                                   // Subtitle with White Border Badge
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFF0F254E).withValues(alpha: 0.85),
                                       borderRadius: BorderRadius.circular(20),
@@ -737,7 +737,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 onTap: () => _navigateToHome(stopAudio: false),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(20),
