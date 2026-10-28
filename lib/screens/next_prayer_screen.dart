@@ -377,13 +377,13 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                   ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
+                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
                   child: Column(
                     children: [
                       // Dates card - Perfectly centered single line with clear bottom spacing
                       Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
                             color: theme.cardBackground,
                             borderRadius: BorderRadius.circular(16),
@@ -396,7 +396,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               children: [
                                 Text(
                                   PrayerService.getFormattedHijriDate(_currentTime, lang),
-                                  style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 12.5),
+                                  style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -407,20 +407,20 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                 ),
                                 Text(
                                   PrayerService.getFormattedGregorianDate(_currentTime, lang),
-                                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
 
                       // Mihrab Holy Quran Verse Card with Recitation Control
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-                        padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 8.0),
+                        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                        padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 10.0),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -446,30 +446,33 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Holy Verse directly in beautiful Uthmani Arabic script with full Tashkeel
+                            // Holy Verse in 2 balanced lines with natural Amiri line height so descenders/tashkeel never clip
                             Padding(
-                              padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
-                              child: Text(
-                                "﴿فَنَادَتْهُ الْمَلَائِكَةُ وَهُوَ قَائِمٌ يُصَلِّي فِي الْمِحْرَابِ أَنَّ اللَّهَ يُبَشِّرُكَ بِيَحْيَىٰ﴾",
-                                textAlign: TextAlign.center,
-                                textDirection: TextDirection.rtl,
-                                textScaler: TextScaler.noScaling,
-                                style: GoogleFonts.amiri(
-                                  color: const Color(0xFFFDE68A),
-                                  fontSize: 16.5,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.65,
-                                  shadows: [
-                                    Shadow(
-                                      color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "﴿فَنَادَتْهُ الْمَلَائِكَةُ وَهُوَ قَائِمٌ يُصَلِّي فِي الْمِحْرَابِ\nأَنَّ اللَّهَ يُبَشِّرُكَ بِيَحْيَىٰ﴾",
+                                  textAlign: TextAlign.center,
+                                  textDirection: TextDirection.rtl,
+                                  textScaler: TextScaler.noScaling,
+                                  style: GoogleFonts.amiri(
+                                    color: const Color(0xFFFDE68A),
+                                    fontSize: 18.5,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.85,
+                                    shadows: [
+                                      Shadow(
+                                        color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
 
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
 
                             // Attribution in a single scaled row to guarantee zero vertical wrapping/overflow
                             FittedBox(
@@ -483,7 +486,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Color(0xFF94A3B8),
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -499,7 +502,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: theme.accent.withValues(alpha: 0.9),
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -507,7 +510,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               ),
                             ),
 
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 6),
 
                             // Interactive Audio Recitation Button with live state
                             ValueListenableBuilder<bool>(
@@ -549,7 +552,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                                 : (isAr ? "استماع للتلاوة" : (lang == 'fr' ? "Écouter la récitation" : "Play Recitation")),
                                             style: TextStyle(
                                               color: isPlaying ? const Color(0xFFFDE68A) : Colors.white,
-                                              fontSize: 11,
+                                              fontSize: 11.5,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -563,7 +566,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
 
                       // Islamic Clock (Supports Analog, Digital, Minimalist)
                       Center(
@@ -573,12 +576,12 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           isAr: isAr,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
 
                       // Next Prayer Countdown Card (Compact vertical layout)
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0),
+                        margin: const EdgeInsets.symmetric(horizontal: 24.0),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
@@ -620,7 +623,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               next['time'] ?? "",
                               style: TextStyle(
                                 color: theme.accent,
-                                fontSize: 22,
+                                fontSize: 21,
                                 fontWeight: FontWeight.bold,
                                 height: 1.1,
                                 letterSpacing: 1.2,
@@ -628,7 +631,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             ),
                             const SizedBox(height: 2),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2.5),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(12),
@@ -640,14 +643,14 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                 style: const TextStyle(
                                   color: Color(0xFFFDE68A),
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 11.5,
+                                  fontSize: 11,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
 
                       // Daily Prayer Tracker with Streak Badge
                       PrayerTrackerCard(isAr: isAr),
