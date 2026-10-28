@@ -63,18 +63,22 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
     Commune commune;
     if (widget.currentWilaya.code >= 1000) {
       final city = WorldCitiesData.getCityByCode(widget.currentWilaya.code);
-      commune = widget.currentCommune ?? (city != null ? Commune(
-        id: city.code,
-        wilayaCode: city.code,
-        nameAr: city.nameAr,
-        nameFr: city.nameFr,
-        latitude: city.latitude,
-        longitude: city.longitude,
-        type: city.countryAr,
-      ) : AlgeriaCommunes.allCommunes[0]);
+      commune = widget.currentCommune ??
+          (city != null
+              ? Commune(
+                  id: city.code,
+                  wilayaCode: city.code,
+                  nameAr: city.nameAr,
+                  nameFr: city.nameFr,
+                  latitude: city.latitude,
+                  longitude: city.longitude,
+                  type: city.countryAr,
+                )
+              : AlgeriaCommunes.allCommunes[0]);
     } else {
       commune = widget.currentCommune ??
-          AlgeriaCommunes.getCommunesByWilaya(widget.currentWilaya.code).firstOrNull ??
+          AlgeriaCommunes.getCommunesByWilaya(widget.currentWilaya.code)
+              .firstOrNull ??
           AlgeriaCommunes.allCommunes[0];
     }
     _todayTimes = PrayerService.calculateTimesForCommune(commune, _currentTime);
@@ -137,7 +141,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        final locName = widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr;
+        final locName =
+            widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr;
         return AlertDialog(
           backgroundColor: const Color(0xFF0F254E),
           shape: RoundedRectangleBorder(
@@ -150,7 +155,10 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
               SizedBox(width: 10),
               Text(
                 "حان الآن موعد الصلاة",
-                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -160,12 +168,16 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
               Text(
                 "الله أكبر الله أكبر\nحان الآن موعد أذان صلاة $prayerName حسب التوقيت المحلي لـ $locName 🕌",
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 13, height: 1.3),
               ),
               const SizedBox(height: 5),
               const Text(
                 "«حَيَّ عَلَى الصَّلَاةِ، حَيَّ عَلَى الْفَلَاحِ»",
-                style: TextStyle(color: Color(0xFFFDE68A), fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(
+                    color: Color(0xFFFDE68A),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
               ),
             ],
           ),
@@ -174,10 +186,12 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4AF37),
                 foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.stop, size: 18),
-              label: const Text("إيقاف الأذان", style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text("إيقاف الأذان",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               onPressed: () {
                 AdhanAudioService.stopAdhan();
                 Navigator.pop(ctx);
@@ -189,16 +203,35 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
     );
   }
 
-
   Map<String, String> _getNextPrayerInfo() {
     final lang = LanguageService.languageCode;
     final isAr = lang == 'ar';
     final prayers = [
-      {"name": isAr ? "الفجر" : LanguageService.tr('fajr'), "nameAr": "الفجر", "key": "fajr"},
-      {"name": isAr ? "الظهر" : LanguageService.tr('dhuhr'), "nameAr": "الظهر", "key": "dhuhr"},
-      {"name": isAr ? "العصر" : LanguageService.tr('asr'), "nameAr": "العصر", "key": "asr"},
-      {"name": isAr ? "المغرب" : LanguageService.tr('maghrib'), "nameAr": "المغرب", "key": "maghrib"},
-      {"name": isAr ? "العشاء" : LanguageService.tr('isha'), "nameAr": "العشاء", "key": "isha"},
+      {
+        "name": isAr ? "الفجر" : LanguageService.tr('fajr'),
+        "nameAr": "الفجر",
+        "key": "fajr"
+      },
+      {
+        "name": isAr ? "الظهر" : LanguageService.tr('dhuhr'),
+        "nameAr": "الظهر",
+        "key": "dhuhr"
+      },
+      {
+        "name": isAr ? "العصر" : LanguageService.tr('asr'),
+        "nameAr": "العصر",
+        "key": "asr"
+      },
+      {
+        "name": isAr ? "المغرب" : LanguageService.tr('maghrib'),
+        "nameAr": "المغرب",
+        "key": "maghrib"
+      },
+      {
+        "name": isAr ? "العشاء" : LanguageService.tr('isha'),
+        "nameAr": "العشاء",
+        "key": "isha"
+      },
     ];
 
     final now = _currentTime;
@@ -206,7 +239,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
       final tStr = _todayTimes[p['key']];
       if (tStr == null) continue;
       final parts = tStr.split(":");
-      final pTime = DateTime(now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
+      final pTime = DateTime(now.year, now.month, now.day, int.parse(parts[0]),
+          int.parse(parts[1]));
 
       if (now.isBefore(pTime)) {
         final diff = pTime.difference(now);
@@ -221,7 +255,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
 
     final fajrStr = _todayTimes['fajr'] ?? "05:00";
     final parts = fajrStr.split(":");
-    final tomorrowFajr = DateTime(now.year, now.month, now.day + 1, int.parse(parts[0]), int.parse(parts[1]));
+    final tomorrowFajr = DateTime(now.year, now.month, now.day + 1,
+        int.parse(parts[0]), int.parse(parts[1]));
     return {
       "name": isAr ? "الفجر" : LanguageService.tr('fajr'),
       "nameAr": "الفجر",
@@ -259,7 +294,11 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
         duration: const Duration(seconds: 3),
         content: Row(
           children: [
-            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -309,7 +348,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
         final isAr = lang == 'ar';
         final next = _getNextPrayerInfo();
         final communeObj = widget.currentCommune ??
-            AlgeriaCommunes.getCommunesByWilaya(widget.currentWilaya.code).firstOrNull ??
+            AlgeriaCommunes.getCommunesByWilaya(widget.currentWilaya.code)
+                .firstOrNull ??
             AlgeriaCommunes.allCommunes[0];
 
         String locationLabel;
@@ -319,10 +359,14 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
               : "${communeObj.nameAr} (${communeObj.type}) • ${widget.currentWilaya.nameAr}";
         } else {
           if (widget.currentWilaya.code >= 1000) {
-            final city = WorldCitiesData.getCityByCode(widget.currentWilaya.code);
-            locationLabel = city != null ? city.getDisplayName(lang) : "${communeObj.nameFr} • ${widget.currentWilaya.nameFr}";
+            final city =
+                WorldCitiesData.getCityByCode(widget.currentWilaya.code);
+            locationLabel = city != null
+                ? city.getDisplayName(lang)
+                : "${communeObj.nameFr} • ${widget.currentWilaya.nameFr}";
           } else {
-            locationLabel = "${communeObj.nameFr} • ${widget.currentWilaya.nameFr}";
+            locationLabel =
+                "${communeObj.nameFr} • ${widget.currentWilaya.nameFr}";
           }
         }
 
@@ -336,7 +380,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.menu, color: Colors.white, size: 26),
-                  tooltip: isAr ? "القائمة الجانبية" : LanguageService.tr('menu'),
+                  tooltip:
+                      isAr ? "القائمة الجانبية" : LanguageService.tr('menu'),
                   onPressed: widget.onOpenDrawer,
                 ),
                 title: GestureDetector(
@@ -349,11 +394,15 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                       Flexible(
                         child: Text(
                           locationLabel,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 20),
+                      const Icon(Icons.arrow_drop_down,
+                          color: Colors.white70, size: 20),
                     ],
                   ),
                 ),
@@ -361,7 +410,9 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                 actions: [
                   IconButton(
                     icon: Icon(Icons.my_location, color: theme.accent),
-                    tooltip: isAr ? "تحديد الموقع GPS تلقائياً" : LanguageService.tr('gps_auto_switch'),
+                    tooltip: isAr
+                        ? "تحديد الموقع GPS تلقائياً"
+                        : LanguageService.tr('gps_auto_switch'),
                     onPressed: () {
                       AppFeedback.tap();
                       _detectGps();
@@ -383,11 +434,13 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                       // Dates card - Perfectly centered single line with clear bottom spacing
                       Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
                             color: theme.cardBackground,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: theme.accent.withValues(alpha: 0.35)),
+                            border: Border.all(
+                                color: theme.accent.withValues(alpha: 0.35)),
                           ),
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
@@ -395,19 +448,31 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  PrayerService.getFormattedHijriDate(_currentTime, lang),
-                                  style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 13),
+                                  PrayerService.getFormattedHijriDate(
+                                      _currentTime, lang),
+                                  style: TextStyle(
+                                      color: theme.accent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   child: Text(
                                     "•",
-                                    style: TextStyle(color: theme.accent.withValues(alpha: 0.6), fontSize: 14),
+                                    style: TextStyle(
+                                        color:
+                                            theme.accent.withValues(alpha: 0.6),
+                                        fontSize: 14),
                                   ),
                                 ),
                                 Text(
-                                  PrayerService.getFormattedGregorianDate(_currentTime, lang),
-                                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, fontWeight: FontWeight.w500),
+                                  PrayerService.getFormattedGregorianDate(
+                                      _currentTime, lang),
+                                  style: const TextStyle(
+                                      color: Color(0xFFCBD5E1),
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
@@ -420,7 +485,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                       Container(
                         width: double.infinity,
                         margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                        padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 10.0),
+                        padding:
+                            const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 10.0),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -448,7 +514,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           children: [
                             // Holy Verse in 2 balanced lines with natural Amiri line height so descenders/tashkeel never clip
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 2.0),
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
@@ -463,7 +530,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     height: 1.85,
                                     shadows: [
                                       Shadow(
-                                        color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                                        color: const Color(0xFFD4AF37)
+                                            .withValues(alpha: 0.35),
                                         blurRadius: 8,
                                       ),
                                     ],
@@ -482,7 +550,9 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    lang == 'fr' ? "[Sourate Âl-'Imrân : 39]" : "[سورة آل عمران: 39]",
+                                    lang == 'fr'
+                                        ? "[Sourate Âl-'Imrân : 39]"
+                                        : "[سورة آل عمران: 39]",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Color(0xFF94A3B8),
@@ -491,17 +561,23 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     ),
                                   ),
                                   const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 6),
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 6),
                                     child: Text(
                                       "•",
-                                      style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                      style: TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontSize: 12),
                                     ),
                                   ),
                                   Text(
-                                    lang == 'fr' ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
+                                    lang == 'fr'
+                                        ? "Cheikh Abdul Basit"
+                                        : "الشيخ عبد الباسط عبد الصمد",
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: theme.accent.withValues(alpha: 0.9),
+                                      color:
+                                          theme.accent.withValues(alpha: 0.9),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -514,7 +590,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
 
                             // Interactive Audio Recitation Button with live state
                             ValueListenableBuilder<bool>(
-                              valueListenable: VerseAudioService.isPlayingNotifier,
+                              valueListenable:
+                                  VerseAudioService.isPlayingNotifier,
                               builder: (context, isPlaying, _) {
                                 return Material(
                                   color: Colors.transparent,
@@ -525,15 +602,21 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     },
                                     borderRadius: BorderRadius.circular(20),
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 250),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      duration:
+                                          const Duration(milliseconds: 250),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: isPlaying
-                                            ? const Color(0xFFD4AF37).withValues(alpha: 0.25)
-                                            : Colors.white.withValues(alpha: 0.08),
+                                            ? const Color(0xFFD4AF37)
+                                                .withValues(alpha: 0.25)
+                                            : Colors.white
+                                                .withValues(alpha: 0.08),
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
-                                          color: isPlaying ? const Color(0xFFD4AF37) : Colors.white24,
+                                          color: isPlaying
+                                              ? const Color(0xFFD4AF37)
+                                              : Colors.white24,
                                           width: 1.0,
                                         ),
                                       ),
@@ -541,17 +624,32 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            isPlaying ? Icons.pause_circle_filled_rounded : Icons.volume_up_rounded,
-                                            color: isPlaying ? const Color(0xFFFDE68A) : theme.accent,
+                                            isPlaying
+                                                ? Icons
+                                                    .pause_circle_filled_rounded
+                                                : Icons.volume_up_rounded,
+                                            color: isPlaying
+                                                ? const Color(0xFFFDE68A)
+                                                : theme.accent,
                                             size: 15,
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
                                             isPlaying
-                                                ? (isAr ? "إيقاف التلاوة" : (lang == 'fr' ? "Pause" : "Pause"))
-                                                : (isAr ? "استماع للتلاوة" : (lang == 'fr' ? "Écouter la récitation" : "Play Recitation")),
+                                                ? (isAr
+                                                    ? "إيقاف التلاوة"
+                                                    : (lang == 'fr'
+                                                        ? "Pause"
+                                                        : "Pause"))
+                                                : (isAr
+                                                    ? "استماع للتلاوة"
+                                                    : (lang == 'fr'
+                                                        ? "Écouter la récitation"
+                                                        : "Play Recitation")),
                                             style: TextStyle(
-                                              color: isPlaying ? const Color(0xFFFDE68A) : Colors.white,
+                                              color: isPlaying
+                                                  ? const Color(0xFFFDE68A)
+                                                  : Colors.white,
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -582,7 +680,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                       Container(
                         width: double.infinity,
                         margin: const EdgeInsets.symmetric(horizontal: 24.0),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
                         clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -591,7 +690,9 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             end: Alignment.bottomLeft,
                           ),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: theme.accent.withValues(alpha: 0.35), width: 1.1),
+                          border: Border.all(
+                              color: theme.accent.withValues(alpha: 0.35),
+                              width: 1.1),
                           boxShadow: [
                             BoxShadow(
                               color: theme.accent.withValues(alpha: 0.12),
@@ -631,7 +732,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             ),
                             const SizedBox(height: 2),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(12),
