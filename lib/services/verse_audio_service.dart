@@ -1,4 +1,4 @@
-// Updated v1.0.1
+// Updated v1.0.4
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -7,10 +7,12 @@ import 'adhan_audio_service.dart';
 import 'prayer_notification_service.dart';
 
 /// Dedicated service for playing the Mihrab Quran verse recitation
-/// (Surah Ali 'Imran: 39) smoothly across Splash and Home Screen without cut-off.
+/// (Surah Ali 'Imran: 39) smoothly across Splash and Home Screen without cut-off or overlap.
 class VerseAudioService {
   static final AudioPlayer _player = AudioPlayer();
   static bool _isInitialized = false;
+  static int _playOpId = 0;
+
   // مفتاح حفظ اختيار المستخدم للتلاوة الافتتاحية
   static const String _keyRecitationEnabled = 'enable_startup_recitation';
 
@@ -24,6 +26,9 @@ class VerseAudioService {
     await prefs.setBool(_keyRecitationEnabled, isEnabled);
     if (!isEnabled) {
       await stopVerse();
+    } else {
+      // Stop any active Adhan immediately when user enables recitation
+      await AdhanAudioService.stopAdhan();
     }
   }
 
@@ -65,7 +70,7 @@ class VerseAudioService {
             stayAwake: true,
             contentType: AndroidContentType.music,
             usageType: AndroidUsageType.media,
-            audioFocus: AndroidAudioFocus.gainTransient,
+            audioFocus: AndroidAudioFocus.gain,
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
@@ -100,42 +105,57 @@ class VerseAudioService {
     }
   }
 
-  /// Play verse audio from local assets (supporting both user-placed file and standard asset)
-  static Future<bool> playVerse({bool restartIfPlaying = false}) async {
+  /// Play verse audio from local assets (supporting both user-placed file and standard asset).
+  /// Stops any active Adhan or previous recitation first to guarantee zero audio overlap.
+  static Future<bool> playVerse({
+    bool restartIfPlaying = false,
+    bool isStartup = false,
+  }) async {
+    final int myOpId = ++_playOpId;
     await init();
-    // 1. فحص هل أوقف المستخدم التلاوة من الإعدادات
-    final isEnabled = await isRecitationEnabled();
-    if (!isEnabled) {
-      return false;
+
+    if (isStartup) {
+      // 1. فحص هل أوقف المستخدم التلاوة الافتتاحية من الإعدادات
+      final isEnabled = await isRecitationEnabled();
+      if (!isEnabled) {
+        return false;
+      }
+
+      // 2. فحص هل الأذان يعمل حالياً عند بدء التشغيل التلقائي
+      if (AdhanAudioService.isPlayingNotifier.value) {
+        debugPrint("VerseAudioService: Startup recitation skipped because Adhan is actively playing");
+        return false;
+      }
+
+      // 3. فحص هل تم فتح التطبيق عبر إشعار صلاة
+      final fromNotif = await PrayerNotificationService.wasLaunchedFromNotification();
+      if (fromNotif) {
+        debugPrint("VerseAudioService: Startup recitation skipped because app launched via prayer notification");
+        return false;
+      }
     }
 
-    // 2. فحص هل الأذان يعمل حالياً لمنع تداخل الصوتين معاً
-    if (AdhanAudioService.isPlayingNotifier.value) {
-      debugPrint("VerseAudioService: Recitation skipped because Adhan is actively playing");
-      return false;
-    }
-
-    // 3. فحص هل تم فتح التطبيق عبر إشعار صلاة
-    final fromNotif = await PrayerNotificationService.wasLaunchedFromNotification();
-    if (fromNotif) {
-      debugPrint("VerseAudioService: Startup recitation skipped because app launched via prayer notification");
-      return false;
-    }
+    if (myOpId != _playOpId) return false;
 
     if (isPlayingNotifier.value && !restartIfPlaying) {
       return true;
     }
 
     try {
+      // إيقاف أي أذان أو إشعار صوتي قيد التشغيل تماماً قبل بدء التلاوة
+      await AdhanAudioService.stopAdhan();
       await _player.stop();
+
+      if (myOpId != _playOpId) return false;
+
       await _player.setVolume(1.0);
 
       // Try user-provided mihrab_verse.mp3 first, then fallback to abdulbasit_3_39.mp3
       bool played = false;
 
-      // Check if mihrab_verse.mp3 asset is loadable
       try {
-        await rootBundle.load('audio/mihrab_verse.mp3');
+        await rootBundle.load('assets/audio/mihrab_verse.mp3');
+        if (myOpId != _playOpId) return false;
         await _player.play(AssetSource('audio/mihrab_verse.mp3'));
         played = true;
       } catch (_) {
@@ -143,6 +163,7 @@ class VerseAudioService {
       }
 
       if (!played) {
+        if (myOpId != _playOpId) return false;
         try {
           await _player.play(AssetSource('audio/abdulbasit_3_39.mp3'));
           played = true;
@@ -151,26 +172,36 @@ class VerseAudioService {
         }
       }
 
+      if (myOpId != _playOpId) {
+        await _player.stop();
+        return false;
+      }
+
       isPlayingNotifier.value = played;
       return played;
     } catch (e) {
       debugPrint("VerseAudioService playVerse error: $e");
-      isPlayingNotifier.value = false;
+      if (myOpId == _playOpId) {
+        isPlayingNotifier.value = false;
+      }
       return false;
     }
   }
 
-  /// Toggle play / pause
+  /// Toggle play / pause when user taps the Listen button
   static Future<void> toggleVerse() async {
     if (isPlayingNotifier.value) {
       await pauseVerse();
     } else {
-      await playVerse(restartIfPlaying: false);
+      // Stop any running Adhan first, then start recitation
+      await AdhanAudioService.stopAdhan();
+      await playVerse(restartIfPlaying: true, isStartup: false);
     }
   }
 
   /// Pause current recitation
   static Future<void> pauseVerse() async {
+    ++_playOpId;
     try {
       await _player.pause();
       isPlayingNotifier.value = false;
@@ -181,6 +212,7 @@ class VerseAudioService {
 
   /// Stop current recitation
   static Future<void> stopVerse() async {
+    ++_playOpId;
     try {
       await _player.stop();
       isPlayingNotifier.value = false;

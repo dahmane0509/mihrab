@@ -152,8 +152,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await _playVerseAudio();
   }
 
-  Future<void> _playVerseAudio() async {
-    final played = await VerseAudioService.playVerse();
+  Future<void> _playVerseAudio({bool isStartup = true}) async {
+    final played = await VerseAudioService.playVerse(
+      restartIfPlaying: !isStartup,
+      isStartup: isStartup,
+    );
     if (played) {
       _playerCompleteSub?.cancel();
       _playerCompleteSub = VerseAudioService.player.onPlayerComplete.listen((_) {
@@ -188,23 +191,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       _playerCompleteSub?.cancel();
       _scheduleHomeNavigation(delayMs: 1200);
     } else {
-      // Enabled: check Adhan active before playing
-      if (AdhanAudioService.isPlayingNotifier.value) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                LanguageService.languageCode == 'fr'
-                    ? "L'Adhan est en cours d'écoute"
-                    : "صوت الأذان يعمل حالياً",
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-        return;
-      }
-      await _playVerseAudio();
+      // Enabled by user: stop any running Adhan first, then play verse recitation
+      await AdhanAudioService.stopAdhan();
+      await _playVerseAudio(isStartup: false);
     }
   }
 

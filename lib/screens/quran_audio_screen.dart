@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../services/adhan_audio_service.dart';
+import '../services/verse_audio_service.dart';
 import '../data/quran_data.dart';
 import '../services/app_feedback.dart';
 
@@ -179,6 +181,8 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
       ),
     );
 
+    VerseAudioService.stopVerse();
+    AdhanAudioService.stopAdhan();
     _audioPlayer.stop().then((_) {
       _audioPlayer.play(UrlSource(streamUrl)).catchError((_) {});
     }).catchError((_) {});

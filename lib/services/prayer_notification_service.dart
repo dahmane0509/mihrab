@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../data/algeria_communes.dart';
 import '../data/world_cities.dart';
 import 'adhan_audio_service.dart';
+import 'verse_audio_service.dart';
 import 'prayer_service.dart';
 import 'silent_mode_service.dart';
 import 'home_widget_service.dart';
@@ -52,6 +53,18 @@ class PrayerNotificationService {
     sound: RawResourceAndroidNotificationSound('athan'),
     enableVibration: true,
     audioAttributesUsage: AudioAttributesUsage.alarm,
+  );
+
+  /// Silent visual heads-up channel used when AdhanAudioService is already playing the user-selected Adhan in-app,
+  /// preventing the notification channel's default 'athan' sound from playing simultaneously with the selected Adhan.
+  static const AndroidNotificationChannel prayerSilentChannel =
+      AndroidNotificationChannel(
+    'mihrab_adhan_silent_headsup_v11',
+    'إشعارات الصلاة المرئية',
+    description: 'إشعار مرئي لدخول وقت الصلاة أثناء تشغيل الأذان المختار لمنع ازدواجية الصوت',
+    importance: Importance.max,
+    playSound: false,
+    enableVibration: true,
   );
 
   static void _ensureTimeZones() {
@@ -175,12 +188,14 @@ class PrayerNotificationService {
               androidPlugin.deleteNotificationChannel(channelId: 'mihrab_adhan_channel_v3'),
               androidPlugin.deleteNotificationChannel(channelId: 'prayer_adhan_channel_v2'),
               androidPlugin.deleteNotificationChannel(channelId: 'prayer_channel_high'),
+              androidPlugin.deleteNotificationChannel(channelId: 'prayer_adhan_channel'),
             ]);
             await prefs.setBool('legacy_channels_cleaned_v10', true);
           } catch (_) {}
         }
 
         await androidPlugin.createNotificationChannel(prayerChannel);
+        await androidPlugin.createNotificationChannel(prayerSilentChannel);
         await androidPlugin.requestNotificationsPermission();
         await androidPlugin.requestExactAlarmsPermission();
       }
@@ -287,7 +302,12 @@ class PrayerNotificationService {
       final location = _resolveLocation(commune.wilayaCode);
       tz.setLocalLocation(location);
 
-      // Cancel previous scheduled prayer IDs (5001..5030)
+      // Cancel previous scheduled prayer IDs (both 1..20 legacy NotificationService IDs and 5001..5030)
+      for (int id = 1; id <= 20; id++) {
+        try {
+          await _notifications.cancel(id: id);
+        } catch (_) {}
+      }
       for (int id = 5001; id <= 5030; id++) {
         try {
           await _notifications.cancel(id: id);
@@ -442,17 +462,26 @@ class PrayerNotificationService {
     }
   }
 
-  /// Triggers the Heads-up system notification and starts the Adhan audio immediately
+  /// Triggers the Heads-up system notification and starts the Adhan audio immediately.
+  /// Uses the silent visual channel when [playVoice] is true so the notification channel's built-in
+  /// 'athan' sound never overlaps with the user-selected Adhan played by [AdhanAudioService].
   static Future<void> triggerAdhanNotification({
     required String prayerName,
     required String prayerKey,
     required String communeName,
     bool playVoice = true,
   }) async {
-    if (AdhanAudioService.isPlayingNotifier.value) { try { await _notifications.cancelAll(); } catch (_) {} return; }
     markTriggeredToday(prayerKey);
 
-    // 1. Play Adhan Voice through loudspeaker and full volume when app is open
+    // 0. Stop any Quran verse recitation and cancel any ringing alarm notification first
+    try {
+      await VerseAudioService.stopVerse();
+    } catch (_) {}
+    try {
+      await _notifications.cancelAll();
+    } catch (_) {}
+
+    // 1. Play user-selected Adhan Voice through loudspeaker when app is open
     if (playVoice) {
       try {
         await AdhanAudioService.playAdhanForPrayer(prayerKey);
@@ -461,19 +490,21 @@ class PrayerNotificationService {
       }
     }
 
-    // 2. Heads-up System Notification
+    // 2. Heads-up System Notification (Silent channel if AdhanAudioService is already playing voice!)
     try {
+      final useSilentChannel = playVoice;
       final androidDetails = AndroidNotificationDetails(
-        prayerChannel.id,
-        prayerChannel.name,
-        channelDescription: prayerChannel.description,
+        useSilentChannel ? prayerSilentChannel.id : prayerChannel.id,
+        useSilentChannel ? prayerSilentChannel.name : prayerChannel.name,
+        channelDescription:
+            useSilentChannel ? prayerSilentChannel.description : prayerChannel.description,
         importance: Importance.max,
         priority: Priority.high,
         ticker: "حان موعد صلاة $prayerName",
         icon: '@mipmap/ic_launcher',
         category: AndroidNotificationCategory.alarm,
-        sound: const RawResourceAndroidNotificationSound('athan'),
-        playSound: true,
+        sound: useSilentChannel ? null : const RawResourceAndroidNotificationSound('athan'),
+        playSound: !useSilentChannel,
         enableVibration: true,
         audioAttributesUsage: AudioAttributesUsage.alarm,
         visibility: NotificationVisibility.public,
@@ -499,6 +530,11 @@ class PrayerNotificationService {
     } catch (e) {
       debugPrint("Failed to display adhan notification: $e");
     }
+
+    // Re-schedule upcoming prayer alarms in the background
+    Future.delayed(const Duration(seconds: 3), () {
+      scheduleAllPrayerNotifications();
+    });
 
     // 3. Auto Silent Mode (Mosque reverence mode)
     try {

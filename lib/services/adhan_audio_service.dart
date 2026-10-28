@@ -52,6 +52,7 @@ class AdhanAudioService {
   static final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
   static final ValueNotifier<String> currentPlayingTitle = ValueNotifier<String>("");
   static bool _isInitialized = false;
+  static int _playOpId = 0;
 
   /// Default Built-in and Online Algerian & Islamic Adhan Sounds
   static const List<AdhanSoundItem> defaultAdhans = [
@@ -60,6 +61,13 @@ class AdhanAudioService {
       name: "أذان جامع الجزائر (الجامع الأعظم)",
       url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Waled_Mahsas_2_-_Algeria_(%D9%88%D9%84%D9%8A%D8%AF_%D9%85%D8%AD%D8%B3%D8%A7%D8%B3_-_%D8%A7%D9%84%D8%AC%D8%B2%D8%A7%D8%A6%D8%B1).mp3",
       desc: "الأذان الجزائري الرسمي المعتمد بصوت الشيخ وليد مهساس",
+      isDefault: true,
+    ),
+    AdhanSoundItem(
+      id: "waled_mahzas",
+      name: "أذان الشيخ وليد مهساس (الجزائر)",
+      url: "https://raw.githubusercontent.com/Kiwifu/adhan-mp3/main/Waled_Mahsas_2_-_Algeria_(%D9%88%D9%84%D9%8A%D8%AF_%D9%85%D8%AD%D8%B3%D8%A7%D8%B3_-_%D8%A7%D9%84%D8%AC%D8%B2%D8%A7%D8%A6%D8%B1).mp3",
+      desc: "صوت خاشع ومؤثر من الجزائر",
       isDefault: true,
     ),
     AdhanSoundItem(
@@ -284,7 +292,7 @@ class AdhanAudioService {
             stayAwake: true,
             contentType: AndroidContentType.music,
             usageType: AndroidUsageType.media,
-            audioFocus: AndroidAudioFocus.gainTransient,
+            audioFocus: AndroidAudioFocus.gain,
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
@@ -363,18 +371,34 @@ class AdhanAudioService {
   }
 
   /// Plays authentic human Adhan recording immediately.
-  /// IMPORTANT: Immediately calls VerseAudioService.stop() to prevent overlap!
+  /// IMPORTANT: Immediately stops all other audio (Verse, previous Adhan, system notification sound) to prevent any overlap!
   static Future<bool> playAdhan({String? soundId}) async {
-    try { await VerseAudioService.stopVerse(); } catch (_) {}
-    try { await FlutterLocalNotificationsPlugin().cancelAll(); } catch (_) {}
-    try {
-      // 1. Immediately stop any Quran recitation before playing Adhan
-      await VerseAudioService.stop();
-      await stopAdhan();
+    final int myOpId = ++_playOpId;
 
+    // 1. Immediately stop any Quran recitation, notification sound, or previous Adhan before starting
+    try {
+      await VerseAudioService.stopVerse();
+    } catch (_) {}
+    try {
+      await FlutterLocalNotificationsPlugin().cancelAll();
+    } catch (_) {}
+    try {
+      await _player.stop();
+      await _chimePlayer.stop();
+    } catch (_) {}
+    isPlayingNotifier.value = false;
+
+    if (myOpId != _playOpId) return false;
+
+    try {
       await init();
+      if (_customAdhans.isEmpty) {
+        await getCustomAdhans();
+      }
       final prefs = await SharedPreferences.getInstance();
       final selected = soundId ?? prefs.getString('adhan_sound') ?? 'algeria_grand_mosque';
+
+      if (myOpId != _playOpId) return false;
 
       final title = adhanNames[selected] ?? "الأذان المبارك";
       currentPlayingTitle.value = title;
@@ -385,19 +409,30 @@ class AdhanAudioService {
 
       // 2. If user selected takbeer only
       if (selected == 'takbeer_only') {
+        if (myOpId != _playOpId) return false;
         try {
           await _player.play(AssetSource('audio/takbeer.wav'));
+          if (myOpId != _playOpId) {
+            await _player.stop();
+            return false;
+          }
           isPlayingNotifier.value = true;
           return true;
         } catch (e) {
           debugPrint("Takbeer asset error: $e");
+          return false;
         }
       }
 
-      // 3. If Algerian Grand Mosque or Traditional Algerian, play local asset
-      if (selected == "algeria_grand_mosque" || selected == "traditional_algerian") {
+      // 3. If official Algerian Grand Mosque (or Waled Mahsas), play built-in local asset directly
+      if (selected == "algeria_grand_mosque" || selected == "waled_mahzas") {
+        if (myOpId != _playOpId) return false;
         try {
           await _player.play(AssetSource('audio/adhan.mp3'));
+          if (myOpId != _playOpId) {
+            await _player.stop();
+            return false;
+          }
           isPlayingNotifier.value = true;
           return true;
         } catch (e) {
@@ -405,13 +440,19 @@ class AdhanAudioService {
         }
       }
 
-      // 4. For online muezzins: check cached file first for 0ms delay
+      // 4. For user-selected online/custom muezzins: check cached file first for 0ms delay
       final onlineUrl = adhanOnlineUrls[selected];
-      if (onlineUrl != null && !onlineUrl.startsWith('assets/')) {
+      if (onlineUrl != null && !onlineUrl.startsWith('assets/') && !onlineUrl.startsWith('audio/')) {
         final cachedFile = await _getCachedAudioFile(selected, onlineUrl);
+        if (myOpId != _playOpId) return false;
+
         if (cachedFile != null) {
           try {
             await _player.play(DeviceFileSource(cachedFile.path));
+            if (myOpId != _playOpId) {
+              await _player.stop();
+              return false;
+            }
             isPlayingNotifier.value = true;
             return true;
           } catch (cachedErr) {
@@ -419,32 +460,46 @@ class AdhanAudioService {
           }
         }
 
+        if (myOpId != _playOpId) return false;
+
         // Stream directly from URL
         try {
           await _player.play(UrlSource(onlineUrl));
+          if (myOpId != _playOpId) {
+            await _player.stop();
+            return false;
+          }
           isPlayingNotifier.value = true;
           return true;
         } catch (streamErr) {
-          debugPrint("Online adhan stream failed: $streamErr, playing local adhan asset");
+          debugPrint("Online adhan stream failed: $streamErr");
+          // If this operation was cancelled/superseded (e.g. by stopAdhan or VerseAudioService), NEVER play fallback!
+          if (myOpId != _playOpId) return false;
         }
       }
 
-      // 5. Fallback to local adhan asset if network fails or offline
+      // 5. Fallback to local adhan asset ONLY if this operation is still active and network failed
+      if (myOpId != _playOpId) return false;
+      await _player.stop();
       await _player.play(AssetSource('audio/adhan.mp3'));
+      if (myOpId != _playOpId) {
+        await _player.stop();
+        return false;
+      }
       isPlayingNotifier.value = true;
       return true;
     } catch (e) {
       debugPrint('playAdhan error: $e');
-      isPlayingNotifier.value = false;
-      currentPlayingTitle.value = "";
+      if (myOpId == _playOpId) {
+        isPlayingNotifier.value = false;
+        currentPlayingTitle.value = "";
+      }
       return false;
     }
   }
 
   /// Plays adhan assigned specifically for a prayer name
   static Future<bool> playAdhanForPrayer(String prayerKey) async {
-    try { await VerseAudioService.stopVerse(); } catch (_) {}
-    try { await FlutterLocalNotificationsPlugin().cancelAll(); } catch (_) {}
     final soundId = await getSoundForPrayer(prayerKey);
     return playAdhan(soundId: soundId);
   }
@@ -474,7 +529,10 @@ class AdhanAudioService {
 
   /// Stop any currently playing audio
   static Future<void> stopAdhan() async {
-    try { await FlutterLocalNotificationsPlugin().cancelAll(); } catch (_) {}
+    ++_playOpId;
+    try {
+      await FlutterLocalNotificationsPlugin().cancelAll();
+    } catch (_) {}
     try {
       await _player.stop();
       await _chimePlayer.stop();

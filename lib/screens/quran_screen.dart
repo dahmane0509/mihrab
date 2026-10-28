@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../services/adhan_audio_service.dart';
+import '../services/verse_audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/quran_data.dart';
 import '../data/quran_texts.dart';
@@ -131,6 +133,8 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
     );
 
     try {
+      await VerseAudioService.stopVerse();
+      await AdhanAudioService.stopAdhan();
       await _audioPlayer.stop();
       await _audioPlayer.play(UrlSource(url));
       setState(() {
