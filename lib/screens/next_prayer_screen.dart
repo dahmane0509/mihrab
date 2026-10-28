@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/algeria_wilayas.dart';
 import '../data/algeria_communes.dart';
@@ -588,74 +589,74 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
 
                             const SizedBox(height: 6),
 
-                            // Interactive Audio Recitation Button with live state
+                            // Manual Audio Playback Button - Always visible, enabled, and independent of general settings
                             ValueListenableBuilder<bool>(
                               valueListenable:
                                   VerseAudioService.isPlayingNotifier,
                               builder: (context, isPlaying, _) {
-                                return Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {
-                                      AppFeedback.tap();
-                                      VerseAudioService.toggleVerse();
-                                    },
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 250),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
-                                      decoration: BoxDecoration(
+                                return TextButton.icon(
+                                  onPressed: () async {
+                                    HapticFeedback.lightImpact();
+                                    if (isPlaying) {
+                                      await VerseAudioService.stopVerse();
+                                    } else {
+                                      await VerseAudioService.playVerse(
+                                        restartIfPlaying: true,
+                                        isStartup: false,
+                                      );
+                                    }
+                                  },
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: isPlaying
+                                        ? const Color(0xFFD4AF37)
+                                            .withValues(alpha: 0.25)
+                                        : Colors.white.withValues(alpha: 0.10),
+                                    foregroundColor: isPlaying
+                                        ? const Color(0xFFFDE68A)
+                                        : Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 5),
+                                    minimumSize: const Size(120, 30),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
                                         color: isPlaying
                                             ? const Color(0xFFD4AF37)
-                                                .withValues(alpha: 0.25)
-                                            : Colors.white
-                                                .withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: isPlaying
-                                              ? const Color(0xFFD4AF37)
-                                              : Colors.white24,
-                                          width: 1.0,
-                                        ),
+                                            : theme.accent
+                                                .withValues(alpha: 0.45),
+                                        width: 1.0,
                                       ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            isPlaying
-                                                ? Icons
-                                                    .pause_circle_filled_rounded
-                                                : Icons.volume_up_rounded,
-                                            color: isPlaying
-                                                ? const Color(0xFFFDE68A)
-                                                : theme.accent,
-                                            size: 15,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            isPlaying
-                                                ? (isAr
-                                                    ? "إيقاف التلاوة"
-                                                    : (lang == 'fr'
-                                                        ? "Pause"
-                                                        : "Pause"))
-                                                : (isAr
-                                                    ? "استماع للتلاوة"
-                                                    : (lang == 'fr'
-                                                        ? "Écouter la récitation"
-                                                        : "Play Recitation")),
-                                            style: TextStyle(
-                                              color: isPlaying
-                                                  ? const Color(0xFFFDE68A)
-                                                  : Colors.white,
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                    ),
+                                  ),
+                                  icon: Icon(
+                                    isPlaying
+                                        ? Icons.pause_circle_filled_rounded
+                                        : Icons.volume_up_rounded,
+                                    color: isPlaying
+                                        ? const Color(0xFFFDE68A)
+                                        : theme.accent,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    isPlaying
+                                        ? (isAr
+                                            ? "إيقاف التلاوة"
+                                            : (lang == 'fr'
+                                                ? "Pause"
+                                                : "Pause"))
+                                        : (isAr
+                                            ? "استماع للتلاوة"
+                                            : (lang == 'fr'
+                                                ? "Écouter la récitation"
+                                                : "Play Recitation")),
+                                    style: TextStyle(
+                                      color: isPlaying
+                                          ? const Color(0xFFFDE68A)
+                                          : Colors.white,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 );

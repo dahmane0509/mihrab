@@ -13,13 +13,13 @@ class VerseAudioService {
   static bool _isInitialized = false;
   static int _playOpId = 0;
 
-  // مفتاح حفظ اختيار المستخدم للتلاوة الافتتاحية
+  // مفتاح حفظ اختيار المستخدم للتلاوة الافتتاحية فقط (عند فتح التطبيق)
   static const String _keyRecitationEnabled = 'enable_startup_recitation';
 
-  /// Reactive notifier for whether startup recitation is enabled by the user
+  /// Reactive notifier for whether automatic startup recitation is enabled by the user
   static final ValueNotifier<bool> recitationEnabledNotifier = ValueNotifier<bool>(true);
 
-  // حفظ حالة القفل (تفعيل / إيقاف)
+  // حفظ حالة التلاوة التلقائية عند بدء التشغيل فقط
   static Future<void> setRecitationEnabled(bool isEnabled) async {
     recitationEnabledNotifier.value = isEnabled;
     final prefs = await SharedPreferences.getInstance();
@@ -27,12 +27,11 @@ class VerseAudioService {
     if (!isEnabled) {
       await stopVerse();
     } else {
-      // Stop any active Adhan immediately when user enables recitation
       await AdhanAudioService.stopAdhan();
     }
   }
 
-  // قراءة حالة القفل (القيمة الافتراضية true)
+  // قراءة حالة التلاوة التلقائية عند بدء التشغيل (القيمة الافتراضية true)
   static Future<bool> isRecitationEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     final enabled = prefs.getBool(_keyRecitationEnabled) ?? true;
@@ -66,7 +65,7 @@ class VerseAudioService {
       try {
         await _player.setAudioContext(AudioContext(
           android: const AudioContextAndroid(
-            isSpeakerphoneOn: true,
+            isSpeakerphoneOn: false,
             stayAwake: true,
             contentType: AndroidContentType.music,
             usageType: AndroidUsageType.media,
@@ -105,29 +104,28 @@ class VerseAudioService {
     }
   }
 
-  /// Play verse audio from local assets (supporting both user-placed file and standard asset).
-  /// Stops any active Adhan or previous recitation first to guarantee zero audio overlap.
+  /// Play verse audio directly from local assets.
+  /// Manual playback (isStartup == false) is 100% independent of general/startup settings
+  /// (`enable_startup_recitation` / `ayahRecitationEnabled`) and always plays immediately.
   static Future<bool> playVerse({
-    bool restartIfPlaying = false,
+    bool restartIfPlaying = true,
     bool isStartup = false,
   }) async {
     final int myOpId = ++_playOpId;
     await init();
 
+    // Startup-only checks (ONLY applied during automatic SplashScreen startup)
     if (isStartup) {
-      // 1. فحص هل أوقف المستخدم التلاوة الافتتاحية من الإعدادات
       final isEnabled = await isRecitationEnabled();
       if (!isEnabled) {
         return false;
       }
 
-      // 2. فحص هل الأذان يعمل حالياً عند بدء التشغيل التلقائي
       if (AdhanAudioService.isPlayingNotifier.value) {
         debugPrint("VerseAudioService: Startup recitation skipped because Adhan is actively playing");
         return false;
       }
 
-      // 3. فحص هل تم فتح التطبيق عبر إشعار صلاة
       final fromNotif = await PrayerNotificationService.wasLaunchedFromNotification();
       if (fromNotif) {
         debugPrint("VerseAudioService: Startup recitation skipped because app launched via prayer notification");
@@ -142,7 +140,7 @@ class VerseAudioService {
     }
 
     try {
-      // إيقاف أي أذان أو إشعار صوتي قيد التشغيل تماماً قبل بدء التلاوة
+      // إيقاف أي أذان أو تلاوة سابقة قيد التشغيل تماماً قبل بدء التلاوة الجديدة
       await AdhanAudioService.stopAdhan();
       await _player.stop();
 
@@ -150,7 +148,7 @@ class VerseAudioService {
 
       await _player.setVolume(1.0);
 
-      // Try user-provided mihrab_verse.mp3 first, then fallback to abdulbasit_3_39.mp3
+      // Try mihrab_verse.mp3 first, then fallback to abdulbasit_3_39.mp3
       bool played = false;
 
       try {
@@ -188,13 +186,12 @@ class VerseAudioService {
     }
   }
 
-  /// Toggle play / pause when user taps the Listen button
+  /// Manual play/stop toggle when user presses the "استماع للتلاوة" button.
+  /// Always active and completely independent of general settings (`ayahRecitationEnabled`).
   static Future<void> toggleVerse() async {
     if (isPlayingNotifier.value) {
-      await pauseVerse();
+      await stopVerse();
     } else {
-      // Stop any running Adhan first, then start recitation
-      await AdhanAudioService.stopAdhan();
       await playVerse(restartIfPlaying: true, isStartup: false);
     }
   }

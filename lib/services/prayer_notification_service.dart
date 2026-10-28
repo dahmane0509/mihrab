@@ -478,7 +478,7 @@ class PrayerNotificationService {
       await VerseAudioService.stopVerse();
     } catch (_) {}
     try {
-      await _notifications.cancelAll();
+      await _notifications.cancel(id: 100);
     } catch (_) {}
 
     // 1. Play user-selected Adhan Voice through loudspeaker when app is open
