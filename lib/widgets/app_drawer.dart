@@ -295,22 +295,51 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                     ),
                     subtitle: Text(
                       isAr
-                          ? "الإصدار 1.0.2 (الجزائر - 1541 بلدية والقرى والمداشر)"
+                          ? "الإصدار 1.0.4 — موثوقية تقنية ومصادر شرعية وفلكية معتمدة"
                           : LanguageService.tr('drawer_about_sub'),
                       style: const TextStyle(color: Colors.white38, fontSize: 11),
                     ),
                     onTap: () {
                       AppFeedback.tap();
                       Navigator.pop(context);
-                      showAboutDialog(
+                      showDialog<void>(
                         context: context,
-                        applicationName: isAr ? "مِحْرَاب" : LanguageService.tr('app_name'),
-                        applicationVersion: isAr ? "1.0.2 (الجزائر)" : "1.0.2",
-                        applicationLegalese: isAr
-                            ? "تطبيق إسلامي شامل للجزائر: مواقيت الصلاة لجميع البلديات والقرى والمداشر، القرآن الكريم قراءة واستماعاً، البث المباشر، وبوصلة القبلة."
-                            : (langCode == 'fr'
-                                ? "Compagnon islamique complet : Horaires de prière, Saint Coran, diffusion en direct et boussole Qibla."
-                                : "Comprehensive Islamic companion: Prayer times, Holy Quran reading & audio, live broadcasts, and Qibla compass."),
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: const Color(0xFF1E293B),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          title: Row(
+                            children: [
+                              Icon(Icons.verified, color: theme.accent, size: 24),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  isAr ? "عن تطبيق مِحْرَاب (الإصدار 1.0.4)" : LanguageService.tr('drawer_about'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          content: SingleChildScrollView(
+                            child: Text(
+                              isAr
+                                  ? "صُمِّم تطبيق «مِحْرَاب» وفق أعلى معايير الجودة الهندسية والموثوقية التقنية ليكون رفيقاً رقمياً دقيقاً وموثوقاً؛ حيث تخضع النصوص القرآنية فيه لمطابقةٍ صارمة مع المراجع القياسية المعتمدة مثل (مشروع تنزيل - Tanzil) لضمان سلامة الرسم والتشكيل وتطابق أرقام الآيات والسور دون أي خطأ. كما تمت مراجعة وتدقيق خوارزميات حساب مواقيت الصلاة واتجاه القبلة برمجياً بالاعتماد على المكتبات الفلكية المعتمدة عالمياً مثل (مكتبة Adhan) وربطها بالإحداثيات الجغرافية الدقيقة والمناطق الزمنية القياسية. وإلى جانب ذلك، يعتمد التطبيق منظومة فحص آلي لقواعد البيانات لضمان تكامل البيانات، وتوثيق الأحاديث النبوية والأذكار وتخريجها بالاستناد إلى المصادر الموثوقة مثل (موقع الدرر السنية)، مع التحقق الكامل من سلامة الترميز القياسي (UTF-8) لضمان عرض النصوص العربية بأعلى درجات الوضوح والدقة."
+                                  : (langCode == 'fr'
+                                      ? "Conçu selon les normes d'ingénierie les plus strictes, Mihrab garantit une fiabilité optimale : validation des textes coraniques via le standard Tanzil, calculs astronomiques précis des prières et de la Qibla via la bibliothèque Adhan, et vérification automatisée des hadiths (Al-Dorar Al-Saniyyah) avec encodage UTF-8 intégral."
+                                      : "Engineered to the highest standards of accuracy and reliability, Mihrab validates Quranic texts against the Tanzil standard, verifies prayer times and Qibla calculations via the astronomical Adhan library, and runs automated UTF-8 database checks with authentic Hadith referencing from Al-Dorar Al-Saniyyah."),
+                              textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+                              style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13.5, height: 1.75),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(
+                                isAr ? "إغلاق" : "OK",
+                                style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
