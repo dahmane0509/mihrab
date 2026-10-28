@@ -1399,6 +1399,25 @@ class _SurahReaderViewState extends State<SurahReaderView> {
     );
   }
 
+  String _stripLeadingBasmalah(String ayahText, int surahNumber) {
+    if (surahNumber == 1 || surahNumber == 9) return ayahText.trim();
+    String cleaned = ayahText.trim();
+    const basmalahPrefixes = [
+      'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+      'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+      'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+      'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ',
+      'بسم الله الرحمن الرحيم',
+    ];
+    for (final prefix in basmalahPrefixes) {
+      if (cleaned.startsWith(prefix)) {
+        cleaned = cleaned.substring(prefix.length).trim();
+        break;
+      }
+    }
+    return cleaned;
+  }
+
   Future<void> _loadSurahVerses() async {
     setState(() {
       _isLoading = true;
@@ -1411,13 +1430,16 @@ class _SurahReaderViewState extends State<SurahReaderView> {
     if (QuranTexts.offlineSurahs.containsKey(widget.surah.number)) {
       final offlineList = QuranTexts.offlineSurahs[widget.surah.number]!;
       if (offlineList.length >= widget.surah.versesCount) {
-        loadedVerses = offlineList;
+        loadedVerses = List<String>.from(offlineList);
       }
     }
     if (loadedVerses.isEmpty) {
       final cached = prefs.getStringList('surah_text_${widget.surah.number}');
       if (cached != null && cached.length >= widget.surah.versesCount) {
-        loadedVerses = cached;
+        loadedVerses = List<String>.from(cached);
+        if (loadedVerses.isNotEmpty) {
+          loadedVerses[0] = _stripLeadingBasmalah(loadedVerses[0], widget.surah.number);
+        }
       }
     }
 
@@ -1474,6 +1496,7 @@ class _SurahReaderViewState extends State<SurahReaderView> {
                 .toList();
 
             if (loadedVerses.isNotEmpty) {
+              loadedVerses[0] = _stripLeadingBasmalah(loadedVerses[0], widget.surah.number);
               await prefs.setStringList('surah_text_${widget.surah.number}', loadedVerses);
             }
           }

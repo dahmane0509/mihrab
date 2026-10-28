@@ -3,17 +3,20 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import '../data/algeria_wilayas.dart';
+import '../data/algeria_communes.dart';
 import '../data/world_cities.dart';
 import '../services/language_service.dart';
 import '../services/qibla_service.dart';
 
 class QiblaScreen extends StatefulWidget {
   final Wilaya currentWilaya;
+  final Commune? currentCommune;
   final VoidCallback? onOpenDrawer;
 
   const QiblaScreen({
     super.key,
     required this.currentWilaya,
+    this.currentCommune,
     this.onOpenDrawer,
   });
 
@@ -135,14 +138,17 @@ class _QiblaScreenState extends State<QiblaScreen> {
         final lang = locale.languageCode;
         final isAr = lang == 'ar';
 
+        final activeLat = widget.currentCommune?.latitude ?? widget.currentWilaya.latitude;
+        final activeLng = widget.currentCommune?.longitude ?? widget.currentWilaya.longitude;
+
         final qiblaBearing = QiblaService.calculateQiblaDirection(
-          widget.currentWilaya.latitude,
-          widget.currentWilaya.longitude,
+          activeLat,
+          activeLng,
         );
 
         final distanceKm = QiblaService.calculateDistanceToKaabaKm(
-          widget.currentWilaya.latitude,
-          widget.currentWilaya.longitude,
+          activeLat,
+          activeLng,
         );
 
         // Relative angle between current heading and Qibla bearing
@@ -159,6 +165,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
           wilayaName = city != null
               ? city.getDisplayName(lang)
               : (isAr ? widget.currentWilaya.nameAr : widget.currentWilaya.nameFr);
+        } else if (widget.currentCommune != null) {
+          wilayaName = isAr ? widget.currentCommune!.nameAr : widget.currentCommune!.nameFr;
         } else {
           wilayaName = isAr ? widget.currentWilaya.nameAr : widget.currentWilaya.nameFr;
         }
@@ -200,7 +208,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 : null,
             title: Text(
               isAr
-                  ? "بوصلة القبلة - ${widget.currentWilaya.nameAr}"
+                  ? "بوصلة القبلة - $wilayaName"
                   : "${LanguageService.tr('qibla_compass')} - $wilayaName",
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
@@ -237,7 +245,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                             children: [
                               Text(
                                 isAr
-                                    ? "زاوية القبلة (${widget.currentWilaya.nameAr})"
+                                    ? "زاوية القبلة ($wilayaName)"
                                     : "${LanguageService.tr('qibla_angle')} ($wilayaName)",
                                 style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                                 textAlign: TextAlign.center,

@@ -670,6 +670,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> with WidgetsBindingObse
               QiblaScreen(
                 key: ValueKey('qibla_${activeLocale.languageCode}'),
                 currentWilaya: _selectedWilaya,
+                currentCommune: _selectedCommune,
                 onOpenDrawer: _openDrawer,
               ),
             ];

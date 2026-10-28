@@ -382,12 +382,30 @@ class PrayerCalculationService {
     JuristicMethod juristic = JuristicMethod.standard,
     PrayerAdjustments adjustments = const PrayerAdjustments(),
   }) {
+    double effectiveTz = timeZone;
+    CalculationMethod effectiveMethod = method;
+
+    if (commune.wilayaCode >= 1000) {
+      final city = WorldCitiesData.getCityByCode(commune.wilayaCode);
+      if (city != null) {
+        effectiveTz = (timeZone != 1.0) ? timeZone : city.timeZone;
+        if (method == CalculationMethod.algeria) {
+          effectiveMethod = CalculationMethod.values.firstWhere(
+            (m) => m.id == city.calculationMethod,
+            orElse: () => CalculationMethod.mwl,
+          );
+        }
+      } else {
+        effectiveTz = (timeZone != 1.0) ? timeZone : (DateTime.now().timeZoneOffset.inMinutes / 60.0);
+      }
+    }
+
     return calculateTimesByCoordinates(
       lat: commune.latitude,
       lng: commune.longitude,
       date: date,
-      timeZone: timeZone,
-      method: method,
+      timeZone: effectiveTz,
+      method: effectiveMethod,
       juristic: juristic,
       adjustments: adjustments,
     );
@@ -455,10 +473,8 @@ class PrayerCalculationService {
   static double _fixHour(double a) => a - 24.0 * (a / 24.0).floor();
 
   static DateTime _hoursToDateTime(DateTime date, double hours) {
-    int totalMinutes = (hours * 60).round();
-    int h = (totalMinutes ~/ 60) % 24;
-    int m = totalMinutes % 60;
-    return DateTime(date.year, date.month, date.day, h, m);
+    final int totalMinutes = (hours * 60).round();
+    return DateTime(date.year, date.month, date.day).add(Duration(minutes: totalMinutes));
   }
 }
 
