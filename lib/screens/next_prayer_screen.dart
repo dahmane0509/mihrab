@@ -369,274 +369,291 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4),
-                child: Column(
-                  children: [
-                    // Dates card - Perfectly centered per user request
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: theme.cardBackground,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: theme.accent.withValues(alpha: 0.35)),
-                        ),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              PrayerService.getFormattedHijriDate(_currentTime, lang),
-                              style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 12.5),
-                            ),
-                            Text(
-                              "•",
-                              style: TextStyle(color: theme.accent.withValues(alpha: 0.6), fontSize: 14),
-                            ),
-                            Text(
-                              PrayerService.getFormattedGregorianDate(_currentTime, lang),
-                              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-
-                    // Mihrab Holy Quran Verse Card with Recitation Control
-                    // Wider (6px side margin/padding) and shorter so the larger clock fits.
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4),
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.cardBackground,
-                            theme.darkPrimary.withValues(alpha: 0.75),
-                          ],
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: theme.accent.withValues(alpha: 0.35),
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.accent.withValues(alpha: 0.08),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
+              body: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: MediaQuery.textScalerOf(context).clamp(
+                    minScaleFactor: 0.9,
+                    maxScaleFactor: 1.12,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
+                  child: Column(
+                    children: [
+                      // Dates card - Perfectly centered single line with clear bottom spacing
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: theme.cardBackground,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: theme.accent.withValues(alpha: 0.35)),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Holy Verse directly in beautiful Uthmani Arabic script with full Tashkeel
-                          Text(
-                            "﴿فَنَادَتْهُ الْمَلَائِكَةُ وَهُوَ قَائِمٌ يُصَلِّي فِي الْمِحْرَابِ أَنَّ اللَّهَ يُبَشِّرُكَ بِيَحْيَىٰ﴾",
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.rtl,
-                            style: GoogleFonts.amiri(
-                              color: const Color(0xFFFDE68A),
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              height: 1.18,
-                              shadows: [
-                                Shadow(
-                                  color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
-                                  blurRadius: 8,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  PrayerService.getFormattedHijriDate(_currentTime, lang),
+                                  style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 12.5),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text(
+                                    "•",
+                                    style: TextStyle(color: theme.accent.withValues(alpha: 0.6), fontSize: 14),
+                                  ),
+                                ),
+                                Text(
+                                  PrayerService.getFormattedGregorianDate(_currentTime, lang),
+                                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
 
-                          const SizedBox(height: 2),
-
-                          // Attribution with Wrap to guarantee zero overflow
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            runSpacing: 2,
-                            children: [
-                              Text(
-                                lang == 'fr' ? "[Sourate Âl-'Imrân : 39]" : "[سورة آل عمران: 39]",
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Color(0xFF94A3B8),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Text(
-                                "•",
-                                style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                              ),
-                              Text(
-                                lang == 'fr' ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: theme.accent.withValues(alpha: 0.9),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                      // Mihrab Holy Quran Verse Card with Recitation Control
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                        padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 8.0),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.cardBackground,
+                              theme.darkPrimary.withValues(alpha: 0.75),
                             ],
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
                           ),
-
-                          const SizedBox(height: 2),
-
-                          // Interactive Audio Recitation Button with live state
-                          ValueListenableBuilder<bool>(
-                            valueListenable: VerseAudioService.isPlayingNotifier,
-                            builder: (context, isPlaying, _) {
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    AppFeedback.tap();
-                                    VerseAudioService.toggleVerse();
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: isPlaying
-                                          ? const Color(0xFFD4AF37).withValues(alpha: 0.25)
-                                          : Colors.white.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: isPlaying ? const Color(0xFFD4AF37) : Colors.white24,
-                                        width: 1.0,
-                                      ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: theme.accent.withValues(alpha: 0.35),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.accent.withValues(alpha: 0.08),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Holy Verse directly in beautiful Uthmani Arabic script with full Tashkeel
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
+                              child: Text(
+                                "﴿فَنَادَتْهُ الْمَلَائِكَةُ وَهُوَ قَائِمٌ يُصَلِّي فِي الْمِحْرَابِ أَنَّ اللَّهَ يُبَشِّرُكَ بِيَحْيَىٰ﴾",
+                                textAlign: TextAlign.center,
+                                textDirection: TextDirection.rtl,
+                                textScaler: TextScaler.noScaling,
+                                style: GoogleFonts.amiri(
+                                  color: const Color(0xFFFDE68A),
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.65,
+                                  shadows: [
+                                    Shadow(
+                                      color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                                      blurRadius: 8,
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          isPlaying ? Icons.pause_circle_filled_rounded : Icons.volume_up_rounded,
-                                          color: isPlaying ? const Color(0xFFFDE68A) : theme.accent,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          isPlaying
-                                              ? (isAr ? "إيقاف التلاوة" : (lang == 'fr' ? "Pause" : "Pause"))
-                                              : (isAr ? "استماع للتلاوة" : (lang == 'fr' ? "Écouter la récitation" : "Play Recitation")),
-                                          style: TextStyle(
-                                            color: isPlaying ? const Color(0xFFFDE68A) : Colors.white,
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            // Attribution in a single scaled row to guarantee zero vertical wrapping/overflow
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    lang == 'fr' ? "[Sourate Âl-'Imrân : 39]" : "[سورة آل عمران: 39]",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 3),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 6),
+                                    child: Text(
+                                      "•",
+                                      style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                    ),
+                                  ),
+                                  Text(
+                                    lang == 'fr' ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: theme.accent.withValues(alpha: 0.9),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                    // Islamic Clock (Supports Analog, Digital, Minimalist)
-                    Center(
-                      child: MihrabClockWidget(
-                        dateTime: _currentTime,
-                        prayerTimes: _todayTimes,
-                        isAr: isAr,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
+                            const SizedBox(height: 5),
 
-                    // Next Prayer Countdown Card (Compact vertical layout)
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 4.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [theme.darkPrimary, theme.cardBackground],
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
+                            // Interactive Audio Recitation Button with live state
+                            ValueListenableBuilder<bool>(
+                              valueListenable: VerseAudioService.isPlayingNotifier,
+                              builder: (context, isPlaying, _) {
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      AppFeedback.tap();
+                                      VerseAudioService.toggleVerse();
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 250),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isPlaying
+                                            ? const Color(0xFFD4AF37).withValues(alpha: 0.25)
+                                            : Colors.white.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: isPlaying ? const Color(0xFFD4AF37) : Colors.white24,
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            isPlaying ? Icons.pause_circle_filled_rounded : Icons.volume_up_rounded,
+                                            color: isPlaying ? const Color(0xFFFDE68A) : theme.accent,
+                                            size: 15,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            isPlaying
+                                                ? (isAr ? "إيقاف التلاوة" : (lang == 'fr' ? "Pause" : "Pause"))
+                                                : (isAr ? "استماع للتلاوة" : (lang == 'fr' ? "Écouter la récitation" : "Play Recitation")),
+                                            style: TextStyle(
+                                              color: isPlaying ? const Color(0xFFFDE68A) : Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: theme.accent.withValues(alpha: 0.35), width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.accent.withValues(alpha: 0.12),
-                            blurRadius: 14,
-                            spreadRadius: 1,
-                          ),
-                        ],
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              isAr
-                                  ? "الصلاة القادمة: صلاة ${next['name']}"
-                                  : "${LanguageService.tr('tab_next_prayer')}: ${next['name']}",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.bold,
+                      const SizedBox(height: 6),
+
+                      // Islamic Clock (Supports Analog, Digital, Minimalist)
+                      Center(
+                        child: MihrabClockWidget(
+                          dateTime: _currentTime,
+                          prayerTimes: _todayTimes,
+                          isAr: isAr,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Next Prayer Countdown Card (Compact vertical layout)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 2.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [theme.darkPrimary, theme.cardBackground],
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: theme.accent.withValues(alpha: 0.35), width: 1.1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.accent.withValues(alpha: 0.12),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                isAr
+                                    ? "الصلاة القادمة: صلاة ${next['name']}"
+                                    : "${LanguageService.tr('tab_next_prayer')}: ${next['name']}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 3),
+                            const SizedBox(height: 2),
 
-                          // Time Text - 24-hour format (e.g. 16:09)
-                          Text(
-                            next['time'] ?? "",
-                            style: TextStyle(
-                              color: theme.accent,
-                              fontSize: 27,
-                              fontWeight: FontWeight.bold,
-                              height: 1.15,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              isAr
-                                  ? "متبقي: ${next['remaining']}"
-                                  : "${LanguageService.tr('remaining_prefix')}: ${next['remaining']}",
-                              style: const TextStyle(
-                                color: Color(0xFFFDE68A),
+                            // Time Text - 24-hour format (e.g. 16:09)
+                            Text(
+                              next['time'] ?? "",
+                              style: TextStyle(
+                                color: theme.accent,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12.5,
+                                height: 1.1,
+                                letterSpacing: 1.2,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 2),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                isAr
+                                    ? "متبقي: ${next['remaining']}"
+                                    : "${LanguageService.tr('remaining_prefix')}: ${next['remaining']}",
+                                style: const TextStyle(
+                                  color: Color(0xFFFDE68A),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
+                      const SizedBox(height: 6),
 
-                    // Daily Prayer Tracker with Streak Badge
-                    PrayerTrackerCard(isAr: isAr),
-                    const SizedBox(height: 5),
-                  ],
+                      // Daily Prayer Tracker with Streak Badge
+                      PrayerTrackerCard(isAr: isAr),
+                      const SizedBox(height: 6),
+                    ],
+                  ),
                 ),
               ),
             );
