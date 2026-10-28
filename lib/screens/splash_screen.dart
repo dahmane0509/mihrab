@@ -633,13 +633,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       // Top Header: Audio Info & Skip Button (placed last in Stack for clear, un-overlapped display)
       Positioned(
         top: topPadding + 10,
-        left: 18,
-        right: 18,
+        left: 8,
+        right: 8,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Audio toggle badge (Sheikh Abdulbasit with interactive toggle & compact switch)
-            ValueListenableBuilder<bool>(
+            // Wrapped in Flexible so the golden badge never overflows the screen edge.
+            Flexible(
+              child: ValueListenableBuilder<bool>(
               valueListenable: VerseAudioService.isPlayingNotifier,
               builder: (context, isPlaying, _) {
                 final active = _isRecitationEnabled;
@@ -650,7 +652,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(20),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4.5),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0F1E36).withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
@@ -673,16 +675,23 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Sheikh Name
-                          Text(
-                            isFr ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
-                            style: GoogleFonts.cairo(
-                              color: active ? const Color(0xFFE2E8F0) : const Color(0xFF94A3B8),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                          // Sheikh Name (scales down instead of overflowing the screen edge)
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                isFr ? "Cheikh Abdul Basit" : "الشيخ عبد الباسط عبد الصمد",
+                                maxLines: 1,
+                                softWrap: false,
+                                style: GoogleFonts.cairo(
+                                  color: active ? const Color(0xFFE2E8F0) : const Color(0xFF94A3B8),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 3),
                           // Speaker Icon reflecting active / playing / muted state
                           Icon(
                             !active
@@ -693,12 +702,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                 : Colors.white38,
                             size: 15,
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 3),
                           // Compact Switch directly toggling & persisting recitation preference
                           // Styled with high-contrast bright red (#EF4444 / #FF0000) for track, thumb, and border
                           SizedBox(
                             width: 34,
-                            height: 19,
+                            height: 20,
                             child: FittedBox(
                               fit: BoxFit.contain,
                               child: Switch(
@@ -728,7 +737,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   ),
                 );
               },
+              ),
             ),
+            const SizedBox(width: 6),
 
             // Skip Button (تخطي / Passer)
             Material(
