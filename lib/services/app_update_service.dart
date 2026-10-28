@@ -78,7 +78,7 @@ class AppUpdateService {
       return PackageInfo(
         appName: 'مِحْراب',
         packageName: 'com.mihrab.algeria.mihrab_app',
-        version: '1.0.2',
+        version: '1.0.4',
         buildNumber: '1',
         buildSignature: '',
       );
