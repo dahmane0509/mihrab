@@ -3,11 +3,18 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'audio_coordinator.dart';
 import 'adhan_audio_service.dart';
 import 'prayer_notification_service.dart';
 
 /// Dedicated service for playing the Mihrab Quran verse recitation
 /// (Surah Ali 'Imran: 39) smoothly across Splash and Home Screen without cut-off or overlap.
+///
+/// Audio priority rules (enforced through [AudioCoordinator]):
+///  * The Adhan ALWAYS has priority: when it starts, this recitation is stopped instantly.
+///  * The automatic startup recitation never starts while the Adhan is playing, during the
+///    Adhan window right after a prayer time, or when the app was opened from a prayer alert.
+///  * Only the explicit "استماع للتلاوة" button may interrupt a playing Adhan (user intent).
 class VerseAudioService {
   static final AudioPlayer _player = AudioPlayer();
   static bool _isInitialized = false;
@@ -17,17 +24,17 @@ class VerseAudioService {
   static const String _keyRecitationEnabled = 'enable_startup_recitation';
 
   /// Reactive notifier for whether automatic startup recitation is enabled by the user
-  static final ValueNotifier<bool> recitationEnabledNotifier = ValueNotifier<bool>(true);
+  static final ValueNotifier<bool> recitationEnabledNotifier =
+      ValueNotifier<bool>(true);
 
   // حفظ حالة التلاوة التلقائية عند بدء التشغيل فقط
+  // ملاحظة: تفعيل الإعداد لا يوقف الأذان أبداً (الأذان له الأولوية القصوى)
   static Future<void> setRecitationEnabled(bool isEnabled) async {
     recitationEnabledNotifier.value = isEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyRecitationEnabled, isEnabled);
     if (!isEnabled) {
       await stopVerse();
-    } else {
-      await AdhanAudioService.stopAdhan();
     }
   }
 
@@ -43,7 +50,8 @@ class VerseAudioService {
   static Future<void> stop() => stopVerse();
 
   /// Reactive notifier for UI components (play/pause state)
-  static final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> isPlayingNotifier =
+      ValueNotifier<bool>(false);
 
   /// Reactive notifier for audio position/progress
   static final ValueNotifier<Duration> positionNotifier =
@@ -57,6 +65,7 @@ class VerseAudioService {
   static Future<void> init() async {
     if (_isInitialized) return;
     _isInitialized = true;
+    AudioCoordinator.registerChannelStopper(AudioChannel.verse, stopVerse);
     recitationEnabledNotifier.value = await isRecitationEnabled();
 
     try {
@@ -85,6 +94,14 @@ class VerseAudioService {
       _player.onPlayerStateChanged.listen((state) {
         final isPlaying = (state == PlayerState.playing);
         isPlayingNotifier.value = isPlaying;
+        // Safety net: if the recitation somehow starts while the Adhan owns focus, stop it at once.
+        if (isPlaying &&
+            AudioCoordinator.isAdhanActive &&
+            !AudioCoordinator.isActive(AudioChannel.verse)) {
+          debugPrint(
+              "VerseAudioService: recitation detected during Adhan -> stopping");
+          stopVerse();
+        }
       });
 
       _player.onPositionChanged.listen((pos) {
@@ -98,18 +115,45 @@ class VerseAudioService {
       _player.onPlayerComplete.listen((_) {
         isPlayingNotifier.value = false;
         positionNotifier.value = Duration.zero;
+        AudioCoordinator.abandonFocus(AudioChannel.verse);
       });
     } catch (e) {
       debugPrint("VerseAudioService init error: $e");
     }
   }
 
+  /// Returns true when an automatic (non-user) recitation must NOT start because the Adhan
+  /// is playing, is about to play, or was just delivered by a system notification.
+  static Future<bool> _isAdhanBlockingAutoPlayback() async {
+    if (AudioCoordinator.isAdhanActive ||
+        AdhanAudioService.isPlayingNotifier.value) {
+      debugPrint(
+          "VerseAudioService: auto recitation blocked (Adhan is playing)");
+      return true;
+    }
+    if (await PrayerNotificationService.wasLaunchedFromNotification()) {
+      debugPrint(
+          "VerseAudioService: auto recitation blocked (launched from prayer notification)");
+      return true;
+    }
+    if (await PrayerNotificationService.isWithinAdhanWindow()) {
+      debugPrint(
+          "VerseAudioService: auto recitation blocked (inside Adhan time window)");
+      return true;
+    }
+    return false;
+  }
+
   /// Play verse audio directly from local assets.
-  /// Manual playback (isStartup == false) is 100% independent of general/startup settings
-  /// (`enable_startup_recitation` / `ayahRecitationEnabled`) and always plays immediately.
+  ///
+  /// * [isStartup] – automatic SplashScreen recitation: respects the user setting and is
+  ///   blocked by any Adhan activity.
+  /// * [interruptAdhan] – ONLY for the explicit "استماع للتلاوة" button: the user's direct
+  ///   action may stop a playing Adhan. Every other caller leaves the Adhan untouched.
   static Future<bool> playVerse({
     bool restartIfPlaying = true,
     bool isStartup = false,
+    bool interruptAdhan = false,
   }) async {
     final int myOpId = ++_playOpId;
     await init();
@@ -120,17 +164,11 @@ class VerseAudioService {
       if (!isEnabled) {
         return false;
       }
+    }
 
-      if (AdhanAudioService.isPlayingNotifier.value) {
-        debugPrint("VerseAudioService: Startup recitation skipped because Adhan is actively playing");
-        return false;
-      }
-
-      final fromNotif = await PrayerNotificationService.wasLaunchedFromNotification();
-      if (fromNotif) {
-        debugPrint("VerseAudioService: Startup recitation skipped because app launched via prayer notification");
-        return false;
-      }
+    // Automatic / non-explicit playback must never compete with the Adhan.
+    if (!interruptAdhan && await _isAdhanBlockingAutoPlayback()) {
+      return false;
     }
 
     if (myOpId != _playOpId) return false;
@@ -139,9 +177,18 @@ class VerseAudioService {
       return true;
     }
 
+    // Acquire exclusive audio focus (stops Surah player / live radio / chime, and the Adhan
+    // only when [interruptAdhan] is true).
+    final granted = await AudioCoordinator.requestFocus(
+      AudioChannel.verse,
+      interruptHigher: interruptAdhan,
+    );
+    if (!granted || myOpId != _playOpId) {
+      if (!granted) AudioCoordinator.abandonFocus(AudioChannel.verse);
+      return false;
+    }
+
     try {
-      // إيقاف أي أذان أو تلاوة سابقة قيد التشغيل تماماً قبل بدء التلاوة الجديدة
-      await AdhanAudioService.stopAdhan();
       await _player.stop();
 
       if (myOpId != _playOpId) return false;
@@ -170,18 +217,23 @@ class VerseAudioService {
         }
       }
 
-      if (myOpId != _playOpId) {
+      // Final guard: if the Adhan claimed focus while we were loading, yield immediately.
+      if (myOpId != _playOpId ||
+          (AudioCoordinator.isAdhanActive && !interruptAdhan)) {
         await _player.stop();
+        AudioCoordinator.abandonFocus(AudioChannel.verse);
         return false;
       }
 
       isPlayingNotifier.value = played;
+      if (!played) AudioCoordinator.abandonFocus(AudioChannel.verse);
       return played;
     } catch (e) {
       debugPrint("VerseAudioService playVerse error: $e");
       if (myOpId == _playOpId) {
         isPlayingNotifier.value = false;
       }
+      AudioCoordinator.abandonFocus(AudioChannel.verse);
       return false;
     }
   }
@@ -192,7 +244,8 @@ class VerseAudioService {
     if (isPlayingNotifier.value) {
       await stopVerse();
     } else {
-      await playVerse(restartIfPlaying: true, isStartup: false);
+      await playVerse(
+          restartIfPlaying: true, isStartup: false, interruptAdhan: true);
     }
   }
 
@@ -204,6 +257,8 @@ class VerseAudioService {
       isPlayingNotifier.value = false;
     } catch (e) {
       debugPrint("VerseAudioService pauseVerse error: $e");
+    } finally {
+      AudioCoordinator.abandonFocus(AudioChannel.verse);
     }
   }
 
@@ -216,6 +271,8 @@ class VerseAudioService {
       positionNotifier.value = Duration.zero;
     } catch (e) {
       debugPrint("VerseAudioService stopVerse error: $e");
+    } finally {
+      AudioCoordinator.abandonFocus(AudioChannel.verse);
     }
   }
 }

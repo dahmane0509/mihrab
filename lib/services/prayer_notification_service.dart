@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter/services.dart';
 import '../data/algeria_communes.dart';
 import '../data/world_cities.dart';
 import 'adhan_audio_service.dart';
-import 'verse_audio_service.dart';
+import 'audio_coordinator.dart';
+import 'home_widget_service.dart';
 import 'prayer_service.dart';
 import 'silent_mode_service.dart';
-import 'home_widget_service.dart';
+import 'verse_audio_service.dart';
 
 /// Service responsible for notifying and playing Adhan audio when prayer times arrive.
 class PrayerNotificationService {
@@ -24,17 +25,77 @@ class PrayerNotificationService {
   static bool get launchedViaNotification => _launchedViaNotification;
 
   /// Returns whether the app was opened from a prayer notification tap
+  /// or while a scheduled prayer notification is actively ringing in the status bar.
   static Future<bool> wasLaunchedFromNotification() async {
     if (_launchedViaNotification) return true;
-    if (!_isInitialized) return false;
     try {
-      final details = await _notifications.getNotificationAppLaunchDetails();
-      if (details?.didNotificationLaunchApp == true) {
-        _launchedViaNotification = true;
-        return true;
+      if (_isInitialized) {
+        final details = await _notifications.getNotificationAppLaunchDetails();
+        if (details?.didNotificationLaunchApp == true) {
+          _launchedViaNotification = true;
+          return true;
+        }
+      }
+      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        final activeList = await androidPlugin.getActiveNotifications();
+        for (final n in activeList) {
+          final id = n.id;
+          if (id != null && (id == 100 || id == 9999 || (id >= 5000 && id <= 5600))) {
+            return true;
+          }
+        }
       }
     } catch (e) {
       debugPrint("wasLaunchedFromNotification note: $e");
+    }
+    return false;
+  }
+
+  /// Returns true if the current clock time falls inside an active prayer Adhan window
+  /// (0..180 seconds after an enabled/unmuted prayer entry), so startup Quran recitation
+  /// yields immediately to the Adhan.
+  static Future<bool> isWithinAdhanWindow() async {
+    if (AudioCoordinator.isAdhanActive || AdhanAudioService.isPlayingNotifier.value) {
+      return true;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final commune = await _getActiveCommune();
+      final now = DateTime.now();
+      final times = PrayerService.calculateTimesForCommuneResult(
+        commune: commune,
+        date: now,
+      );
+
+      final prayers = <String, Map<String, dynamic>>{
+        'fajr': {'name': 'الفجر', 'time': times.fajr},
+        'dhuhr': {'name': 'الظهر', 'time': times.dhuhr},
+        'asr': {'name': 'العصر', 'time': times.asr},
+        'maghrib': {'name': 'المغرب', 'time': times.maghrib},
+        'isha': {'name': 'العشاء', 'time': times.isha},
+      };
+
+      for (final entry in prayers.entries) {
+        final key = entry.key;
+        final prayerName = entry.value['name'] as String;
+        final pTime = entry.value['time'] as DateTime;
+
+        final isMuted = prefs.getBool('mute_$key') ?? false;
+        final isNotifEnabled = prefs.getBool('notif_$prayerName') ?? true;
+        if (isMuted || !isNotifEnabled) continue;
+
+        final diffSeconds = now.difference(pTime).inSeconds;
+        if (diffSeconds >= 0 && diffSeconds < 180) {
+          // If this prayer hasn't triggered yet or Adhan is still playing, block startup verse
+          if (!hasTriggeredToday(key) || AdhanAudioService.isPlayingNotifier.value) {
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("isWithinAdhanWindow check note: $e");
     }
     return false;
   }
@@ -163,6 +224,7 @@ class PrayerNotificationService {
         settings: initSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           _launchedViaNotification = true;
+          VerseAudioService.stopVerse();
           if (response.actionId == 'stop_adhan') {
             AdhanAudioService.stopAdhan();
           } else {
@@ -200,10 +262,12 @@ class PrayerNotificationService {
         await androidPlugin.requestExactAlarmsPermission();
       }
 
+      _isInitialized = true;
       await checkNotificationsEnabled();
+      // Immediately check if we are inside a prayer time right now so Adhan takes priority
+      await checkCurrentPrayerTime();
       await scheduleAllPrayerNotifications();
       startMonitoring();
-      _isInitialized = true;
     } catch (e) {
       debugPrint("PrayerNotificationService initialization note: $e");
     }
@@ -292,7 +356,7 @@ class PrayerNotificationService {
     } catch (_) {}
   }
 
-  /// Schedule all 5 daily prayers using exact alarm manager for today and the next 7 days
+  /// Schedule all 5 daily prayers using exact alarm manager for today and tomorrow
   static Future<void> scheduleAllPrayerNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -463,8 +527,9 @@ class PrayerNotificationService {
   }
 
   /// Triggers the Heads-up system notification and starts the Adhan audio immediately.
-  /// Uses the silent visual channel when [playVoice] is true so the notification channel's built-in
-  /// 'athan' sound never overlaps with the user-selected Adhan played by [AdhanAudioService].
+  /// Gives Adhan HIGHEST PRIORITY: stops Quran recitation and cancels any ringing OS alarm
+  /// notification before starting the selected Adhan, and uses the silent visual channel
+  /// when [playVoice] is true so the notification channel's built-in 'athan' sound never overlaps.
   static Future<void> triggerAdhanNotification({
     required String prayerName,
     required String prayerKey,
@@ -473,26 +538,30 @@ class PrayerNotificationService {
   }) async {
     markTriggeredToday(prayerKey);
 
-    // 0. Stop any Quran verse recitation and cancel any ringing alarm notification first
+    // 0. Claim Adhan priority immediately, stop any Quran verse recitation, and cancel any ringing alarm notification
+    try {
+      await AudioCoordinator.requestFocus(AudioChannel.adhan, interruptHigher: true);
+    } catch (_) {}
     try {
       await VerseAudioService.stopVerse();
     } catch (_) {}
-    try {
-      await _notifications.cancel(id: 100);
-    } catch (_) {}
+    await AdhanAudioService.cancelActiveRingingNotifications();
 
-    // 1. Play user-selected Adhan Voice through loudspeaker when app is open
+    // 1. Play user-selected Adhan Voice through loudspeaker when app is active
+    bool voiceStarted = false;
     if (playVoice) {
       try {
-        await AdhanAudioService.playAdhanForPrayer(prayerKey);
+        voiceStarted = await AdhanAudioService.playAdhanForPrayer(prayerKey);
       } catch (e) {
         debugPrint("Failed to play adhan audio: $e");
       }
+    } else {
+      await AudioCoordinator.silenceAllExceptAdhan();
     }
 
-    // 2. Heads-up System Notification (Silent channel if AdhanAudioService is already playing voice!)
+    // 2. Heads-up System Notification (Silent channel whenever AdhanAudioService is playing voice!)
     try {
-      final useSilentChannel = playVoice;
+      final useSilentChannel = playVoice && voiceStarted;
       final androidDetails = AndroidNotificationDetails(
         useSilentChannel ? prayerSilentChannel.id : prayerChannel.id,
         useSilentChannel ? prayerSilentChannel.name : prayerChannel.name,

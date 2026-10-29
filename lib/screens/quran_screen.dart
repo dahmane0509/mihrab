@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../services/adhan_audio_service.dart';
+import '../services/audio_coordinator.dart';
 import '../services/verse_audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/quran_data.dart';
@@ -45,6 +45,18 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
     QuranAudioRecitersService.activeReciterNotifier.addListener(_onReciterChanged);
     QuranAudioRecitersService.recitersVersionNotifier.addListener(_onRecitersListChanged);
     _loadBookmark();
+    AudioCoordinator.registerMediaStopper('quran_screen', () async {
+      try {
+        await _audioPlayer.stop();
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _currentPlayingSurahNumber = null;
+          _position = Duration.zero;
+        });
+      }
+    });
 
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
@@ -89,6 +101,8 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
 
   @override
   void dispose() {
+    AudioCoordinator.unregisterMediaStopper('quran_screen');
+    AudioCoordinator.abandonFocus(AudioChannel.media);
     _tabController.dispose();
     _audioPlayer.dispose();
     QuranAudioRecitersService.activeReciterNotifier.removeListener(_onReciterChanged);
@@ -133,8 +147,12 @@ class _QuranScreenState extends State<QuranScreen> with SingleTickerProviderStat
     );
 
     try {
+      final granted = await AudioCoordinator.requestFocus(
+        AudioChannel.media,
+        mediaOwner: 'quran_screen',
+      );
+      if (!granted) return;
       await VerseAudioService.stopVerse();
-      await AdhanAudioService.stopAdhan();
       await _audioPlayer.stop();
       await _audioPlayer.play(UrlSource(url));
       setState(() {

@@ -1,7 +1,7 @@
 // Updated v1.0.1
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../services/adhan_audio_service.dart';
+import '../services/audio_coordinator.dart';
 import '../services/verse_audio_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
@@ -145,6 +145,18 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
   @override
   void initState() {
     super.initState();
+    AudioCoordinator.registerMediaStopper('live_broadcast_screen', () async {
+      try {
+        await _livePlayer.stop();
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _isLoading = false;
+          _activeChannelId = null;
+        });
+      }
+    });
     _livePlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() {
@@ -157,6 +169,8 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
 
   @override
   void dispose() {
+    AudioCoordinator.unregisterMediaStopper('live_broadcast_screen');
+    AudioCoordinator.abandonFocus(AudioChannel.media);
     _livePlayer.dispose();
     super.dispose();
   }
@@ -248,8 +262,12 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
     );
 
     try {
+      final granted = await AudioCoordinator.requestFocus(
+        AudioChannel.media,
+        mediaOwner: 'live_broadcast_screen',
+      );
+      if (!granted) return;
       await VerseAudioService.stopVerse();
-      await AdhanAudioService.stopAdhan();
       await _livePlayer.stop();
       await _livePlayer.play(UrlSource(channel.audioStreamUrl));
     } catch (e) {

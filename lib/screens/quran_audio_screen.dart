@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../services/adhan_audio_service.dart';
+import '../services/audio_coordinator.dart';
 import '../services/verse_audio_service.dart';
 import '../data/quran_data.dart';
 import '../services/app_feedback.dart';
@@ -99,6 +99,19 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
   void initState() {
     super.initState();
     _selectedReciter = _reciters[0];
+    AudioCoordinator.registerMediaStopper('quran_audio_screen', () async {
+      try {
+        await _audioPlayer.stop();
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _isLoading = false;
+          _playingSurahNumber = null;
+          _position = Duration.zero;
+        });
+      }
+    });
 
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
@@ -130,6 +143,8 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
 
   @override
   void dispose() {
+    AudioCoordinator.unregisterMediaStopper('quran_audio_screen');
+    AudioCoordinator.abandonFocus(AudioChannel.media);
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -181,11 +196,16 @@ class _QuranAudioScreenState extends State<QuranAudioScreen> {
       ),
     );
 
-    VerseAudioService.stopVerse();
-    AdhanAudioService.stopAdhan();
-    _audioPlayer.stop().then((_) {
-      _audioPlayer.play(UrlSource(streamUrl)).catchError((_) {});
-    }).catchError((_) {});
+    AudioCoordinator.requestFocus(
+      AudioChannel.media,
+      mediaOwner: 'quran_audio_screen',
+    ).then((granted) {
+      if (!granted) return;
+      VerseAudioService.stopVerse();
+      _audioPlayer.stop().then((_) {
+        _audioPlayer.play(UrlSource(streamUrl)).catchError((_) {});
+      }).catchError((_) {});
+    });
   }
 
   Future<void> _stopAudio() async {

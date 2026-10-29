@@ -138,12 +138,18 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
     VerseAudioService.stopVerse();
     if (const bool.fromEnvironment('FLUTTER_TEST')) return;
 
+    final locName =
+        widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr;
+    PrayerNotificationService.triggerAdhanNotification(
+      prayerName: prayerName,
+      prayerKey: prayerKey,
+      communeName: locName,
+    );
+
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        final locName =
-            widget.currentCommune?.nameAr ?? widget.currentWilaya.nameAr;
         return AlertDialog(
           backgroundColor: const Color(0xFF0F254E),
           shape: RoundedRectangleBorder(
@@ -603,6 +609,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                       await VerseAudioService.playVerse(
                                         restartIfPlaying: true,
                                         isStartup: false,
+                                        interruptAdhan: true,
                                       );
                                     }
                                   },

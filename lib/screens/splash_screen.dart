@@ -114,8 +114,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // Start entrance animations
     _entranceController.forward();
 
+    // Listen for Adhan starting so SplashScreen immediately yields to Adhan (highest priority)
+    AdhanAudioService.isPlayingNotifier.addListener(_onAdhanPlayingChanged);
+
     // Check user preference & Adhan conditions before playing recitation
     _initRecitation();
+  }
+
+  void _onAdhanPlayingChanged() {
+    if (AdhanAudioService.isPlayingNotifier.value) {
+      debugPrint("SplashScreen: Adhan started -> stopping verse recitation & transitioning to Home.");
+      VerseAudioService.stopVerse();
+      _playerCompleteSub?.cancel();
+      _scheduleHomeNavigation(delayMs: 800);
+    }
   }
 
   Future<void> _initRecitation() async {
@@ -133,10 +145,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       return;
     }
 
-    // 2. If Adhan is currently playing, do NOT play startup recitation
-    if (AdhanAudioService.isPlayingNotifier.value) {
-      debugPrint("Startup recitation prevented: Adhan is actively playing.");
-      _scheduleHomeNavigation(delayMs: 2500);
+    // 2. If Adhan is currently playing or we are inside a prayer Adhan window, do NOT play startup recitation
+    if (AdhanAudioService.isPlayingNotifier.value ||
+        await PrayerNotificationService.isWithinAdhanWindow()) {
+      debugPrint("Startup recitation prevented: Adhan is active or prayer time has arrived.");
+      await PrayerNotificationService.checkCurrentPrayerTime();
+      _scheduleHomeNavigation(delayMs: 2000);
       return;
     }
 
@@ -191,9 +205,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       _playerCompleteSub?.cancel();
       _scheduleHomeNavigation(delayMs: 1200);
     } else {
-      // Enabled by user: stop any running Adhan first, then play verse recitation
-      await AdhanAudioService.stopAdhan();
-      await _playVerseAudio(isStartup: false);
+      // Enabled by user: play verse recitation only if Adhan is not playing (Adhan has top priority)
+      if (!AdhanAudioService.isPlayingNotifier.value) {
+        await _playVerseAudio(isStartup: false);
+      }
     }
   }
 
@@ -226,6 +241,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   void dispose() {
+    AdhanAudioService.isPlayingNotifier.removeListener(_onAdhanPlayingChanged);
     _safetyTimer?.cancel();
     _playerCompleteSub?.cancel();
     _entranceController.dispose();

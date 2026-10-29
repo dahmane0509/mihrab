@@ -6,6 +6,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'adhan_audio_service.dart';
+import 'audio_coordinator.dart';
+import 'verse_audio_service.dart';
 
 class AdhkarItem {
   final String id;
@@ -246,7 +249,10 @@ class AutoAdhkarService {
             contentTitle: '📿 ${item.category}',
             summaryText: item.virtue.isNotEmpty ? item.virtue : 'تطبيق مِحْراب',
           ),
-          playSound: soundEnabled,
+          playSound: soundEnabled &&
+            !AudioCoordinator.isBusy &&
+            !AdhanAudioService.isPlayingNotifier.value &&
+            !VerseAudioService.isPlayingNotifier.value,
           enableVibration: true,
         );
 
@@ -396,7 +402,10 @@ class AutoAdhkarService {
           contentTitle: '📿 ${item.category}',
           summaryText: item.virtue.isNotEmpty ? item.virtue : 'تطبيق مِحْراب',
         ),
-        playSound: soundEnabled,
+        playSound: soundEnabled &&
+            !AudioCoordinator.isBusy &&
+            !AdhanAudioService.isPlayingNotifier.value &&
+            !VerseAudioService.isPlayingNotifier.value,
         enableVibration: true,
         fullScreenIntent: false,
       );

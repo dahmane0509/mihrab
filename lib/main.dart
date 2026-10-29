@@ -24,9 +24,11 @@ import 'services/clock_style_service.dart';
 import 'services/prayer_tracker_service.dart';
 import 'services/home_widget_service.dart';
 import 'services/verse_audio_service.dart';
+import 'services/audio_coordinator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AudioCoordinator.init();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
