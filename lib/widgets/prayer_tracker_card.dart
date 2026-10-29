@@ -27,7 +27,7 @@ class PrayerTrackerCard extends StatelessWidget {
               builder: (context, streak, _) {
                 return Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
                     color: theme.cardBackground,
                     borderRadius: BorderRadius.circular(20),
@@ -74,18 +74,19 @@ class PrayerTrackerCard extends StatelessWidget {
                                   isAr ? "متتبع الصلوات اليومية" : "Daily Prayer Tracker",
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 13.5,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(height: 1),
+                                const SizedBox(height: 2),
                                 Text(
                                   isAr
                                       ? "سجّل صلواتك في وقتها واحرص على استمرار السلسلة"
                                       : "Log your prayers on time and keep the streak",
                                   style: const TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 10.5,
+                                    color: Color(0xFFCBD5E1),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -129,7 +130,7 @@ class PrayerTrackerCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 9),
 
                       // Progress Bar & Count
                       Row(
@@ -158,7 +159,7 @@ class PrayerTrackerCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
 
                       // 5 Prayer Buttons
                       Row(
@@ -191,7 +192,7 @@ class PrayerTrackerCard extends StatelessWidget {
                                     await PrayerTrackerService.togglePrayer(key);
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding: const EdgeInsets.symmetric(vertical: 7),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -201,7 +202,7 @@ class PrayerTrackerCard extends StatelessWidget {
                                               : Icons.radio_button_unchecked_rounded,
                                           color: isDone
                                               ? const Color(0xFF34D399)
-                                              : Colors.white38,
+                                              : Colors.white54,
                                           size: 18,
                                         ),
                                         const SizedBox(height: 4),
@@ -210,11 +211,11 @@ class PrayerTrackerCard extends StatelessWidget {
                                           style: TextStyle(
                                             color: isDone
                                                 ? Colors.white
-                                                : const Color(0xFF94A3B8),
-                                            fontSize: 11,
+                                                : const Color(0xFFCBD5E1),
+                                            fontSize: 13,
                                             fontWeight: isDone
                                                 ? FontWeight.bold
-                                                : FontWeight.w500,
+                                                : FontWeight.w600,
                                           ),
                                         ),
                                       ],

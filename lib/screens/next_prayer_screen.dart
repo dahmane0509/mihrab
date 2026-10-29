@@ -435,65 +435,64 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                   ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
+                  padding: const EdgeInsets.fromLTRB(16.0, 6.0, 16.0, 4.0),
                   child: Column(
                     children: [
-                      // Dates card - Perfectly centered single line with clear bottom spacing
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: theme.cardBackground,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                                color: theme.accent.withValues(alpha: 0.35)),
-                          ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  PrayerService.getFormattedHijriDate(
-                                      _currentTime, lang),
+                      // Dates card - Full width matching all cards below (16dp outer horizontal margin)
+                      Container(
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: theme.cardBackground,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: theme.accent.withValues(alpha: 0.35)),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                PrayerService.getFormattedHijriDate(
+                                    _currentTime, lang),
+                                style: TextStyle(
+                                    color: theme.accent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: Text(
+                                  "•",
                                   style: TextStyle(
-                                      color: theme.accent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13),
+                                      color:
+                                          theme.accent.withValues(alpha: 0.6),
+                                      fontSize: 14),
                                 ),
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 8),
-                                  child: Text(
-                                    "•",
-                                    style: TextStyle(
-                                        color:
-                                            theme.accent.withValues(alpha: 0.6),
-                                        fontSize: 14),
-                                  ),
-                                ),
-                                Text(
-                                  PrayerService.getFormattedGregorianDate(
-                                      _currentTime, lang),
-                                  style: const TextStyle(
-                                      color: Color(0xFFCBD5E1),
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
+                              ),
+                              Text(
+                                PrayerService.getFormattedGregorianDate(
+                                    _currentTime, lang),
+                                style: const TextStyle(
+                                    color: Color(0xFFCBD5E1),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 6),
 
-                      // Mihrab Holy Quran Verse Card with Recitation Control
+                      // Mihrab Holy Quran Verse Card with Recitation Control (Full width, 16dp outer margin)
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 4.0),
                         padding:
-                            const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 10.0),
+                            const EdgeInsets.fromLTRB(14.0, 9.0, 14.0, 9.0),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -522,7 +521,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             // Holy Verse in 2 balanced lines with natural Amiri line height so descenders/tashkeel never clip
                             Padding(
                               padding:
-                                  const EdgeInsets.symmetric(vertical: 2.0),
+                                  const EdgeInsets.symmetric(vertical: 1.0),
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
@@ -534,7 +533,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     color: const Color(0xFFFDE68A),
                                     fontSize: 18.5,
                                     fontWeight: FontWeight.bold,
-                                    height: 1.85,
+                                    height: 1.80,
                                     shadows: [
                                       Shadow(
                                         color: const Color(0xFFD4AF37)
@@ -547,7 +546,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                               ),
                             ),
 
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
 
                             // Attribution in a single scaled row to guarantee zero vertical wrapping/overflow
                             FittedBox(
@@ -595,7 +594,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
 
                             const SizedBox(height: 6),
 
-                            // Manual Audio Playback Button - Always visible, enabled, and independent of general settings
+                            // Manual Audio Playback Button - Comfortable touch target (38px-42px) & 13.5px font
                             ValueListenableBuilder<bool>(
                               valueListenable:
                                   VerseAudioService.isPlayingNotifier,
@@ -622,8 +621,8 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                         ? const Color(0xFFFDE68A)
                                         : Colors.white,
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 5),
-                                    minimumSize: const Size(120, 30),
+                                        horizontal: 18, vertical: 8),
+                                    minimumSize: const Size(140, 38),
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     shape: RoundedRectangleBorder(
@@ -644,7 +643,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     color: isPlaying
                                         ? const Color(0xFFFDE68A)
                                         : theme.accent,
-                                    size: 16,
+                                    size: 18,
                                   ),
                                   label: Text(
                                     isPlaying
@@ -662,7 +661,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                       color: isPlaying
                                           ? const Color(0xFFFDE68A)
                                           : Colors.white,
-                                      fontSize: 11.5,
+                                      fontSize: 13.5,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -672,7 +671,7 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 5),
 
                       // Islamic Clock (Supports Analog, Digital, Minimalist)
                       Center(
@@ -682,14 +681,13 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                           isAr: isAr,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 5),
 
-                      // Next Prayer Countdown Card (Compact vertical layout)
+                      // Next Prayer Countdown Card (Full width matching all other cards, prominent typography)
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.symmetric(horizontal: 24.0),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
+                            horizontal: 16, vertical: 7),
                         clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -697,10 +695,10 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                             begin: Alignment.topRight,
                             end: Alignment.bottomLeft,
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                               color: theme.accent.withValues(alpha: 0.35),
-                              width: 1.1),
+                              width: 1.2),
                           boxShadow: [
                             BoxShadow(
                               color: theme.accent.withValues(alpha: 0.12),
@@ -720,28 +718,28 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                     : "${LanguageService.tr('tab_next_prayer')}: ${next['name']}",
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 13,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 2),
 
-                            // Time Text - 24-hour format (e.g. 16:09)
+                            // Time Text - 24-hour format (28px–30px bold)
                             Text(
                               next['time'] ?? "",
                               style: TextStyle(
                                 color: theme.accent,
-                                fontSize: 21,
+                                fontSize: 29,
                                 fontWeight: FontWeight.bold,
-                                height: 1.1,
+                                height: 1.05,
                                 letterSpacing: 1.2,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 3),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 2),
+                                  horizontal: 12, vertical: 3),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(12),
@@ -753,18 +751,18 @@ class _NextPrayerScreenState extends State<NextPrayerScreen> {
                                 style: const TextStyle(
                                   color: Color(0xFFFDE68A),
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 11,
+                                  fontSize: 13.5,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
                       // Daily Prayer Tracker with Streak Badge
                       PrayerTrackerCard(isAr: isAr),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 2),
                     ],
                   ),
                 ),

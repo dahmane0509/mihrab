@@ -41,8 +41,8 @@ class MihrabClockWidget extends StatelessWidget {
   // 1. Classic Analog Clock
   Widget _buildAnalogClock(BuildContext context, AppThemeColor theme) {
     return SizedBox(
-      width: 168,
-      height: 168,
+      width: 158,
+      height: 158,
       child: CustomPaint(
         painter: ModernAnalogClockPainter(
           dateTime: dateTime,
@@ -200,8 +200,8 @@ class MihrabClockWidget extends StatelessWidget {
   // 3. Minimalist Arabic Numerals Clock
   Widget _buildMinimalistClock(BuildContext context, AppThemeColor theme) {
     return SizedBox(
-      width: 168,
-      height: 168,
+      width: 158,
+      height: 158,
       child: CustomPaint(
         painter: MinimalistArabicClockPainter(
           dateTime: dateTime,
@@ -278,9 +278,9 @@ class ModernAnalogClockPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: "$i",
         style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
+          color: Color(0xFFE2E8F0),
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
         ),
       );
       textPainter.layout();
@@ -379,9 +379,9 @@ class MinimalistArabicClockPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: arabicNumerals[i],
         style: TextStyle(
-          color: isCardinal ? accentColor : Colors.white60,
-          fontSize: isCardinal ? 13 : 11,
-          fontWeight: isCardinal ? FontWeight.bold : FontWeight.w500,
+          color: isCardinal ? accentColor : const Color(0xFFE2E8F0),
+          fontSize: 13,
+          fontWeight: isCardinal ? FontWeight.bold : FontWeight.w600,
         ),
       );
       textPainter.layout();
