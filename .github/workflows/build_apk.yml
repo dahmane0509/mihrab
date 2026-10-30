@@ -1,4 +1,4 @@
-name: Build & Release APK
+name: Build & Release (Android AAB/APK & iOS IPA)
 
 on:
   push:
@@ -9,7 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-android:
+    name: Build Android Release (.aab & .apk)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,14 +21,66 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: "stable"
+      - name: Configure Android Release Keystore
+        run: |
+          if [ ! -f android/app/upload-keystore.jks ]; then
+            keytool -genkeypair -v \
+              -keystore android/app/upload-keystore.jks \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -alias upload -storepass mihrab2026 -keypass mihrab2026 \
+              -dname "CN=Mihrab App, OU=Mobile, O=Mihrab Algeria, L=Algiers, ST=Algiers, C=DZ"
+            cat <<EOF > android/key.properties
+          storePassword=mihrab2026
+          keyPassword=mihrab2026
+          keyAlias=upload
+          storeFile=upload-keystore.jks
+          EOF
+          fi
       - run: flutter pub get
-      - run: flutter build apk --release
+      - name: Build Signed Android App Bundle (.aab)
+        run: |
+          flutter build appbundle --release
+          cp build/app/outputs/bundle/release/app-release.aab mihrab-v1.0.4.aab
+      - name: Build Signed Android APK (.apk)
+        run: |
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk mihrab-v1.0.4.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: mihrab-v1.0.4-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: mihrab-v1.0.4-android
+          path: |
+            mihrab-v1.0.4.aab
+            mihrab-v1.0.4.apk
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.4
           name: "Mihrab v1.0.4"
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            mihrab-v1.0.4.aab
+            mihrab-v1.0.4.apk
+            build/app/outputs/flutter-apk/app-release.apk
+
+  build-ios:
+    name: Build iOS Release (.ipa)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run: flutter pub get
+      - name: Build iOS Release & Package .ipa
+        run: |
+          flutter build ios --release --no-codesign
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r -q mihrab-v1.0.4.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mihrab-v1.0.4-ios-ipa
+          path: mihrab-v1.0.4.ipa
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.4
+          name: "Mihrab v1.0.4"
+          files: mihrab-v1.0.4.ipa

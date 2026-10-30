@@ -4,6 +4,12 @@
 *.pyc
 *.swp
 *.apk
+*.aab
+*.ipa
+*.jks
+*.keystore
+key.properties
+/android/key.properties
 .DS_Store
 .atom/
 .build/
