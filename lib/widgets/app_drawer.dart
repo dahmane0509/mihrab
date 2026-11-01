@@ -320,14 +320,70 @@ class _AppDrawerState extends State<AppDrawer> with SingleTickerProviderStateMix
                             ],
                           ),
                           content: SingleChildScrollView(
-                            child: Text(
-                              isAr
-                                  ? "صُمِّم تطبيق «مِحْرَاب» وفق أعلى معايير الجودة الهندسية والموثوقية التقنية ليكون رفيقاً رقمياً دقيقاً وموثوقاً؛ حيث تخضع النصوص القرآنية فيه لمطابقةٍ صارمة مع المراجع القياسية المعتمدة مثل (مشروع تنزيل - Tanzil) لضمان سلامة الرسم والتشكيل وتطابق أرقام الآيات والسور دون أي خطأ. كما تمت مراجعة وتدقيق خوارزميات حساب مواقيت الصلاة واتجاه القبلة برمجياً بالاعتماد على المكتبات الفلكية المعتمدة عالمياً مثل (مكتبة Adhan) وربطها بالإحداثيات الجغرافية الدقيقة والمناطق الزمنية القياسية. وإلى جانب ذلك، يعتمد التطبيق منظومة فحص آلي لقواعد البيانات لضمان تكامل البيانات، وتوثيق الأحاديث النبوية والأذكار وتخريجها بالاستناد إلى المصادر الموثوقة مثل (موقع الدرر السنية)، مع التحقق الكامل من سلامة الترميز القياسي (UTF-8) لضمان عرض النصوص العربية بأعلى درجات الوضوح والدقة."
-                                  : (langCode == 'fr'
-                                      ? "Conçu selon les normes d'ingénierie les plus strictes, Mihrab garantit une fiabilité optimale : validation des textes coraniques via le standard Tanzil, calculs astronomiques précis des prières et de la Qibla via la bibliothèque Adhan, et vérification automatisée des hadiths (Al-Dorar Al-Saniyyah) avec encodage UTF-8 intégral."
-                                      : "Engineered to the highest standards of accuracy and reliability, Mihrab validates Quranic texts against the Tanzil standard, verifies prayer times and Qibla calculations via the astronomical Adhan library, and runs automated UTF-8 database checks with authentic Hadith referencing from Al-Dorar Al-Saniyyah."),
-                              textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
-                              style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13.5, height: 1.75),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  isAr
+                                      ? "صُمِّم تطبيق «مِحْرَاب» وفق أعلى معايير الجودة الهندسية والموثوقية التقنية ليكون رفيقاً رقمياً دقيقاً وموثوقاً؛ حيث تخضع النصوص القرآنية فيه لمطابقةٍ صارمة مع المراجع القياسية المعتمدة مثل (مشروع تنزيل - Tanzil) لضمان سلامة الرسم والتشكيل وتطابق أرقام الآيات والسور دون أي خطأ. كما تمت مراجعة وتدقيق خوارزميات حساب مواقيت الصلاة واتجاه القبلة برمجياً بالاعتماد على المكتبات الفلكية المعتمدة عالمياً مثل (مكتبة Adhan) وربطها بالإحداثيات الجغرافية الدقيقة والمناطق الزمنية القياسية. وإلى جانب ذلك، يعتمد التطبيق منظومة فحص آلي لقواعد البيانات لضمان تكامل البيانات، وتوثيق الأحاديث النبوية والأذكار وتخريجها بالاستناد إلى المصادر الموثوقة مثل (موقع الدرر السنية)، مع التحقق الكامل من سلامة الترميز القياسي (UTF-8) لضمان عرض النصوص العربية بأعلى درجات الوضوح والدقة."
+                                      : (langCode == 'fr'
+                                          ? "Conçu selon les normes d'ingénierie les plus strictes, Mihrab garantit une fiabilité optimale : validation des textes coraniques via le standard Tanzil, calculs astronomiques précis des prières et de la Qibla via la bibliothèque Adhan, et vérification automatisée des hadiths (Al-Dorar Al-Saniyyah) avec encodage UTF-8 intégral."
+                                          : "Engineered to the highest standards of accuracy and reliability, Mihrab validates Quranic texts against the Tanzil standard, verifies prayer times and Qibla calculations via the astronomical Adhan library, and runs automated UTF-8 database checks with authentic Hadith referencing from Al-Dorar Al-Saniyyah."),
+                                  textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+                                  style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13.5, height: 1.75),
+                                ),
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.65),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: theme.accent.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.library_music_outlined, color: theme.accent, size: 18),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              isAr
+                                                  ? "توثيق وتراخيص الأصول الصوتية (License Notes)"
+                                                  : (langCode == 'fr'
+                                                      ? "Licences des Ressources Audio"
+                                                      : "Audio Assets & License Notes"),
+                                              textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+                                              style: TextStyle(
+                                                color: theme.accent,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        isAr
+                                            ? "• التلاوات القرآنية والأذان: جميع تسجيلات الأذان والتكبيرات وتلاوة الآية الكريمة (بصوت الشيخ عبد الباسط عبد الصمد) وتلاوات المصحف المرتل مستمدة من التراث الإسلامي العام والأرشيفات الوقفية المفتوحة (EveryAyah، MP3Quran.net، وQuranGo) المتاحة للاستخدام الحر غير التجاري وبموجب رخص المشاع الإبداعي/الملك العام.\n• نغمات التنبيه: مؤثرات صوتية قصيرة مولّدة رقمياً وخاصة بالتطبيق (CC0 1.0 Public Domain)."
+                                            : (langCode == 'fr'
+                                                ? "• Récitations et Adhan : issus du domaine public islamique (Waqf ouvert : EveryAyah, MP3Quran.net, QuranGo) sous licence libre non commerciale / Creative Commons.\n• Sons de notification : effets sonores synthétisés propres à l'application (CC0 1.0)."
+                                                : "• Quran Recitations & Adhan: sourced from public-domain Islamic heritage and open Waqf archives (EveryAyah, MP3Quran.net, QuranGo) under free non-commercial / Creative Commons terms.\n• Notification Chimes: original synthesized audio chimes dedicated to this app (CC0 1.0 Public Domain)."),
+                                        textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+                                        style: const TextStyle(
+                                          color: Color(0xFFCBD5E1),
+                                          fontSize: 12,
+                                          height: 1.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           actions: [
