@@ -57,3 +57,4 @@
 > - Historical Quranic recitations (e.g., Sheikh Abdul Basit Abdul Samad, Surah Ali 'Imran 3:39) and traditional Adhan recordings are part of the public Islamic heritage / Waqf and are distributed under open, non-commercial free-use terms via **Tanzil**, **EveryAyah**, and **MP3Quran.net**.
 > - UI notification chimes are original synthesized audio assets dedicated to this application under **CC0 1.0 Universal (Public Domain Dedication)**.
 > - No copyrighted commercial music tracks or unauthorized third-party proprietary audio recordings are bundled or monetized in this application.
+
