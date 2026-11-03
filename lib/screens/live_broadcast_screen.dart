@@ -6,6 +6,7 @@ import '../services/verse_audio_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
 import '../services/app_feedback.dart';
+import '../services/language_service.dart';
 
 class LiveChannel {
   final String id;
@@ -44,7 +45,8 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
     LiveChannel(
       id: "algeria_coran",
       title: "إذاعة القرآن الكريم الجزائرية",
-      subtitle: "البوابة الرسمية للبث المباشر لإذاعة القرآن الجزائرية والتلاوات",
+      subtitle:
+          "البوابة الرسمية للبث المباشر لإذاعة القرآن الجزائرية والتلاوات",
       location: "الجزائر العاصمة 🇩🇿",
       audioStreamUrl: "https://qurango.net/radio/salma",
       videoWebUrl: "https://qurango.net/radio/salma",
@@ -62,7 +64,8 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
     LiveChannel(
       id: "general_quran",
       title: "إذاعة القرآن الكريم العامة",
-      subtitle: "تلاوات متواصلة على مدار 24 ساعة بأصوات كبار قراء العالم الإسلامي",
+      subtitle:
+          "تلاوات متواصلة على مدار 24 ساعة بأصوات كبار قراء العالم الإسلامي",
       location: "العالم الإسلامي 🕌",
       audioStreamUrl: "https://qurango.net/radio/mix",
       videoWebUrl: "https://qurango.net/radio/mix",
@@ -175,6 +178,24 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
     super.dispose();
   }
 
+  String _getChannelTitle(LiveChannel channel) {
+    final trKey = 'live_channel_${channel.id}_title';
+    final trVal = LanguageService.tr(trKey);
+    return trVal != trKey ? trVal : channel.title;
+  }
+
+  String _getChannelSubtitle(LiveChannel channel) {
+    final trKey = 'live_channel_${channel.id}_sub';
+    final trVal = LanguageService.tr(trKey);
+    return trVal != trKey ? trVal : channel.subtitle;
+  }
+
+  String _getChannelLocation(LiveChannel channel) {
+    final trKey = 'live_channel_${channel.id}_loc';
+    final trVal = LanguageService.tr(trKey);
+    return trVal != trKey ? trVal : channel.location;
+  }
+
   Future<void> _launchVideoUrl(String url, String channelTitle) async {
     AppFeedback.tap();
     if (!mounted) return;
@@ -190,8 +211,9 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "جاري فتح البث المرئي المباشر لـ $channelTitle... 📺",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                "${LanguageService.tr('live_opening_video')} $channelTitle... 📺",
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
           ],
@@ -226,9 +248,9 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
         SnackBar(
           backgroundColor: Colors.red.shade800,
           duration: const Duration(seconds: 4),
-          content: const Text(
-            "تعذر فتح البث تلقائياً. يرجى التأكد من توفر تطبيق YouTube أو متصفح إنترنت.",
-            style: TextStyle(fontWeight: FontWeight.bold),
+          content: Text(
+            LanguageService.tr('live_open_video_failed'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       );
@@ -252,9 +274,10 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
       SnackBar(
         backgroundColor: const Color(0xFF065F46),
         duration: const Duration(seconds: 4),
-        content: Text("جاري الاتصال بالبث المباشر: ${channel.title}... 🔴"),
+        content: Text(
+            "${LanguageService.tr('live_connecting')} ${_getChannelTitle(channel)}... 🔴"),
         action: SnackBarAction(
-          label: "إيقاف",
+          label: LanguageService.tr('stop'),
           textColor: const Color(0xFFFDE68A),
           onPressed: _stopLiveChannel,
         ),
@@ -278,9 +301,9 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
           _activeChannelId = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Color(0xFF991B1B),
-            content: Text("تعذر الاتصال بالبث المباشر حالياً، يرجى التحقق من اتصال الإنترنت ⚠️"),
+          SnackBar(
+            backgroundColor: const Color(0xFF991B1B),
+            content: Text(LanguageService.tr('live_connection_error')),
           ),
         );
       }
@@ -298,276 +321,351 @@ class _LiveBroadcastScreenState extends State<LiveBroadcastScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Color(0xFF1E293B),
-        duration: Duration(seconds: 2),
-        content: Text("تم إيقاف البث المباشر ⏹️"),
+      SnackBar(
+        backgroundColor: const Color(0xFF1E293B),
+        duration: const Duration(seconds: 2),
+        content: Text(LanguageService.tr('live_stopped')),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<AppThemeColor>(
-      valueListenable: ThemeService.currentTheme,
-      builder: (context, theme, _) {
-        final activeChannel = _channels.firstWhere(
-          (c) => c.id == _activeChannelId,
-          orElse: () => _channels[0],
-        );
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LanguageService.currentLocale,
+      builder: (context, _, __) {
+        return ValueListenableBuilder<AppThemeColor>(
+          valueListenable: ThemeService.currentTheme,
+          builder: (context, theme, _) {
+            final activeChannel = _channels.firstWhere(
+              (c) => c.id == _activeChannelId,
+              orElse: () => _channels[0],
+            );
 
-        return Scaffold(
-          backgroundColor: theme.background,
-          appBar: AppBar(
-            backgroundColor: theme.darkPrimary,
-            elevation: 0,
-            centerTitle: true,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  "البث المباشر الإسلامي",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ],
-            ),
-          ),
-          body: Column(
-            children: [
-              // Live Header Banner
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.darkPrimary, theme.cardBackground],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.accent.withValues(alpha: 0.4)),
-                ),
-                child: Column(
+            return Scaffold(
+              backgroundColor: theme.background,
+              appBar: AppBar(
+                backgroundColor: theme.darkPrimary,
+                elevation: 0,
+                centerTitle: true,
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.redAccent),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.fiber_manual_record, color: Colors.redAccent, size: 14),
-                              SizedBox(width: 4),
-                              Text("مباشر 24/7", style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          "إذاعات وقنوات حية",
-                          style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                      ],
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "استمع مباشرة إلى إذاعة القرآن الكريم الجزائرية وبث الحرم المكي والحرم النبوي الشريف بأعلى جودة صوت نقية.",
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
-                      style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                    const SizedBox(width: 8),
+                    Text(
+                      LanguageService.tr('live_broadcast_title'),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18),
                     ),
                   ],
                 ),
               ),
-
-              // Channels List
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  itemCount: _channels.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final channel = _channels[index];
-                    final isCurrent = _activeChannelId == channel.id;
-
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: isCurrent ? theme.darkPrimary.withValues(alpha: 0.8) : theme.cardBackground,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: isCurrent ? theme.accent : const Color(0xFF334155),
-                          width: isCurrent ? 2 : 1,
-                        ),
-                        boxShadow: isCurrent
-                            ? [
-                                BoxShadow(
-                                  color: theme.accent.withValues(alpha: 0.25),
-                                  blurRadius: 12,
-                                  spreadRadius: 1,
-                                )
-                              ]
-                            : null,
+              body: Column(
+                children: [
+                  // Live Header Banner
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [theme.darkPrimary, theme.cardBackground],
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
                       ),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            leading: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: isCurrent ? theme.accent : theme.background,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                channel.icon,
-                                color: isCurrent ? Colors.black : theme.primary,
-                                size: 26,
-                              ),
-                            ),
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    channel.title,
-                                    textDirection: TextDirection.rtl,
-                                    style: TextStyle(
-                                      color: isCurrent ? theme.accent : Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Text(
-                                  channel.subtitle,
-                                  textDirection: TextDirection.rtl,
-                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  channel.location,
-                                  style: TextStyle(color: theme.primary, fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            trailing: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isCurrent && _isPlaying ? Colors.redAccent : theme.accent,
-                                foregroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              ),
-                              icon: _isLoading && isCurrent
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
-                                    )
-                                  : Icon(
-                                      isCurrent && _isPlaying ? Icons.stop : Icons.play_arrow,
-                                      size: 20,
-                                    ),
-                              label: Text(
-                                isCurrent && _isPlaying ? "إيقاف" : "بث حي",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              onPressed: () => _playLiveChannel(channel),
-                            ),
-                          ),
-                          if (channel.id.contains("makkah") || channel.id.contains("madinah") || channel.id.contains("algeria"))
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.redAccent,
-                                    side: const BorderSide(color: Colors.redAccent),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                  ),
-                                  icon: const Icon(Icons.live_tv, size: 18),
-                                  label: const Text(
-                                    "مشاهدة البث المرئي المباشر (فيديو 24/7) 📺",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                  ),
-                                  onPressed: () => _launchVideoUrl(channel.videoWebUrl, channel.title),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Active Playing Mini-Bar
-              if (_activeChannelId != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: theme.darkPrimary,
-                    border: Border(top: BorderSide(color: theme.accent, width: 2)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: _isPlaying ? Colors.redAccent : Colors.amber,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: theme.accent.withValues(alpha: 0.4)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              activeChannel.title,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                              overflow: TextOverflow.ellipsis,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.redAccent),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.fiber_manual_record,
+                                      color: Colors.redAccent, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    LanguageService.tr('live_badge_24_7'),
+                                    style: const TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
                             ),
                             Text(
-                              _isPlaying ? "البث المباشر يعمل الآن 🔴" : "جاري الاتصال بالبث...",
-                              style: TextStyle(color: theme.accent, fontSize: 12),
+                              LanguageService.tr('live_stations_header'),
+                              style: TextStyle(
+                                  color: theme.accent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15),
                             ),
                           ],
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(_isPlaying ? Icons.stop_circle : Icons.play_circle_fill,
-                            color: theme.accent, size: 36),
-                        onPressed: _stopLiveChannel,
-                        tooltip: "إيقاف البث",
-                      ),
-                    ],
+                        const SizedBox(height: 10),
+                        Text(
+                          LanguageService.tr('live_stations_desc'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 13, height: 1.5),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-            ],
-          ),
+
+                  // Channels List
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 6),
+                      itemCount: _channels.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final channel = _channels[index];
+                        final isCurrent = _activeChannelId == channel.id;
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isCurrent
+                                ? theme.darkPrimary.withValues(alpha: 0.8)
+                                : theme.cardBackground,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isCurrent
+                                  ? theme.accent
+                                  : const Color(0xFF334155),
+                              width: isCurrent ? 2 : 1,
+                            ),
+                            boxShadow: isCurrent
+                                ? [
+                                    BoxShadow(
+                                      color:
+                                          theme.accent.withValues(alpha: 0.25),
+                                      blurRadius: 12,
+                                      spreadRadius: 1,
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                leading: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: isCurrent
+                                        ? theme.accent
+                                        : theme.background,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    channel.icon,
+                                    color: isCurrent
+                                        ? Colors.black
+                                        : theme.primary,
+                                    size: 26,
+                                  ),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _getChannelTitle(channel),
+                                        style: TextStyle(
+                                          color: isCurrent
+                                              ? theme.accent
+                                              : Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _getChannelSubtitle(channel),
+                                      style: const TextStyle(
+                                          color: Color(0xFF94A3B8),
+                                          fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _getChannelLocation(channel),
+                                      style: TextStyle(
+                                          color: theme.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                                trailing: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isCurrent && _isPlaying
+                                        ? Colors.redAccent
+                                        : theme.accent,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 8),
+                                  ),
+                                  icon: _isLoading && isCurrent
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                              color: Colors.black,
+                                              strokeWidth: 2),
+                                        )
+                                      : Icon(
+                                          isCurrent && _isPlaying
+                                              ? Icons.stop
+                                              : Icons.play_arrow,
+                                          size: 20,
+                                        ),
+                                  label: Text(
+                                    isCurrent && _isPlaying
+                                        ? LanguageService.tr('stop')
+                                        : LanguageService.tr('live_stream_btn'),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  onPressed: () => _playLiveChannel(channel),
+                                ),
+                              ),
+                              if (channel.id.contains("makkah") ||
+                                  channel.id.contains("madinah") ||
+                                  channel.id.contains("algeria"))
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.redAccent,
+                                        side: const BorderSide(
+                                            color: Colors.redAccent),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                      ),
+                                      icon: const Icon(Icons.live_tv, size: 18),
+                                      label: Text(
+                                        LanguageService.tr(
+                                            'live_watch_video_btn'),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12),
+                                      ),
+                                      onPressed: () => _launchVideoUrl(
+                                          channel.videoWebUrl,
+                                          _getChannelTitle(channel)),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Active Playing Mini-Bar
+                  if (_activeChannelId != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: theme.darkPrimary,
+                        border: Border(
+                            top: BorderSide(color: theme.accent, width: 2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color:
+                                  _isPlaying ? Colors.redAccent : Colors.amber,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _getChannelTitle(activeChannel),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  _isPlaying
+                                      ? LanguageService.tr(
+                                          'live_status_playing')
+                                      : LanguageService.tr(
+                                          'live_status_connecting'),
+                                  style: TextStyle(
+                                      color: theme.accent, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                                _isPlaying
+                                    ? Icons.stop_circle
+                                    : Icons.play_circle_fill,
+                                color: theme.accent,
+                                size: 36),
+                            onPressed: _stopLiveChannel,
+                            tooltip: LanguageService.tr('live_stop_tooltip'),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
       },
     );

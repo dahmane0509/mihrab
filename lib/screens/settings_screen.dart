@@ -77,86 +77,36 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   };
 
   List<Map<String, String>> get _adhanSoundsList {
-    final lang = LanguageService.languageCode;
-    final isAr = lang == 'ar';
-    final list = <Map<String, String>>[
-      {
-        "id": "algeria_grand_mosque",
-        "name": isAr ? "أذان جامع الجزائر (الجامع الأعظم)" : (lang == 'fr' ? "Grande Mosquée d'Alger" : "Algeria Grand Mosque Adhan"),
-        "desc": isAr ? "أذان العاصمة والمنارة التاريخية" : (lang == 'fr' ? "Appel officiel de la Grande Mosquée d'Alger" : "Official Adhan of the Grand Mosque of Algiers"),
-      },
-      {
-        "id": "traditional_algerian",
-        "name": isAr ? "الأذان الجزائري الأصيل (المقام المغاربي)" : (lang == 'fr' ? "Adhan Traditionnel Algérien" : "Authentic Algerian Adhan"),
-        "desc": isAr ? "الأذان التراثي الجزائري العذب" : (lang == 'fr' ? "Style maghrébin traditionnel" : "Traditional Maghrebi style"),
-      },
-      {
-        "id": "waled_mahzas",
-        "name": isAr ? "أذان الشيخ وليد مهساس (الجزائر)" : "Sheikh Walid Mehsas (Algeria)",
-        "desc": isAr ? "صوت خاشع ومؤثر من الجزائر" : "Touching Algerian Adhan recitation",
-      },
-      {
-        "id": "makkah",
-        "name": isAr ? "أذان المسجد الحرام (مكة المكرمة)" : (lang == 'fr' ? "Adhan de La Mecque" : "Makkah Grand Mosque Adhan"),
-        "desc": isAr ? "بصوت الشيخ علي بن أحمد ملا" : "Sheikh Ali Ibn Ahmad Mala",
-      },
-      {
-        "id": "madinah",
-        "name": isAr ? "أذان المسجد النبوي (المدينة المنورة)" : (lang == 'fr' ? "Adhan de Médine" : "Madinah Prophet's Mosque Adhan"),
-        "desc": isAr ? "الأذان المدني الشريف الخاشع" : "Sacred Madinah Al-Munawwarah Adhan",
-      },
-      {
-        "id": "al_aqsa",
-        "name": isAr ? "أذان المسجد الأقصى المبارك" : (lang == 'fr' ? "Adhan de la Mosquée Al-Aqsa" : "Al-Aqsa Mosque Adhan"),
-        "desc": isAr ? "بصوت مؤذن الأقصى الشريف الشيخ ناجي قزاز" : "Sheikh Najee Qazaz (Jerusalem)",
-      },
-      {
-        "id": "abdulbasit",
-        "name": isAr ? "أذان الشيخ عبد الباسط عبد الصمد" : "Sheikh Abdulbasit Abdulsamad",
-        "desc": isAr ? "أذان مصر التاريخي الخالد ذو الهيبة" : "Historic Egyptian Adhan",
-      },
-      {
-        "id": "rifat",
-        "name": isAr ? "أذان الشيخ محمد رفعت" : "Sheikh Muhammad Refaat",
-        "desc": isAr ? "قيثارة السماء والأذان الخالد" : "Classic Cairo Adhan",
-      },
-      {
-        "id": "husary",
-        "name": isAr ? "أذان الشيخ محمود خليل الحصري" : "Sheikh Mahmoud Khalil Al-Hussary",
-        "desc": isAr ? "أذان رصين متقن بالأحكام والتجويد" : "Precise tajweed Adhan recitation",
-      },
-      {
-        "id": "banna",
-        "name": isAr ? "أذان الشيخ محمود علي البنا" : "Sheikh Mahmoud Ali Al-Banna",
-        "desc": isAr ? "أداء رفيع وشجي من كبار قراء مصر" : "Renowned Egyptian recitation",
-      },
-      {
-        "id": "shaisha",
-        "name": isAr ? "أذان الشيخ أبو العينين شعيشع" : "Sheikh Abul-Ainain Shuaisha",
-        "desc": isAr ? "نبرة عذبة من الزمن الجميل" : "Classic golden-era Adhan",
-      },
-      {
-        "id": "qatami",
-        "name": isAr ? "أذان الشيخ ناصر القطامي" : "Sheikh Nasser Al-Qatami",
-        "desc": isAr ? "أذان نجد الشجي والمؤثر" : "Melodious Riyadh Adhan",
-      },
-      {
-        "id": "takbeer_only",
-        "name": isAr ? "تكبيرات الأذان والعيد (المسجد الحرام)" : "Takbeerat of Eid & Adhan",
-        "desc": isAr ? "تكبيرات جماعية مهيبة" : "Harmonious collective Takbeer",
-      },
-    ];
+    final list = <Map<String, String>>[];
+    for (final item in AdhanAudioService.defaultAdhans) {
+      final nameKey = 'adhan_${item.id}_name';
+      final descKey = 'adhan_${item.id}_desc';
+      final trName = LanguageService.tr(nameKey);
+      final trDesc = LanguageService.tr(descKey);
+      list.add({
+        "id": item.id,
+        "name": trName != nameKey ? trName : item.name,
+        "desc": trDesc != descKey ? trDesc : item.desc,
+      });
+    }
 
     for (final custom in _customAdhansList) {
       list.add({
         "id": custom.id,
         "name": custom.name,
-        "desc": custom.desc.isNotEmpty ? custom.desc : (isAr ? "أذان مخصص مضاف" : "Custom added Adhan"),
+        "desc": custom.desc.isNotEmpty ? custom.desc : LanguageService.tr('adhan_custom_label'),
         "isCustom": "true",
       });
     }
 
     return list;
+  }
+
+  String _getAdhanDisplayName(String soundId) {
+    final trKey = 'adhan_${soundId}_name';
+    final trVal = LanguageService.tr(trKey);
+    if (trVal != trKey) return trVal;
+    return AdhanAudioService.adhanNames[soundId] ?? LanguageService.tr('adhan_standard_label');
   }
 
   @override
@@ -428,10 +378,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     children: [
                       Icon(Icons.library_music, color: theme.accent, size: 24),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "إضافة صوت أذان آخر 🕌",
-                          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                          LanguageService.tr('settings_add_custom_adhan_btn'),
+                          style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                         ),
                       ),
                       IconButton(
@@ -470,7 +420,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           children: [
                             IconButton(
                               icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37), size: 22),
-                              tooltip: "استماع للعينة",
+                              tooltip: LanguageService.tr('listen'),
                               onPressed: () {
                                 AdhanAudioService.playAdhan(soundId: item.id);
                               },
@@ -480,11 +430,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    item.name,
+                                    _getAdhanDisplayName(item.id),
                                     style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                                   ),
                                   Text(
-                                    item.desc,
+                                    LanguageService.tr('adhan_${item.id}_desc') != 'adhan_${item.id}_desc'
+                                        ? LanguageService.tr('adhan_${item.id}_desc')
+                                        : item.desc,
                                     style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                                   ),
                                 ],
@@ -498,7 +450,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               icon: const Icon(Icons.add, size: 16),
-                              label: const Text("إضافة", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              label: Text(LanguageService.tr('add'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                               onPressed: () async {
                                 await AdhanAudioService.addAdhan(item);
                                 await _loadPreferences();
@@ -509,7 +461,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: const Color(0xFF064E3B),
-                                      content: Text("تمت إضافة «${item.name}» إلى قائمة أصوات الأذان!"),
+                                      content: Text("تمت إضافة «${_getAdhanDisplayName(item.id)}» إلى قائمة أصوات الأذان!"),
                                     ),
                                   );
                                 }
@@ -1482,7 +1434,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                       ),
                                     ),
                                     title: Text(
-                                      theme.nameAr,
+                                      theme.displayName,
                                       style: TextStyle(
                                         color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
                                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1619,7 +1571,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   const SizedBox(height: 24),
 
                   // 2. Location & GPS Settings
-                  _buildSectionHeader("الموقع والتحديد التلقائي", Icons.location_on, activeTheme.accent),
+                  _buildSectionHeader(LanguageService.tr('settings_location_header'), Icons.location_on, activeTheme.accent),
                   const SizedBox(height: 8),
                   Material(
                     color: activeTheme.cardBackground,
@@ -1631,18 +1583,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(Icons.location_city, color: Color(0xFF10B981)),
-                            title: const Text("الولاية المحددة حالياً", style: TextStyle(color: Colors.white, fontSize: 14)),
-                            subtitle: Text("ولاية ${currentWilaya.code} - ${currentWilaya.nameAr} (${currentWilaya.nameFr})",
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            title: Text(LanguageService.tr('settings_current_wilaya'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: Text(
+                              LanguageService.isRtl
+                                  ? "ولاية ${currentWilaya.code} - ${currentWilaya.nameAr} (${currentWilaya.nameFr})"
+                                  : "${LanguageService.tr('wilaya_prefix')} ${currentWilaya.code} - ${currentWilaya.nameFr} (${currentWilaya.nameAr})",
+                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            ),
                           ),
                           const Divider(color: Color(0xFF334155)),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             value: _useGpsAuto,
                             activeThumbColor: activeTheme.primary,
-                            title: const Text("التحديد التلقائي للموقع (GPS)", style: TextStyle(color: Colors.white, fontSize: 14)),
-                            subtitle: const Text("كشف الولاية والبلدية بدقة عبر الأقمار الصناعية وحساب المواقيت آلياً",
-                                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            title: Text(LanguageService.tr('settings_auto_gps_title'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: Text(LanguageService.tr('settings_auto_gps_desc'),
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                             onChanged: (val) async {
                               setState(() {
                                 _useGpsAuto = val;
@@ -1650,9 +1606,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               _savePreference('use_gps_auto', val);
                               if (val) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Color(0xFF064E3B),
-                                    content: Text("جاري كشف موقعك وتحديد ولايتك..."),
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF064E3B),
+                                    content: Text(LanguageService.tr('settings_detecting_location')),
                                   ),
                                 );
                                 final detected = await LocationService.detectLocation();
@@ -1667,7 +1623,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: const Color(0xFF064E3B),
-                                      content: Text("تم تحديد موقعك بدقة: بلدية ${detected.commune.nameAr} (ولاية ${detected.wilaya.nameAr})"),
+                                      content: Text(
+                                        LanguageService.isRtl
+                                            ? "${LanguageService.tr('settings_location_detected')}بلدية ${detected.commune.nameAr} (ولاية ${detected.wilaya.nameAr})"
+                                            : "${LanguageService.tr('settings_location_detected')}${detected.commune.nameFr} (${detected.wilaya.nameFr})",
+                                      ),
                                     ),
                                   );
                                 }
@@ -1832,27 +1792,27 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, height: 1.5),
                         ),
                         const SizedBox(height: 12),
-                        _buildAdjustmentCounter("صلاة الفجر", _adjFajr, (v) {
+                        _buildAdjustmentCounter(LanguageService.tr('prayer_fajr'), _adjFajr, (v) {
                           setState(() => _adjFajr = v);
                           _savePreference('adj_fajr', v);
                         }, activeTheme),
-                        _buildAdjustmentCounter("الشروق", _adjSunrise, (v) {
+                        _buildAdjustmentCounter(LanguageService.tr('sunrise'), _adjSunrise, (v) {
                           setState(() => _adjSunrise = v);
                           _savePreference('adj_sunrise', v);
                         }, activeTheme),
-                        _buildAdjustmentCounter("صلاة الظهر", _adjDhuhr, (v) {
+                        _buildAdjustmentCounter(LanguageService.tr('prayer_dhuhr'), _adjDhuhr, (v) {
                           setState(() => _adjDhuhr = v);
                           _savePreference('adj_dhuhr', v);
                         }, activeTheme),
-                        _buildAdjustmentCounter("صلاة العصر", _adjAsr, (v) {
+                        _buildAdjustmentCounter(LanguageService.tr('prayer_asr'), _adjAsr, (v) {
                           setState(() => _adjAsr = v);
                           _savePreference('adj_asr', v);
                         }, activeTheme),
-                        _buildAdjustmentCounter("صلاة المغرب", _adjMaghrib, (v) {
+                        _buildAdjustmentCounter(LanguageService.tr('prayer_maghrib'), _adjMaghrib, (v) {
                           setState(() => _adjMaghrib = v);
                           _savePreference('adj_maghrib', v);
                         }, activeTheme),
-                        _buildAdjustmentCounter("صلاة العشاء", _adjIsha, (v) {
+                        _buildAdjustmentCounter(LanguageService.tr('prayer_isha'), _adjIsha, (v) {
                           setState(() => _adjIsha = v);
                           _savePreference('adj_isha', v);
                         }, activeTheme),
@@ -1872,11 +1832,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                       child: Column(
                         children: [
                           for (var entry in [
-                            {'key': 'fajr', 'name': 'صلاة الفجر'},
-                            {'key': 'dhuhr', 'name': 'صلاة الظهر'},
-                            {'key': 'asr', 'name': 'صلاة العصر'},
-                            {'key': 'maghrib', 'name': 'صلاة المغرب'},
-                            {'key': 'isha', 'name': 'صلاة العشاء'},
+                            {'key': 'fajr', 'name': LanguageService.tr('prayer_fajr')},
+                            {'key': 'dhuhr', 'name': LanguageService.tr('prayer_dhuhr')},
+                            {'key': 'asr', 'name': LanguageService.tr('prayer_asr')},
+                            {'key': 'maghrib', 'name': LanguageService.tr('prayer_maghrib')},
+                            {'key': 'isha', 'name': LanguageService.tr('prayer_isha')},
                           ])
                             Container(
                               margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1889,7 +1849,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 child: ListTile(
                                   title: Text(entry['name']!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                                   subtitle: Text(
-                                    AdhanAudioService.adhanNames[_prayerAdhanSounds[entry['key']]] ?? "أذان معتمد",
+                                    _getAdhanDisplayName(_prayerAdhanSounds[entry['key']] ?? 'algeria_grand_mosque'),
                                     style: TextStyle(color: activeTheme.accent, fontSize: 12),
                                   ),
                                   trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF94A3B8), size: 14),
@@ -1944,16 +1904,16 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.volume_up, color: Color(0xFFD4AF37)),
-                                      tooltip: "استماع لعينة الصوت",
+                                      tooltip: LanguageService.tr('listen'),
                                       onPressed: () {
                                         AdhanAudioService.playAdhan(soundId: sound['id']!);
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             backgroundColor: const Color(0xFF064E3B),
                                             duration: const Duration(seconds: 4),
-                                            content: Text("جاري تشغيل عينة ${sound['name']}"),
+                                            content: Text("${LanguageService.tr('playing')}: ${sound['name']}"),
                                             action: SnackBarAction(
-                                              label: "إيقاف",
+                                              label: LanguageService.tr('stop'),
                                               textColor: const Color(0xFFFDE68A),
                                               onPressed: () => AdhanAudioService.stopAdhan(),
                                             ),
@@ -1964,7 +1924,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                     if (isCustom)
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                                        tooltip: "حذف هذا الأذان",
+                                        tooltip: LanguageService.tr('delete'),
                                         onPressed: () async {
                                           await AdhanAudioService.deleteAdhan(sound['id']!);
                                           await _loadPreferences();
@@ -1972,7 +1932,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               SnackBar(
                                                 backgroundColor: const Color(0xFF7F1D1D),
-                                                content: Text("تم حذف «${sound['name']}» من القائمة."),
+                                                content: Text("${LanguageService.tr('delete')}: «${sound['name']}»"),
                                               ),
                                             );
                                           }
@@ -1997,9 +1957,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               icon: const Icon(Icons.add_circle_outline, size: 20),
-                              label: const Text(
-                                "إضافة صوت أذان آخر ➕",
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                              label: Text(
+                                LanguageService.tr('settings_add_custom_adhan_btn'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                               ),
                               onPressed: () => _showAddAdhanModal(activeTheme),
                             ),
@@ -2011,7 +1971,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   const SizedBox(height: 24),
 
                   // Dedicated Adhan Testing & Diagnostics Section
-                  _buildSectionHeader("اختبار وتجربة الأذان", Icons.hearing_rounded, activeTheme.accent),
+                  _buildSectionHeader(LanguageService.tr('settings_test_section_header'), Icons.hearing_rounded, activeTheme.accent),
                   const SizedBox(height: 8),
                   Material(
                     color: activeTheme.cardBackground,
@@ -2024,9 +1984,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "اختبر عمل الأذان والإشعارات والتنبيه بدقة للتأكد من وصول النداء في وقته:",
-                            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.4),
+                          Text(
+                            LanguageService.tr('settings_test_section_desc'),
+                            style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.4),
                           ),
                           const SizedBox(height: 14),
 
@@ -2045,9 +2005,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
                                       icon: const Icon(Icons.volume_up_rounded, size: 20),
-                                      label: const Text(
-                                        "سماع صوت الأذان المختار",
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      label: Text(
+                                        LanguageService.tr('settings_test_play_btn'),
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                       ),
                                       onPressed: () async {
                                         AppFeedback.tap();
@@ -2055,17 +2015,17 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                         if (!context.mounted) return;
                                         if (!ok) {
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              backgroundColor: Color(0xFF1E293B),
-                                              content: Text("يتطلب الاستماع للأذان بصوت المؤذن اتصالاً بالإنترنت أو استخدام الأذان المدمج 📶"),
+                                            SnackBar(
+                                              backgroundColor: const Color(0xFF1E293B),
+                                              content: Text(LanguageService.tr('settings_test_offline_msg')),
                                             ),
                                           );
                                         } else {
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              backgroundColor: Color(0xFF065F46),
-                                              duration: Duration(seconds: 4),
-                                              content: Text("يرتفع الآن صوت الأذان المبارك في الهاتف 🕌"),
+                                            SnackBar(
+                                              backgroundColor: const Color(0xFF065F46),
+                                              duration: const Duration(seconds: 4),
+                                              content: Text(LanguageService.tr('settings_test_playing_now')),
                                             ),
                                           );
                                         }
@@ -2082,7 +2042,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
                                       icon: const Icon(Icons.stop_circle_outlined, size: 20),
-                                      label: const Text("إيقاف", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      label: Text(LanguageService.tr('stop'), style: const TextStyle(fontWeight: FontWeight.bold)),
                                       onPressed: () {
                                         AppFeedback.tap();
                                         AdhanAudioService.stopAdhan();
@@ -2106,26 +2066,26 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               icon: Icon(Icons.notifications_active_rounded, color: activeTheme.accent, size: 20),
-                              label: const Text(
-                                "تجربة تنبيه وإشعار الأذان الفوري 🔔",
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              label: Text(
+                                LanguageService.tr('settings_test_prayer_notif_btn'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                               ),
                               onPressed: () async {
                                 AppFeedback.tap();
                                 final wilaya = AlgeriaWilayas.getWilayaByCode(_wilayaCode);
                                 final enabled = await PrayerNotificationService.testAdhanNotification(
-                                  prayerName: "الظهر",
+                                  prayerName: LanguageService.tr('prayer_dhuhr'),
                                   prayerKey: "dhuhr",
-                                  communeName: wilaya.nameAr,
+                                  communeName: LanguageService.isRtl ? wilaya.nameAr : wilaya.nameFr,
                                 );
                                 if (!context.mounted) return;
                                 if (!enabled) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: const Color(0xFF991B1B),
-                                      content: const Text("⚠️ إشعارات التطبيق معطلة في الهاتف! اضغط لتفعيلها"),
+                                      content: Text(LanguageService.tr('settings_test_prayer_notif_err')),
                                       action: SnackBarAction(
-                                        label: "تفعيل",
+                                        label: LanguageService.tr('enable'),
                                         textColor: Colors.white,
                                         onPressed: () => PrayerNotificationService.openNotificationSettings(),
                                       ),
@@ -2133,10 +2093,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   );
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      backgroundColor: Color(0xFF065F46),
-                                      duration: Duration(seconds: 4),
-                                      content: Text("تم إطلاق إشعار وصوت أذان صلاة الظهر تجريبياً 🕌"),
+                                    SnackBar(
+                                      backgroundColor: const Color(0xFF065F46),
+                                      duration: const Duration(seconds: 4),
+                                      content: Text("${LanguageService.tr('settings_prayer_notif_test')} (${LanguageService.tr('prayer_dhuhr')}) 🕌"),
                                     ),
                                   );
                                 }
@@ -2156,23 +2116,23 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               icon: const Icon(Icons.screen_lock_portrait_rounded, size: 19),
-                              label: const Text(
-                                "تجربة في وضع السبات (بعد 10 ثوانٍ) ⏳",
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              label: Text(
+                                LanguageService.tr('settings_test_doze_btn'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                               ),
                               onPressed: () async {
                                 AppFeedback.tap();
                                 await PrayerNotificationService.scheduleTestSleepAdhan(
                                   delaySeconds: 10,
-                                  prayerName: "الظهر",
+                                  prayerName: LanguageService.tr('prayer_dhuhr'),
                                 );
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Color(0xFF1E3A8A),
-                                    duration: Duration(seconds: 7),
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF1E3A8A),
+                                    duration: const Duration(seconds: 7),
                                     content: Text(
-                                      "⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.",
+                                      LanguageService.tr('settings_test_doze_snackbar'),
                                     ),
                                   ),
                                 );
@@ -2207,10 +2167,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                       size: 22,
                                     ),
                                     const SizedBox(width: 8),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
-                                        "استثناء تحسين البطارية (سامسونج وأندرويد)",
-                                        style: TextStyle(
+                                        LanguageService.tr('settings_battery_samsung_title'),
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
@@ -2226,7 +2186,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        _isBatteryOptimizationIgnored ? "مُستثنى ✓" : "مطلوب ⚠️",
+                                        _isBatteryOptimizationIgnored
+                                            ? LanguageService.tr('settings_battery_exempted')
+                                            : LanguageService.tr('settings_battery_required'),
                                         style: TextStyle(
                                           color: _isBatteryOptimizationIgnored
                                               ? const Color(0xFF34D399)
@@ -2239,9 +2201,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                const Text(
-                                  "توقف هواتف سامسونج التطبيقات في الخلفية تلقائياً لتوفير الطاقة، مما قد يعطل الأذان عند قفل الشاشة. يرجى تفعيل الاستثناء لضمان الرنين دائماً.",
-                                  style: TextStyle(
+                                Text(
+                                  LanguageService.tr('settings_battery_samsung_desc'),
+                                  style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11.5,
                                     height: 1.45,
@@ -2261,9 +2223,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                         padding: const EdgeInsets.symmetric(vertical: 10),
                                       ),
                                       icon: const Icon(Icons.bolt_rounded, size: 18),
-                                      label: const Text(
-                                        "إعفاء التطبيق من تحسين البطارية الآن",
-                                        style: TextStyle(
+                                      label: Text(
+                                        LanguageService.tr('settings_battery_request_btn'),
+                                        style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12.5,
                                         ),
@@ -2285,7 +2247,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   const SizedBox(height: 24),
 
                   // 7. Advance Reminder & Iqamah
-                  _buildSectionHeader("التنبيه المسبق ووقت الإقامة", Icons.alarm, activeTheme.accent),
+                  _buildSectionHeader(LanguageService.tr('settings_advance_reminder_header'), Icons.alarm, activeTheme.accent),
                   const SizedBox(height: 8),
                   Material(
                     color: activeTheme.cardBackground,
@@ -2295,9 +2257,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "تنبيه هادئ قبل الأذان للاستعداد والوضوء:",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          Text(
+                            LanguageService.tr('settings_advance_reminder_prompt'),
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
                           ),
                           const SizedBox(height: 12),
                           Wrap(
@@ -2305,7 +2267,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             children: [0, 5, 10, 15, 20, 30].map((mins) {
                               final isSelected = _advanceReminderMinutes == mins;
                               return ChoiceChip(
-                                label: Text(mins == 0 ? "بدون تنبيه" : "$mins دقيقة"),
+                                label: Text(mins == 0 ? LanguageService.tr('settings_no_reminder') : "$mins ${LanguageService.tr('minute_x')}"),
                                 selected: isSelected,
                                 selectedColor: activeTheme.primary,
                                 backgroundColor: const Color(0xFF0F172A),
@@ -2328,8 +2290,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             contentPadding: EdgeInsets.zero,
                             value: _iqamahReminder,
                             activeThumbColor: activeTheme.primary,
-                            title: const Text("تنبيه وقت الإقامة", style: TextStyle(color: Colors.white, fontSize: 14)),
-                            subtitle: const Text("إشعار لطيف عند حلول وقت إقامة الصلاة في المسجد", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            title: Text(LanguageService.tr('settings_iqamah_title'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: Text(LanguageService.tr('settings_iqamah_desc'), style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                             onChanged: (val) {
                               setState(() => _iqamahReminder = val);
                               _savePreference('iqamah_reminder', val);
@@ -2340,8 +2302,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             contentPadding: EdgeInsets.zero,
                             value: _startupRecitation,
                             activeThumbColor: activeTheme.primary,
-                            title: const Text("تلاوة بداية التطبيق", style: TextStyle(color: Colors.white, fontSize: 14)),
-                            subtitle: const Text("تشغيل آية المحراب بصوت الشيخ عبد الباسط عند فتح التطبيق", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            title: Text(LanguageService.tr('settings_startup_recitation_title'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: Text(LanguageService.tr('settings_startup_recitation_desc'), style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                             onChanged: (val) {
                               setState(() => _startupRecitation = val);
                               VerseAudioService.setRecitationEnabled(val);
@@ -2368,13 +2330,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             contentPadding: EdgeInsets.zero,
                             value: _autoSilentMode,
                             activeThumbColor: activeTheme.primary,
-                            title: const Text(
-                              "كتم صوت الهاتف تلقائياً أثناء الصلاة",
-                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            title: Text(
+                              LanguageService.tr('auto_silent_mode_title'),
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                             ),
-                            subtitle: const Text(
-                              "تحويل الهاتف لوضع الصامت تلقائياً بعد الأذان أثناء صلاة الجماعة في المسجد وإعادته بعدها.",
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            subtitle: Text(
+                              LanguageService.tr('auto_silent_mode_desc'),
+                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                             ),
                             onChanged: (val) async {
                               if (val) {
@@ -2403,22 +2365,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Row(
+                                    Row(
                                       children: [
-                                        Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 20),
-                                        SizedBox(width: 8),
+                                        const Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 20),
+                                        const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            "إذن كتم الصوت غير ممنوح في نظام أندرويد",
-                                            style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 13),
+                                            LanguageService.tr('settings_dnd_not_granted_title'),
+                                            style: const TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 13),
                                           ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 6),
-                                    const Text(
-                                      "لكي يعمل الكتم التلقائي بنجاح، يجب منح التطبيق إذن «الوصول إلى عدم الإزعاج» من إعدادات الهاتف.",
-                                      style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.4),
+                                    Text(
+                                      LanguageService.tr('settings_dnd_not_granted_desc'),
+                                      style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.4),
                                     ),
                                     const SizedBox(height: 10),
                                     SizedBox(
@@ -2431,9 +2393,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                           padding: const EdgeInsets.symmetric(vertical: 8),
                                         ),
                                         icon: const Icon(Icons.settings, size: 16),
-                                        label: const Text(
-                                          "منح إذن كتم الصوت في إعدادات النظام ⚙️",
-                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                        label: Text(
+                                          LanguageService.tr('settings_grant_dnd_btn'),
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                         ),
                                         onPressed: () async {
                                           await SilentModeService.openDndSettings();
@@ -2451,14 +2413,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                   border: Border.all(color: const Color(0xFF10B981), width: 0.8),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
-                                    Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
-                                    SizedBox(width: 8),
+                                    const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+                                    const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        "إذن كتم الصوت مفعّل في النظام - الوضع الصامت جاهز للعمل.",
-                                        style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5),
+                                        LanguageService.tr('settings_dnd_granted'),
+                                        style: const TextStyle(color: Color(0xFF10B981), fontSize: 11.5),
                                       ),
                                     ),
                                   ],
@@ -2469,16 +2431,16 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             const SizedBox(height: 12),
 
                             // Mode selection: Silent or Vibrate
-                            const Text(
-                              "نوع الوضع أثناء الصلاة:",
-                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            Text(
+                              LanguageService.tr('settings_silent_type_label'),
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
                                   child: ChoiceChip(
-                                    label: const Center(child: Text("صامت تماماً 🔕")),
+                                    label: Center(child: Text(LanguageService.tr('settings_silent_mode_full'))),
                                     selected: _mosqueSilentType == 'silent',
                                     selectedColor: activeTheme.primary,
                                     backgroundColor: const Color(0xFF0F172A),
@@ -2496,7 +2458,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: ChoiceChip(
-                                    label: const Center(child: Text("اهتزاز فقط 📳")),
+                                    label: Center(child: Text(LanguageService.tr('settings_silent_mode_vibrate'))),
                                     selected: _mosqueSilentType == 'vibrate',
                                     selectedColor: activeTheme.primary,
                                     backgroundColor: const Color(0xFF0F172A),
@@ -2516,9 +2478,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
                             const SizedBox(height: 14),
                             // Duration selection: 15, 20, 25, 30 min
-                            const Text(
-                              "مدة كتم الصوت بعد الأذان:",
-                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            Text(
+                              LanguageService.tr('settings_silent_duration_label'),
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Wrap(
@@ -2526,7 +2488,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               children: [15, 20, 25, 30].map((mins) {
                                 final isSel = _mosqueSilentDuration == mins;
                                 return ChoiceChip(
-                                  label: Text("$mins دقيقة"),
+                                  label: Text("$mins ${LanguageService.tr('minute_x')}"),
                                   selected: isSel,
                                   selectedColor: activeTheme.primary,
                                   backgroundColor: const Color(0xFF0F172A),
@@ -2563,8 +2525,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                     : const Icon(Icons.phonelink_ring_rounded, size: 18),
                                 label: Text(
                                   _isTestingSilent
-                                      ? "جاري التجربة (الهاتف مكتوم الآن)..."
-                                      : "تجربة كتم الصوت الآن (لمدة 5 ثوانٍ) 🧪",
+                                      ? LanguageService.tr('settings_testing_silent')
+                                      : LanguageService.tr('settings_test_silent_label'),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                                 ),
                                 onPressed: _isTestingSilent
@@ -2580,17 +2542,17 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                         if (context.mounted) {
                                           if (success) {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                backgroundColor: Color(0xFF064E3B),
-                                                duration: Duration(seconds: 5),
-                                                content: Text("🔕 تم كتم الهاتف بنجاح! سيتم إرجاع الصوت تلقائياً بعد 5 ثوانٍ..."),
+                                              SnackBar(
+                                                backgroundColor: const Color(0xFF064E3B),
+                                                duration: const Duration(seconds: 5),
+                                                content: Text(LanguageService.tr('settings_test_silent_active')),
                                               ),
                                             );
                                           } else {
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                backgroundColor: Color(0xFF7F1D1D),
-                                                content: Text("⚠️ تعذر كتم الصوت، يرجى التحقق من إذن عدم الإزعاج في إعدادات الهاتف."),
+                                              SnackBar(
+                                                backgroundColor: const Color(0xFF7F1D1D),
+                                                content: Text(LanguageService.tr('settings_dnd_not_granted_desc')),
                                               ),
                                             );
                                           }
@@ -2608,7 +2570,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   const SizedBox(height: 24),
 
                   // 9. Auto Adhkar On-Screen Notifications
-                  _buildSectionHeader("أذكار الشاشة التلقائية", Icons.auto_awesome, activeTheme.accent),
+                  _buildSectionHeader(LanguageService.tr('auto_adhkar_page_title'), Icons.auto_awesome, activeTheme.accent),
                   const SizedBox(height: 8),
                   Material(
                     color: activeTheme.cardBackground,
@@ -2622,13 +2584,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                             contentPadding: EdgeInsets.zero,
                             value: _autoAdhkar,
                             activeThumbColor: activeTheme.primary,
-                            title: const Text(
-                              "تفعيل أذكار الشاشة التلقائية",
-                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            title: Text(
+                              LanguageService.tr('settings_auto_adhkar_title'),
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                             ),
-                            subtitle: const Text(
-                              "إظهار ذكر أو دعاء مأثور على شاشة الهاتف دورياً أثناء استخدام الهاتف لتظل رطباً بذكر الله",
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            subtitle: Text(
+                              LanguageService.tr('settings_auto_adhkar_desc'),
+                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                             ),
                             onChanged: (val) async {
                               setState(() => _autoAdhkar = val);
@@ -2636,9 +2598,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               await AutoAdhkarService.saveSettings();
                               if (val && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Color(0xFF065F46),
-                                    content: Text("تم تفعيل أذكار الشاشة التلقائية 📿"),
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF065F46),
+                                    content: Text(LanguageService.tr('settings_auto_adhkar_enabled_toast')),
                                   ),
                                 );
                               }
@@ -2647,9 +2609,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           if (_autoAdhkar) ...[
                             const Divider(color: Color(0xFF334155)),
                             const SizedBox(height: 8),
-                            const Text(
-                              "فترة التكرار الزمني:",
-                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            Text(
+                              LanguageService.tr('settings_auto_adhkar_interval_label'),
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Wrap(
@@ -2657,7 +2619,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                               children: [5, 10, 15, 30, 60].map((mins) {
                                 final isSel = _adhkarInterval == mins;
                                 return ChoiceChip(
-                                  label: Text("كل $mins دقيقة"),
+                                  label: Text(LanguageService.tr('every_x_minutes').replaceAll('{0}', '$mins')),
                                   selected: isSel,
                                   selectedColor: activeTheme.primary,
                                   backgroundColor: const Color(0xFF0F172A),
@@ -2686,7 +2648,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                                 padding: const EdgeInsets.symmetric(vertical: 10),
                               ),
                               icon: Icon(Icons.settings_suggest, color: activeTheme.accent, size: 18),
-                              label: const Text("تخصيص مكتبة الأذكار وإضافة أدعية خاصة"),
+                              label: Text(LanguageService.tr('settings_customize_adhkar_btn')),
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -2933,13 +2895,13 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          "تطبيق مِحْراب • مواقيت الصلاة والقرآن",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                        Text(
+                          LanguageService.tr('settings_about_app'),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "الإصدار $_appVersionString (الجزائر) • مجاني 100% وبدون أي إعلانات",
+                          LanguageService.tr('settings_about_version').replaceAll('1.0.4', _appVersionString),
                           style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                         ),
                       ],

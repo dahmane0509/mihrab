@@ -1122,6 +1122,90 @@ class AppTranslations {
       'fr': 'Ouvrir les Paramètres de l\'Appareil',
       'it': 'Apri Impostazioni App nel Telefono',
     },
+    'settings_battery_samsung_title': {
+      'ar': 'استثناء تحسين البطارية (سامسونج وأندرويد)',
+      'en': 'Battery Optimization Exemption (Samsung & Android)',
+      'fr': 'Exemption d\'optimisation de batterie (Samsung & Android)',
+      'it': 'Esenzione ottimizzazione batteria (Samsung e Android)',
+    },
+    'settings_battery_exempted': {
+      'ar': 'مُستثنى ✓',
+      'en': 'Exempted ✓',
+      'fr': 'Exempté ✓',
+      'it': 'Esente ✓',
+    },
+    'settings_battery_required': {
+      'ar': 'مطلوب ⚠️',
+      'en': 'Required ⚠️',
+      'fr': 'Requis ⚠️',
+      'it': 'Richiesto ⚠️',
+    },
+    'settings_battery_samsung_desc': {
+      'ar': 'توقف هواتف سامسونج التطبيقات في الخلفية تلقائياً لتوفير الطاقة، مما قد يعطل الأذان عند قفل الشاشة. يرجى تفعيل الاستثناء لضمان الرنين دائماً.',
+      'en': 'Samsung and Android phones stop background apps to save energy, which may prevent Adhan when locked. Please allow exemption to guarantee alerts.',
+      'fr': 'Les téléphones Samsung et Android arrêtent les applications en arrière-plan pour économiser la batterie. Activez l\'exemption pour garantir l\'Adhan.',
+      'it': 'I telefoni Samsung e Android interrompono le app in background per risparmiare energia. Attiva l\'esenzione per garantire l\'Adhan.',
+    },
+    'settings_battery_request_btn': {
+      'ar': 'إعفاء التطبيق من تحسين البطارية الآن',
+      'en': 'Exempt App from Battery Optimization Now',
+      'fr': 'Exempter l\'application de la batterie maintenant',
+      'it': 'Esonera l\'app dall\'ottimizzazione adesso',
+    },
+    'settings_test_section_header': {
+      'ar': 'اختبار وتجربة الأذان',
+      'en': 'Test & Experience Adhan',
+      'fr': 'Test & Vérification de l\'Adhan',
+      'it': 'Test dell\'Adhan e Notifiche',
+    },
+    'settings_test_section_desc': {
+      'ar': 'اختبر عمل الأذان والإشعارات والتنبيه بدقة للتأكد من وصول النداء في وقته:',
+      'en': 'Accurately test Adhan, notifications, and alerts to ensure timely call to prayer:',
+      'fr': 'Testez l\'Adhan, les alertes et notifications pour vous assurer de sonner à l\'heure :',
+      'it': 'Testa l\'Adhan e le notifiche per assicurarti che arrivino in orario:',
+    },
+    'settings_test_play_btn': {
+      'ar': 'سماع صوت الأذان المختار',
+      'en': 'Listen to Selected Adhan',
+      'fr': 'Écouter l\'Adhan sélectionné',
+      'it': 'Ascolta l\'Adhan selezionato',
+    },
+    'settings_test_prayer_notif_btn': {
+      'ar': 'تجربة تنبيه وإشعار الأذان الفوري 🔔',
+      'en': 'Test Instant Adhan Alert & Notification 🔔',
+      'fr': 'Tester la notification et l\'Adhan immédiat 🔔',
+      'it': 'Test notifica e Adhan immediato 🔔',
+    },
+    'settings_test_doze_btn': {
+      'ar': 'تجربة في وضع السبات (بعد 10 ثوانٍ) ⏳',
+      'en': 'Test in Sleep / Doze Mode (after 10s) ⏳',
+      'fr': 'Tester en mode veille prolongée (après 10s) ⏳',
+      'it': 'Test in modalità sonno profondo (dopo 10s) ⏳',
+    },
+    'settings_test_doze_snackbar': {
+      'ar': '⏳ تم ضبط التنبيه بعد 10 ثوانٍ! يرجى قفل شاشة الهاتف الآن لتجربة التنبيه في وضع السبات.',
+      'en': '⏳ Alert set for 10 seconds! Please lock your phone now to test sleep mode notification.',
+      'fr': '⏳ Alerte réglée dans 10 secondes ! Verrouillez l\'écran pour tester en veille.',
+      'it': '⏳ Allarme impostato tra 10 secondi! Blocca lo schermo per testare la notifica.',
+    },
+    'settings_test_prayer_notif_err': {
+      'ar': '⚠️ إشعارات التطبيق معطلة في الهاتف! اضغط لتفعيلها',
+      'en': '⚠️ App notifications are disabled! Tap to enable',
+      'fr': '⚠️ Les notifications de l\'application sont désactivées !',
+      'it': '⚠️ Le notifiche dell\'app sono disattivate!',
+    },
+    'settings_test_offline_msg': {
+      'ar': 'يتطلب الاستماع للأذان بصوت المؤذن اتصالاً بالإنترنت أو استخدام الأذان المدمج 📶',
+      'en': 'Listening to this reciter Adhan requires internet connection or built-in audio 📶',
+      'fr': 'La lecture de cet adhan requiert une connexion internet ou l\'audio intégré 📶',
+      'it': 'L\'ascolto dell\'Adhan richiede una connessione a Internet 📶',
+    },
+    'settings_test_playing_now': {
+      'ar': 'يرتفع الآن صوت الأذان المبارك في الهاتف 🕌',
+      'en': 'Blessed Adhan is now playing on device 🕌',
+      'fr': 'L\'appel béni à la prière retentit sur le téléphone 🕌',
+      'it': 'L\'Adhan benedetto sta suonando sul dispositivo 🕌',
+    },
 
     // About App Card
     'settings_about_app': {
@@ -1495,6 +1579,912 @@ class AppTranslations {
       'ar': 'جاري التحقق من التحديثات...',
       'en': 'Checking for updates...',
       'fr': 'Vérification des mises à jour...',
+    },
+
+    // Theme & Appearance
+    'theme_name_emerald': {
+      'ar': 'الأخضر الزمردي الأندلسي (الافتراضي)',
+      'en': 'Andalusian Emerald (Default)',
+      'fr': 'Émeraude Andalouse (Par défaut)',
+    },
+    'theme_name_royal_blue': {
+      'ar': 'الأزرق الملكي القرطبي',
+      'en': 'Cordoban Royal Blue',
+      'fr': 'Bleu Royal de Cordoue',
+    },
+    'theme_name_amber_desert': {
+      'ar': 'الصحراوي الذهبي (الرمال والواحات)',
+      'en': 'Sahara Gold (Oasis & Dunes)',
+      'fr': 'Or Saharien (Oasis & Dunes)',
+    },
+    'theme_name_midnight': {
+      'ar': 'الأسود والذهبي الفاخر',
+      'en': 'Luxury Black & Gold',
+      'fr': 'Noir & Or Luxueux',
+    },
+
+    // Adhan Voice Names & Locations
+    'adhan_constantine_algeria_name': {
+      'ar': 'أذان قسنطينة (عاصمة الشرق الجزائري)',
+      'en': 'Constantine Adhan (Eastern Algeria)',
+      'fr': 'Adhan de Constantine (Est Algérien)',
+    },
+    'adhan_constantine_algeria_desc': {
+      'ar': 'أذان قسنطيني أصيل - الحاج سليمان مختار',
+      'en': 'Authentic Constantine Adhan - Haj Sulaiman Mukhtar',
+      'fr': 'Adhan constantinois authentique - Hadj Slimane Mokhtar',
+    },
+    'adhan_tlemcen_algeria_name': {
+      'ar': 'أذان فجر تلمسان (المدينة العتيقة)',
+      'en': 'Tlemcen Fajr Adhan (Ancient City)',
+      'fr': 'Adhan de Tlemcen pour le Fajr',
+    },
+    'adhan_tlemcen_algeria_desc': {
+      'ar': 'أذان فجر مغاربي عذب ونادر من تلمسان',
+      'en': 'Rare melodious Maghrebi Fajr Adhan from Tlemcen',
+      'fr': 'Rare et mélodieux Adhan du Fajr de Tlemcen',
+    },
+    'adhan_waled_mahzas_name': {
+      'ar': 'أذان الشيخ وليد مهساس (الجزائر)',
+      'en': 'Sheikh Walid Mehsas (Algeria)',
+      'fr': 'Cheikh Walid Mehsas (Algérie)',
+    },
+    'adhan_waled_mahzas_desc': {
+      'ar': 'صوت خاشع ومؤثر من الجزائر',
+      'en': 'Touching Algerian Adhan recitation',
+      'fr': "Appel émouvant d'Algérie",
+    },
+    'adhan_zitouna_tunisia_name': {
+      'ar': 'أذان جامع الزيتونة المعمور (تونس)',
+      'en': 'Al-Zaytouna Mosque Adhan (Tunisia)',
+      'fr': 'Adhan de la Mosquée Zitouna (Tunisie)',
+    },
+    'adhan_zitouna_tunisia_desc': {
+      'ar': 'الأذان التونسي المغاربي الخاشع',
+      'en': 'Reverent Tunisian Maghrebi Adhan',
+      'fr': 'Adhan maghrébin tunisien recueilli',
+    },
+    'adhan_qarawiyyin_morocco_name': {
+      'ar': 'أذان جامع القرويين (فاس - المغرب)',
+      'en': 'Al-Qarawiyyin Mosque Adhan (Fez - Morocco)',
+      'fr': 'Adhan de la Mosquée Al Quaraouiyine (Fès - Maroc)',
+    },
+    'adhan_qarawiyyin_morocco_desc': {
+      'ar': 'الأذان المغربي الأصيل - كمال المرعوش',
+      'en': 'Authentic Moroccan Adhan - Kamal Al-Maroush',
+      'fr': 'Adhan marocain authentique - Kamal El Marrouch',
+    },
+    'adhan_umayyad_syria_name': {
+      'ar': 'أذان الجامع الأموي (دمشق - الشام)',
+      'en': 'Umayyad Mosque Adhan (Damascus - Syria)',
+      'fr': 'Adhan de la Mosquée des Omeyyades (Damas)',
+    },
+    'adhan_umayyad_syria_desc': {
+      'ar': 'أذان الجامع الأموي الكبير بدمشق',
+      'en': 'Adhan of the Great Umayyad Mosque in Damascus',
+      'fr': 'Adhan de la Grande Mosquée des Omeyyades à Damas',
+    },
+    'adhan_blue_mosque_turkey_name': {
+      'ar': 'أذان مسجد السلطان أحمد (إسطنبول - تركيا)',
+      'en': 'Blue Mosque Adhan (Istanbul - Turkey)',
+      'fr': 'Adhan de la Mosquée Bleue (Istanbul)',
+    },
+    'adhan_blue_mosque_turkey_desc': {
+      'ar': 'أذان عثماني بالمقام الصبا',
+      'en': 'Ottoman Adhan in Saba Maqam',
+      'fr': 'Adhan ottoman en mode Saba',
+    },
+    'adhan_sheikh_zayed_uae_name': {
+      'ar': 'أذان جامع الشيخ زايد الكبير (أبوظبي)',
+      'en': 'Sheikh Zayed Grand Mosque Adhan (Abu Dhabi)',
+      'fr': 'Adhan de la Grande Mosquée Cheikh Zayed (Abou Dabi)',
+    },
+    'adhan_sheikh_zayed_uae_desc': {
+      'ar': 'أذان مهيب خاشع من الإمارات',
+      'en': 'Majestic reverent Adhan from UAE',
+      'fr': 'Majestueux Adhan des Émirats',
+    },
+    'adhan_qatami_name': {
+      'ar': 'أذان الشيخ ناصر القطامي',
+      'en': 'Sheikh Nasser Al-Qatami',
+      'fr': 'Cheikh Nasser Al-Qatami',
+    },
+    'adhan_qatami_desc': {
+      'ar': 'أذان نجد الشجي والمؤثر',
+      'en': 'Melodious Riyadh Adhan',
+      'fr': 'Adhan mélodieux de Riyad',
+    },
+    'adhan_custom_label': {
+      'ar': 'أذان مخصص مضاف',
+      'en': 'Custom added Adhan',
+      'fr': 'Adhan personnalisé ajouté',
+    },
+    'adhan_standard_label': {
+      'ar': 'أذان معتمد',
+      'en': 'Standard Adhan',
+      'fr': 'Adhan standard',
+    },
+
+    // Settings Screen Extras
+    'settings_startup_recitation_title': {
+      'ar': 'تلاوة بداية التطبيق',
+      'en': 'Startup Verse Recitation',
+      'fr': 'Récitation au Démarrage',
+    },
+    'settings_startup_recitation_desc': {
+      'ar': 'تشغيل آية المحراب بصوت الشيخ عبد الباسط عند فتح التطبيق',
+      'en': 'Play Mihrab verse by Sheikh Abdulbasit when opening app',
+      'fr': "Récitation du verset de Mihrab par Cheikh Abdulbasit à l'ouverture",
+    },
+    'settings_add_custom_adhan_btn': {
+      'ar': 'إضافة صوت أذان آخر ➕',
+      'en': 'Add another Adhan sound ➕',
+      'fr': 'Ajouter un autre Adhan ➕',
+    },
+    'settings_dnd_not_granted_title': {
+      'ar': 'إذن كتم الصوت غير ممنوح في نظام أندرويد',
+      'en': 'Do Not Disturb permission not granted on Android',
+      'fr': 'Autorisation « Ne pas déranger » non accordée sur Android',
+    },
+    'settings_dnd_not_granted_desc': {
+      'ar': 'لكي يعمل الكتم التلقائي بنجاح، يجب منح التطبيق إذن «الوصول إلى عدم الإزعاج» من إعدادات الهاتف.',
+      'en': 'For auto-silence to work, grant the app "Do Not Disturb" access in phone settings.',
+      'fr': 'Pour que le mode silencieux fonctionne, autorisez « Ne pas déranger » dans les paramètres.',
+    },
+    'settings_grant_dnd_btn': {
+      'ar': 'منح إذن كتم الصوت في إعدادات النظام ⚙️',
+      'en': 'Grant DND Permission in System Settings ⚙️',
+      'fr': "Accorder l'autorisation dans les paramètres ⚙️",
+    },
+    'settings_dnd_granted': {
+      'ar': 'إذن كتم الصوت مفعّل في النظام - الوضع الصامت جاهز للعمل.',
+      'en': 'DND permission active - Silent mode is ready.',
+      'fr': 'Autorisation active - Le mode silencieux est prêt.',
+    },
+    'settings_silent_type_label': {
+      'ar': 'نوع الوضع أثناء الصلاة:',
+      'en': 'Mode type during prayer:',
+      'fr': 'Type de mode pendant la prière :',
+    },
+    'settings_silent_mode_full': {
+      'ar': 'صامت تماماً 🔕',
+      'en': 'Completely Silent 🔕',
+      'fr': 'Totalement Silencieux 🔕',
+    },
+    'settings_silent_mode_vibrate': {
+      'ar': 'اهتزاز فقط 📳',
+      'en': 'Vibrate Only 📳',
+      'fr': 'Vibreur Uniquement 📳',
+    },
+    'settings_silent_duration_label': {
+      'ar': 'مدة كتم الصوت بعد الأذان:',
+      'en': 'Silence duration after Adhan:',
+      'fr': "Durée du mode silencieux après l'Adhan :",
+    },
+    'settings_testing_silent': {
+      'ar': 'جاري التجربة (الهاتف مكتوم الآن)...',
+      'en': 'Testing (Phone silenced now)...',
+      'fr': 'Test en cours (Téléphone silencieux)...',
+    },
+    'settings_test_silent_label': {
+      'ar': 'تجربة كتم الصوت الآن (لمدة 5 ثوانٍ) 🧪',
+      'en': 'Test Silent Mode Now (for 5 seconds) 🧪',
+      'fr': 'Tester le mode silencieux (pendant 5 s) 🧪',
+    },
+    'settings_auto_adhkar_title': {
+      'ar': 'تفعيل أذكار الشاشة التلقائية',
+      'en': 'Enable Auto Screen Dhikr',
+      'fr': "Activer les Rappels Automatiques à l'Écran",
+    },
+    'settings_auto_adhkar_desc': {
+      'ar': 'إظهار ذكر أو دعاء مأثور على شاشة الهاتف دورياً أثناء استخدام الهاتف لتظل رطباً بذكر الله',
+      'en': 'Periodically display authentic Dhikr on screen while browsing to keep remembering Allah',
+      'fr': "Afficher périodiquement des invocations à l'écran pour garder le souvenir d'Allah",
+    },
+    'settings_auto_adhkar_enabled_toast': {
+      'ar': 'تم تفعيل أذكار الشاشة التلقائية 📿',
+      'en': 'Auto Screen Dhikr enabled 📿',
+      'fr': "Rappels automatiques à l'écran activés 📿",
+    },
+    'settings_auto_adhkar_interval_label': {
+      'ar': 'فترة التكرار الزمني:',
+      'en': 'Repeat interval:',
+      'fr': 'Intervalle de répétition :',
+    },
+    'settings_customize_adhkar_btn': {
+      'ar': 'تخصيص مكتبة الأذكار وإضافة أدعية خاصة',
+      'en': 'Customize Dhikr Library & Add Prayers',
+      'fr': "Personnaliser la bibliothèque d'invocations",
+    },
+    'minute_x': {
+      'ar': 'دقيقة',
+      'en': 'min',
+      'fr': 'min',
+    },
+    'every_x_minutes': {
+      'ar': 'كل {0} دقيقة',
+      'en': 'Every {0} min',
+      'fr': 'Toutes les {0} min',
+    },
+    'wilaya_prefix': {
+      'ar': 'ولاية',
+      'en': 'Province',
+      'fr': 'Wilaya',
+    },
+    'commune_prefix': {
+      'ar': 'بلدية',
+      'en': 'Municipality',
+      'fr': 'Commune',
+    },
+
+    // Quran Card Creator Screen
+    'card_creator_title': {
+      'ar': 'صانع ومشارك البطاقات القرآنية',
+      'en': 'Quranic Card Maker & Sharing',
+      'fr': 'Créateur & Partage de Cartes Coraniques',
+    },
+    'card_share_btn': {
+      'ar': 'مشاركة عبر التطبيقات',
+      'en': 'Share via Apps',
+      'fr': 'Partager via les Applications',
+    },
+    'card_colors_header': {
+      'ar': 'ألوان وخلفية البطاقة',
+      'en': 'Card Colors & Background',
+      'fr': 'Couleurs & Arrière-plan de la Carte',
+    },
+    'card_format_header': {
+      'ar': 'تنسيق البطاقة',
+      'en': 'Card Formatting',
+      'fr': 'Formatage de la Carte',
+    },
+    'card_content_header': {
+      'ar': 'محتوى البطاقة (آيات، أحاديث، نص مخصص)',
+      'en': 'Card Content (Verses, Hadiths, Custom)',
+      'fr': 'Contenu de la Carte (Versets, Hadiths, Personnalisé)',
+    },
+    'card_theme_emerald': {
+      'ar': 'زمردي مِحراب',
+      'en': 'Mihrab Emerald',
+      'fr': 'Émeraude Mihrab',
+    },
+    'card_theme_royal_navy': {
+      'ar': 'كحلي ملكي',
+      'en': 'Royal Navy',
+      'fr': 'Bleu Nuit Royal',
+    },
+    'card_theme_andalusian_garnet': {
+      'ar': 'عقيق أندلسي',
+      'en': 'Andalusian Garnet',
+      'fr': 'Grenat Andalou',
+    },
+    'card_theme_sahara_night': {
+      'ar': 'سواد الصحراء',
+      'en': 'Sahara Night',
+      'fr': 'Nuit Saharienne',
+    },
+    'card_theme_pure_gold': {
+      'ar': 'ذهب خالص',
+      'en': 'Pure Gold',
+      'fr': 'Or Pur',
+    },
+    'card_font_size': {
+      'ar': 'حجم الخط:',
+      'en': 'Font size:',
+      'fr': 'Taille de police :',
+    },
+    'size_small': {
+      'ar': 'صغير',
+      'en': 'Small',
+      'fr': 'Petit',
+    },
+    'size_medium': {
+      'ar': 'متوسط',
+      'en': 'Medium',
+      'fr': 'Moyen',
+    },
+    'size_large': {
+      'ar': 'كبير',
+      'en': 'Large',
+      'fr': 'Grand',
+    },
+    'card_show_bismillah': {
+      'ar': 'إظهار البسملة (﷽):',
+      'en': 'Show Bismillah (﷽):',
+      'fr': 'Afficher la Basmala (﷽) :',
+    },
+    'card_show_footer': {
+      'ar': 'تذييل البطاقة (صدقة جارية):',
+      'en': 'Card Footer (Charity notice):',
+      'fr': 'Pied de page (Aumône continue) :',
+    },
+    'card_cat_quran': {
+      'ar': 'آيات قرآنية',
+      'en': 'Quranic Verses',
+      'fr': 'Versets Coraniques',
+    },
+    'card_cat_hadith': {
+      'ar': 'أحاديث نبوية',
+      'en': 'Prophetic Hadiths',
+      'fr': 'Hadiths Prophétiques',
+    },
+    'card_cat_supplications': {
+      'ar': 'أدعية مأثورة',
+      'en': 'Supplications & Adhkar',
+      'fr': 'Invocations & Adhkar',
+    },
+    'card_cat_custom': {
+      'ar': 'اكتب نصك الخاص',
+      'en': 'Write Custom Text',
+      'fr': 'Rédiger Votre Propre Texte',
+    },
+    'card_custom_text_label': {
+      'ar': 'نص البطاقة الخاص بك:',
+      'en': 'Your custom card text:',
+      'fr': 'Votre texte de carte :',
+    },
+    'card_custom_text_hint': {
+      'ar': 'اكتب الآية، الحديث، أو الدعاء الذي ترغب بتصميمه ومشاركته...',
+      'en': 'Type the verse, hadith, or prayer to design and share...',
+      'fr': 'Saisissez le verset, hadith ou invocation à concevoir...',
+    },
+    'card_custom_ref_label': {
+      'ar': 'المصدر أو المرجع (اختياري):',
+      'en': 'Source or reference (optional):',
+      'fr': 'Source ou référence (optionnel) :',
+    },
+    'card_custom_ref_hint': {
+      'ar': 'مثال: [سورة البقرة: 255] أو [صحيح مسلم]',
+      'en': 'e.g. [Surah Al-Baqarah: 255] or [Sahih Muslim]',
+      'fr': 'Ex. : [Sourate Al-Baqarah : 255] ou [Sahih Muslim]',
+    },
+    'card_error_empty': {
+      'ar': 'الرجاء إدخال نص للبطاقة قبل المشاركة',
+      'en': 'Please enter card text before sharing',
+      'fr': 'Veuillez saisir un texte avant de partager',
+    },
+    'card_share_subject': {
+      'ar': 'بطاقة إسلامية - تطبيق مِـحْـرَابْ الجزائر',
+      'en': 'Islamic Card - Mihrab App',
+      'fr': 'Carte Islamique - Application Mihrab',
+    },
+    'card_copied': {
+      'ar': 'تم نسخ محتوى البطاقة للحافظة لمشاركتها 📋',
+      'en': 'Card text copied to clipboard 📋',
+      'fr': 'Texte de la carte copié dans le presse-papiers 📋',
+    },
+    'card_copied_full': {
+      'ar': 'تم نسخ محتوى البطاقة بالكامل إلى الحافظة بنجاح 📋✨',
+      'en': 'Card content fully copied to clipboard 📋✨',
+      'fr': 'Contenu de la carte copié avec succès 📋✨',
+    },
+    'card_preview_placeholder': {
+      'ar': '«أدخل نص البطاقة القرآنية هنا»',
+      'en': '«Enter card text here»',
+      'fr': '«Saisissez le texte de la carte ici»',
+    },
+    'card_footer_text': {
+      'ar': 'صدقة جارية — تطبيق مِـحْـرَابْ الجزائر',
+      'en': 'Sadaqah Jariyah — Mihrab App',
+      'fr': 'Aumône continue — Application Mihrab',
+    },
+
+    // Live Broadcast Screen
+    'live_broadcast_title': {
+      'ar': 'البث المباشر الإسلامي',
+      'en': 'Islamic Live Broadcast',
+      'fr': 'Direct Islamique & Radios',
+    },
+    'live_badge_24_7': {
+      'ar': 'مباشر 24/7',
+      'en': 'Live 24/7',
+      'fr': 'En direct 24/7',
+    },
+    'live_stations_header': {
+      'ar': 'إذاعات وقنوات حية',
+      'en': 'Live Radios & Channels',
+      'fr': 'Radios & Chaînes en Direct',
+    },
+    'live_stations_desc': {
+      'ar': 'استمع مباشرة إلى إذاعة القرآن الكريم الجزائرية وبث الحرم المكي والحرم النبوي الشريف بأعلى جودة صوت نقية.',
+      'en': 'Listen live to Algerian Quran Radio, Makkah Haram, and Madinah Holy Mosque broadcasts in crystal clear audio.',
+      'fr': 'Écoutez en direct la radio coranique algérienne et les diffusions des Saintes Mosquées de La Mecque et Médine.',
+    },
+    'live_stream_btn': {
+      'ar': 'بث حي',
+      'en': 'Live Stream',
+      'fr': 'Direct',
+    },
+    'live_watch_video_btn': {
+      'ar': 'مشاهدة البث المرئي المباشر (فيديو 24/7) 📺',
+      'en': 'Watch Live Video Stream (24/7) 📺',
+      'fr': 'Regarder la diffusion vidéo en direct (24/7) 📺',
+    },
+    'live_status_playing': {
+      'ar': 'البث المباشر يعمل الآن 🔴',
+      'en': 'Live stream is playing now 🔴',
+      'fr': 'Diffusion en direct en cours 🔴',
+    },
+    'live_status_connecting': {
+      'ar': 'جاري الاتصال بالبث...',
+      'en': 'Connecting to stream...',
+      'fr': 'Connexion au direct en cours...',
+    },
+    'live_stop_tooltip': {
+      'ar': 'إيقاف البث',
+      'en': 'Stop Broadcast',
+      'fr': 'Arrêter le direct',
+    },
+    'live_opening_video': {
+      'ar': 'جاري فتح البث المرئي المباشر... 📺',
+      'en': 'Opening live video stream... 📺',
+      'fr': 'Ouverture du flux vidéo en direct... 📺',
+    },
+    'live_open_video_failed': {
+      'ar': 'تعذر فتح البث تلقائياً. يرجى التأكد من توفر تطبيق YouTube أو متصفح إنترنت.',
+      'en': 'Unable to open video stream. Ensure YouTube or a web browser is installed.',
+      'fr': "Impossible d'ouvrir le direct vidéo. Vérifiez YouTube ou un navigateur.",
+    },
+    'live_connecting': {
+      'ar': 'جاري الاتصال بالبث المباشر: ',
+      'en': 'Connecting to live broadcast: ',
+      'fr': 'Connexion au direct : ',
+    },
+    'live_connection_error': {
+      'ar': 'تعذر الاتصال بالبث المباشر حالياً، يرجى التحقق من اتصال الإنترنت ⚠️',
+      'en': 'Unable to connect to live stream, please check your internet connection ⚠️',
+      'fr': 'Impossible de se connecter au direct, vérifiez votre connexion Internet ⚠️',
+    },
+    'live_stopped': {
+      'ar': 'تم إيقاف البث المباشر ⏹️',
+      'en': 'Live broadcast stopped ⏹️',
+      'fr': 'Diffusion en direct arrêtée ⏹️',
+    },
+
+    // Channel Titles, Subtitles, Locations
+    'live_channel_algeria_coran_title': {
+      'ar': 'إذاعة القرآن الكريم الجزائرية',
+      'en': 'Algerian Holy Quran Radio',
+      'fr': 'Radio Algérienne du Saint Coran',
+    },
+    'live_channel_algeria_coran_sub': {
+      'ar': 'البوابة الرسمية للبث المباشر لإذاعة القرآن الجزائرية والتلاوات',
+      'en': 'Official live stream of Algerian Quran Radio and recitations',
+      'fr': 'Portail officiel du direct de la radio coranique algérienne',
+    },
+    'live_channel_algeria_coran_loc': {
+      'ar': 'الجزائر العاصمة 🇩🇿',
+      'en': 'Algiers 🇩🇿',
+      'fr': 'Alger 🇩🇿',
+    },
+    'live_channel_makkah_live_title': {
+      'ar': 'قناة القرآن الكريم - مكة المكرمة',
+      'en': 'Holy Quran TV - Makkah',
+      'fr': 'Chaîne du Saint Coran - La Mecque',
+    },
+    'live_channel_makkah_live_sub': {
+      'ar': 'بث حي ومباشر من المسجد الحرام بمكة المكرمة على مدار الساعة 🕋',
+      'en': '24/7 live stream from the Grand Mosque in Makkah 🕋',
+      'fr': 'Direct 24/7 de la Grande Mosquée de La Mecque 🕋',
+    },
+    'live_channel_makkah_live_loc': {
+      'ar': 'مكة المكرمة 🕋',
+      'en': 'Makkah Al-Mukarramah 🕋',
+      'fr': 'La Mecque 🕋',
+    },
+    'live_channel_general_quran_title': {
+      'ar': 'إذاعة القرآن الكريم العامة',
+      'en': 'General Holy Quran Radio',
+      'fr': 'Radio Générale du Saint Coran',
+    },
+    'live_channel_general_quran_sub': {
+      'ar': 'تلاوات متواصلة على مدار 24 ساعة بأصوات كبار قراء العالم الإسلامي',
+      'en': '24/7 continuous recitations by renowned Islamic reciters',
+      'fr': 'Récitations 24/7 des grands récitateurs du monde musulman',
+    },
+    'live_channel_general_quran_loc': {
+      'ar': 'العالم الإسلامي 🕌',
+      'en': 'Islamic World 🕌',
+      'fr': 'Monde Islamique 🕌',
+    },
+    'live_channel_minshawi_radio_title': {
+      'ar': 'إذاعة الشيخ محمد صديق المنشاوي',
+      'en': 'Sheikh Muhammad Siddiq Al-Minshawi Radio',
+      'fr': 'Radio Cheikh Al-Minshawi',
+    },
+    'live_channel_minshawi_radio_sub': {
+      'ar': 'تلاوات خاشعة ومجودة على مدار الساعة للصوت الباكي',
+      'en': 'Reverent tajweed recitations around the clock by the weeping voice',
+      'fr': 'Récitations pieuses et émouvantes en continu',
+    },
+    'live_channel_minshawi_radio_loc': {
+      'ar': 'مصر والعالم الإسلامي 🎙️',
+      'en': 'Egypt & Islamic World 🎙️',
+      'fr': 'Égypte & Monde Islamique 🎙️',
+    },
+    'live_channel_hussary_radio_title': {
+      'ar': 'إذاعة الشيخ محمود خليل الحصري',
+      'en': 'Sheikh Mahmoud Khalil Al-Hussary Radio',
+      'fr': 'Radio Cheikh Al-Hussary',
+    },
+    'live_channel_hussary_radio_sub': {
+      'ar': 'تلاوات محكمة ومتقنة على مدار الساعة لشيخ المقارئ المصرية',
+      'en': 'Flawless tajweed recitations by the dean of Egyptian reciters',
+      'fr': 'Récitations impeccables du doyen des récitateurs égyptiens',
+    },
+    'live_channel_hussary_radio_loc': {
+      'ar': 'مصر والعالم الإسلامي 🎙️',
+      'en': 'Egypt & Islamic World 🎙️',
+      'fr': 'Égypte & Monde Islamique 🎙️',
+    },
+    'live_channel_maher_radio_title': {
+      'ar': 'إذاعة الشيخ ماهر المعيقلي',
+      'en': 'Sheikh Maher Al-Muaiqly Radio',
+      'fr': 'Radio Cheikh Maher Al-Muaiqly',
+    },
+    'live_channel_maher_radio_sub': {
+      'ar': 'تلاوات ندية خاشعة لإمام وخطيب المسجد الحرام',
+      'en': 'Reverent recitations by the Imam of the Grand Mosque',
+      'fr': "Récitations émouvantes de l'imam de la Mosquée Sacrée",
+    },
+    'live_channel_maher_radio_loc': {
+      'ar': 'مكة المكرمة 🕋',
+      'en': 'Makkah Al-Mukarramah 🕋',
+      'fr': 'La Mecque 🕋',
+    },
+    'live_channel_alajmy_radio_title': {
+      'ar': 'إذاعة الشيخ أحمد العجمي',
+      'en': 'Sheikh Ahmad Al-Ajmy Radio',
+      'fr': 'Radio Cheikh Ahmad Al-Ajmy',
+    },
+    'live_channel_alajmy_radio_sub': {
+      'ar': 'تلاوات مرتلة عذبة متواصلة على مدار اليوم',
+      'en': 'Melodious tartil recitations throughout the day',
+      'fr': 'Récitations mélodieuses en continu',
+    },
+    'live_channel_alajmy_radio_loc': {
+      'ar': 'العالم الإسلامي 🎙️',
+      'en': 'Islamic World 🎙️',
+      'fr': 'Monde Islamique 🎙️',
+    },
+    'live_channel_albaqarah_radio_title': {
+      'ar': 'إذاعة سورة البقرة المباركة',
+      'en': 'Surah Al-Baqarah Radio',
+      'fr': 'Radio Sourate Al-Baqarah',
+    },
+    'live_channel_albaqarah_radio_sub': {
+      'ar': 'بث متواصل لسورة البقرة لطرد الشياطين وبركة البيوت',
+      'en': 'Continuous recitation of Surah Al-Baqarah for home blessing',
+      'fr': 'Diffusion continue de Sourate Al-Baqarah pour la bénédiction du foyer',
+    },
+    'live_channel_albaqarah_radio_loc': {
+      'ar': 'بث متواصل 📖',
+      'en': 'Continuous Broadcast 📖',
+      'fr': 'Diffusion Continue 📖',
+    },
+    'live_channel_roqiah_radio_title': {
+      'ar': 'إذاعة الرقية الشرعية',
+      'en': 'Ruqyah Shariyyah Radio',
+      'fr': 'Radio Roqya Chariya',
+    },
+    'live_channel_roqiah_radio_sub': {
+      'ar': 'آيات الرقية الشرعية والأدعية النبوية للشفاء والحفظ',
+      'en': 'Verses and prophetic prayers for healing and protection',
+      'fr': 'Versets et invocations pour la guérison et la protection',
+    },
+    'live_channel_roqiah_radio_loc': {
+      'ar': 'بث متواصل 🛡️',
+      'en': 'Continuous Broadcast 🛡️',
+      'fr': 'Diffusion Continue 🛡️',
+    },
+    'live_channel_adhkar_radio_title': {
+      'ar': 'إذاعة أذكار الصباح والمساء',
+      'en': 'Morning & Evening Adhkar Radio',
+      'fr': 'Radio Invocations Matin & Soir',
+    },
+    'live_channel_adhkar_radio_sub': {
+      'ar': 'حصن المسلم وأذكار اليوم والليلة بأصوات ندية',
+      'en': 'Fortress of the Muslim: daily dhikr in serene voices',
+      'fr': 'La citadelle du musulman : invocations du jour et de la nuit',
+    },
+    'live_channel_adhkar_radio_loc': {
+      'ar': 'بث متواصل 📿',
+      'en': 'Continuous Broadcast 📿',
+      'fr': 'Diffusion Continue 📿',
+    },
+    'live_channel_tafsir_radio_title': {
+      'ar': 'إذاعة تفسير القرآن الكريم',
+      'en': 'Quran Tafsir Radio',
+      'fr': 'Radio Tafsir du Coran',
+    },
+    'live_channel_tafsir_radio_sub': {
+      'ar': 'المختصر في تفسير القرآن الكريم وتوضيح معاني الآيات',
+      'en': 'Concise explanation and meanings of the Holy Quran',
+      'fr': 'Explication concise des sens des versets du Coran',
+    },
+    'live_channel_tafsir_radio_loc': {
+      'ar': 'الإذاعة التعليمية 📖',
+      'en': 'Educational Radio 📖',
+      'fr': 'Radio Éducative 📖',
+    },
+
+    // Auto Adhkar Screen
+    'auto_adhkar_page_title': {
+      'ar': 'أذكار وأدعية الشاشة التلقائية',
+      'en': 'Auto Screen Dhikr & Duas',
+      'fr': 'Rappels & Invocations Automatiques',
+    },
+    'auto_adhkar_add_tooltip': {
+      'ar': 'إضافة ذكر أو دعاء مخصص',
+      'en': 'Add custom Dhikr or supplication',
+      'fr': 'Ajouter une invocation personnalisée',
+    },
+    'auto_adhkar_add_btn': {
+      'ar': 'إضافة ذكر جديد',
+      'en': 'Add New Dhikr',
+      'fr': 'Ajouter un Dhikr',
+    },
+    'auto_adhkar_card_title': {
+      'ar': 'ظهور الأذكار التلقائي على الشاشة',
+      'en': 'Automatic Screen Dhikr Popups',
+      'fr': 'Affichage Automatique des Invocations',
+    },
+    'auto_adhkar_card_desc': {
+      'ar': 'تذكيرك بذكر الله والأدعية أثناء تصفح الهاتف والإنترنت',
+      'en': 'Reminding you of Allah while browsing your phone & web',
+      'fr': "Rappels spirituels pendant l'utilisation de votre téléphone",
+    },
+    'auto_adhkar_enabled_prefix': {
+      'ar': 'الأذكار المفعلة: ',
+      'en': 'Active Dhikrs: ',
+      'fr': 'Invocations actives : ',
+    },
+    'of_total': {
+      'ar': 'من',
+      'en': 'of',
+      'fr': 'sur',
+    },
+    'auto_adhkar_test_btn': {
+      'ar': 'اختبر الظهور الآن',
+      'en': 'Test Popup Now',
+      'fr': "Tester l'Affichage",
+    },
+    'auto_adhkar_settings_header': {
+      'ar': 'إعدادات التكرار والتنبيه',
+      'en': 'Interval & Sound Settings',
+      'fr': 'Paramètres de Fréquence & Alerte',
+    },
+    'auto_adhkar_freq_title': {
+      'ar': 'معدل ظهور الذكر على الشاشة أثناء التصفح:',
+      'en': 'Frequency of Dhikr appearance:',
+      'fr': "Fréquence d'affichage du dhikr :",
+    },
+    'freq_5_min': {
+      'ar': 'كل 5 دقائق (سريع)',
+      'en': 'Every 5 min (Fast)',
+      'fr': 'Toutes les 5 min (Rapide)',
+    },
+    'freq_10_min': {
+      'ar': 'كل 10 دقائق',
+      'en': 'Every 10 min',
+      'fr': 'Toutes les 10 min',
+    },
+    'freq_15_min': {
+      'ar': 'كل 15 دقيقة (مستحسن)',
+      'en': 'Every 15 min (Recommended)',
+      'fr': 'Toutes les 15 min (Recommandé)',
+    },
+    'freq_30_min': {
+      'ar': 'كل 30 دقيقة',
+      'en': 'Every 30 min',
+      'fr': 'Toutes les 30 min',
+    },
+    'freq_60_min': {
+      'ar': 'كل ساعة',
+      'en': 'Every hour',
+      'fr': 'Toutes les heures',
+    },
+    'freq_120_min': {
+      'ar': 'كل ساعتين',
+      'en': 'Every 2 hours',
+      'fr': 'Toutes les 2 heures',
+    },
+    'auto_adhkar_sound_title': {
+      'ar': 'نغمة تنبيه صوتية عند ظهور الذكر',
+      'en': 'Sound alert when Dhikr appears',
+      'fr': "Sonnerie d'alerte à l'affichage",
+    },
+    'auto_adhkar_sound_desc': {
+      'ar': 'تشغيل صوت هادئ مع الإشعار المنبثق',
+      'en': 'Play a gentle tone with the popup notification',
+      'fr': 'Émettre un son doux avec la notification',
+    },
+    'auto_adhkar_select_list_header': {
+      'ar': 'اختر الأذكار والأدعية التي تظهر لك',
+      'en': 'Select Dhikrs & Duas to Display',
+      'fr': 'Choisissez les Invocations à Afficher',
+    },
+    'select_all': {
+      'ar': 'تحديد الكل',
+      'en': 'Select All',
+      'fr': 'Tout sélectionner',
+    },
+    'deselect_all': {
+      'ar': 'إلغاء الكل',
+      'en': 'Deselect All',
+      'fr': 'Tout désélectionner',
+    },
+    'all_filter': {
+      'ar': 'الكل',
+      'en': 'All',
+      'fr': 'Tous',
+    },
+    'auto_adhkar_user_added': {
+      'ar': 'مضاف من طرفك',
+      'en': 'Added by you',
+      'fr': 'Ajouté par vous',
+    },
+    'auto_adhkar_preview_tooltip': {
+      'ar': 'معاينة الظهور',
+      'en': 'Preview Popup',
+      'fr': "Aperçu de l'affichage",
+    },
+    'auto_adhkar_delete_tooltip': {
+      'ar': 'حذف الذكر المخصص',
+      'en': 'Delete Custom Dhikr',
+      'fr': 'Supprimer ce dhikr',
+    },
+    'auto_adhkar_preview_title': {
+      'ar': 'معاينة الذكر المنبثق على الشاشة',
+      'en': 'Screen Popup Preview',
+      'fr': "Aperçu du Rappel à l'Écran",
+    },
+    'ok': {
+      'ar': 'حسناً',
+      'en': 'OK',
+      'fr': "D'accord",
+    },
+    'auto_adhkar_dialog_add_title': {
+      'ar': 'إضافة ذكر أو دعاء مخصص',
+      'en': 'Add Custom Dhikr or Prayer',
+      'fr': 'Ajouter une invocation personnalisée',
+    },
+    'auto_adhkar_dialog_prompt': {
+      'ar': 'اكتب الذكر أو الدعاء الذي ترغب أن يظهر لك على شاشة هاتفك:',
+      'en': 'Type the Dhikr or supplication you wish to appear on your screen:',
+      'fr': 'Saisissez le dhikr ou l\'invocation que vous souhaitez voir apparaître :',
+    },
+    'auto_adhkar_dialog_hint': {
+      'ar': 'مثال: اللَّهُمَّ رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً...',
+      'en': 'e.g. Allahumma Rabbana atina fid-dunya hasanah...',
+      'fr': 'Ex. : Allahoumma Rabbana atina fid-dounya hasanah...',
+    },
+    'category_label': {
+      'ar': 'التصنيف:',
+      'en': 'Category:',
+      'fr': 'Catégorie :',
+    },
+    'auto_adhkar_virtue_label': {
+      'ar': 'الفضل أو الملاحظة (اختياري)',
+      'en': 'Virtue or Note (Optional)',
+      'fr': 'Bienfait ou Note (Optionnel)',
+    },
+    'auto_adhkar_virtue_hint': {
+      'ar': 'مثال: دعاء مبارك لتفريج الهموم',
+      'en': 'e.g. Blessed supplication for relief of distress',
+      'fr': 'Ex. : Invocation bénie pour dissiper les soucis',
+    },
+    'auto_adhkar_save_btn': {
+      'ar': 'حفظ الذكر',
+      'en': 'Save Dhikr',
+      'fr': 'Enregistrer',
+    },
+    'auto_adhkar_error_empty': {
+      'ar': 'يرجى كتابة نص الذكر أو الدعاء أولاً',
+      'en': 'Please type the Dhikr or prayer text first',
+      'fr': "Veuillez d'abord saisir le texte du dhikr",
+    },
+    'auto_adhkar_added_success': {
+      'ar': 'تمت إضافة الذكر بنجاح وإدراجه في دورة الظهور ✅',
+      'en': 'Dhikr added successfully and queued for display ✅',
+      'fr': "Invocation ajoutée avec succès au cycle d'affichage ✅",
+    },
+    'auto_adhkar_none_enabled': {
+      'ar': 'يرجى تفعيل ذكر واحد على الأقل للظهور',
+      'en': 'Please enable at least one Dhikr to display',
+      'fr': 'Veuillez activer au moins une invocation à afficher',
+    },
+
+    // Adhkar Categories
+    'adhkar_cat_tasbih': {
+      'ar': 'تسبيح وتحميد',
+      'en': 'Praise & Glorification',
+      'fr': 'Louange & Glorification',
+    },
+    'adhkar_cat_istighfar': {
+      'ar': 'استغفار وتوبة',
+      'en': 'Forgiveness & Repentance',
+      'fr': 'Pardon & Repentir',
+    },
+    'adhkar_cat_prophet': {
+      'ar': 'الصلاة على النبي',
+      'en': 'Prayers upon the Prophet',
+      'fr': 'Prières sur le Prophète',
+    },
+    'adhkar_cat_tawakkul': {
+      'ar': 'حوقلة وتوكل',
+      'en': 'Trust & Reliance on Allah',
+      'fr': 'Confiance & Remise à Allah',
+    },
+    'adhkar_cat_relief': {
+      'ar': 'تفريج الكرب',
+      'en': 'Relief from Distress',
+      'fr': 'Soulagement de la Détresse',
+    },
+    'adhkar_cat_baqiyat': {
+      'ar': 'الباقيات الصالحات',
+      'en': 'Enduring Good Deeds',
+      'fr': 'Bonnes Œuvres Durables',
+    },
+    'adhkar_cat_prophetic_dua': {
+      'ar': 'أدعية نبوية',
+      'en': 'Prophetic Supplications',
+      'fr': 'Invocations Prophétiques',
+    },
+    'adhkar_cat_comprehensive_dua': {
+      'ar': 'أدعية جامعة',
+      'en': 'Comprehensive Prayers',
+      'fr': 'Invocations Complètes',
+    },
+    'adhkar_cat_protection': {
+      'ar': 'حفظ وتحصين',
+      'en': 'Protection & Refuge',
+      'fr': 'Protection & Préservation',
+    },
+    'adhkar_cat_ease': {
+      'ar': 'تيسير الأمور',
+      'en': 'Facilitation of Affairs',
+      'fr': 'Facilitation des Affaires',
+    },
+    'adhkar_cat_custom': {
+      'ar': 'أدعية مخصصة',
+      'en': 'Custom Supplications',
+      'fr': 'Invocations Personnalisées',
+    },
+    'gps_auto_switch': {
+      'ar': 'التحديد التلقائي عبر الأقمار الصناعية (GPS)',
+      'en': 'Automatic Satellite Detection (GPS)',
+      'fr': 'Détection Automatique par Satellite (GPS)',
+    },
+    'add': {
+      'ar': 'إضافة',
+      'en': 'Add',
+      'fr': 'Ajouter',
+    },
+    'playing': {
+      'ar': 'يعمل',
+      'en': 'Playing',
+      'fr': 'En cours',
+    },
+    'delete': {
+      'ar': 'حذف',
+      'en': 'Delete',
+      'fr': 'Supprimer',
+    },
+    'enable': {
+      'ar': 'تفعيل',
+      'en': 'Enable',
+      'fr': 'Activer',
+    },
+    'settings_prayer_notif_test': {
+      'ar': 'صلاة تجريبية (فحص الإشعارات)',
+      'en': 'Test Prayer (Notification Check)',
+      'fr': 'Prière Test (Vérification des notifications)',
+    },
+    'settings_later_btn': {
+      'ar': 'لاحقاً',
+      'en': 'Later',
+      'fr': 'Plus tard',
     },
   };
 

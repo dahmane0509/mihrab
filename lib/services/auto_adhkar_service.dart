@@ -9,6 +9,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'adhan_audio_service.dart';
 import 'audio_coordinator.dart';
 import 'verse_audio_service.dart';
+import 'language_service.dart';
 
 class AdhkarItem {
   final String id;
@@ -26,6 +27,8 @@ class AdhkarItem {
     this.isCustom = false,
     this.isEnabled = true,
   });
+
+  String get displayCategory => AutoAdhkarService.getCategoryDisplayName(category);
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -60,6 +63,37 @@ class AutoAdhkarService {
   static const String channelId = 'auto_adhkar_channel';
   static const String channelName = 'أذكار الشاشة التلقائية';
   static const String channelDesc = 'إظهار الأذكار والأدعية على الشاشة أثناء تصفح الهاتف';
+
+  static String getCategoryDisplayName(String category) {
+    switch (category) {
+      case 'الكل':
+        return LanguageService.tr('all_filter');
+      case 'تسبيح وتحميد':
+        return LanguageService.tr('adhkar_cat_tasbih');
+      case 'استغفار وتوبة':
+        return LanguageService.tr('adhkar_cat_istighfar');
+      case 'الصلاة على النبي':
+        return LanguageService.tr('adhkar_cat_prophet');
+      case 'حوقلة وتوكل':
+        return LanguageService.tr('adhkar_cat_tawakkul');
+      case 'تفريج الكرب':
+        return LanguageService.tr('adhkar_cat_relief');
+      case 'الباقيات الصالحات':
+        return LanguageService.tr('adhkar_cat_baqiyat');
+      case 'أدعية نبوية':
+        return LanguageService.tr('adhkar_cat_prophetic_dua');
+      case 'أدعية جامعة':
+        return LanguageService.tr('adhkar_cat_comprehensive_dua');
+      case 'حفظ وتحصين':
+        return LanguageService.tr('adhkar_cat_protection');
+      case 'تيسير الأمور':
+        return LanguageService.tr('adhkar_cat_ease');
+      case 'أدعية مخصصة':
+        return LanguageService.tr('adhkar_cat_custom');
+      default:
+        return category;
+    }
+  }
 
   // Default Authentic Adhkar Library
   static final List<AdhkarItem> _defaultAdhkar = [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'language_service.dart';
 
 class AppThemeColor {
   final String id;
@@ -19,6 +20,21 @@ class AppThemeColor {
     required this.background,
     required this.cardBackground,
   });
+
+  String get displayName {
+    switch (id) {
+      case 'emerald':
+        return LanguageService.tr('theme_emerald_name');
+      case 'royal_blue':
+        return LanguageService.tr('theme_royal_blue_name');
+      case 'amber_desert':
+        return LanguageService.tr('theme_desert_gold_name');
+      case 'midnight':
+        return LanguageService.tr('theme_black_gold_name');
+      default:
+        return nameAr;
+    }
+  }
 }
 
 class ThemeService {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mihrab_app/services/auto_adhkar_service.dart';
+import 'package:mihrab_app/services/language_service.dart';
 import 'package:mihrab_app/services/theme_service.dart';
 
 class AutoAdhkarScreen extends StatefulWidget {
@@ -84,9 +85,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
             children: [
               Icon(Icons.add_circle, color: theme.accent, size: 24),
               const SizedBox(width: 8),
-              const Text(
-                "إضافة ذكر أو دعاء مخصص",
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                LanguageService.tr('auto_adhkar_dialog_add_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -95,9 +96,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "اكتب الذكر أو الدعاء الذي ترغب أن يظهر لك على شاشة هاتفك:",
-                  style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
+                Text(
+                  LanguageService.tr('auto_adhkar_dialog_prompt'),
+                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -105,7 +106,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                   maxLines: 3,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: "مثال: اللَّهُمَّ رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً...",
+                    hintText: LanguageService.tr('auto_adhkar_dialog_hint'),
                     hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
@@ -120,7 +121,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text("التصنيف:", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(LanguageService.tr('category_label'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
                   initialValue: category,
@@ -142,7 +143,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                     'تيسير الأمور',
                     'حفظ وتحصين',
                     'استغفار وتوبة',
-                  ].map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  ].map((cat) => DropdownMenuItem(value: cat, child: Text(AutoAdhkarService.getCategoryDisplayName(cat)))).toList(),
                   onChanged: (val) {
                     if (val != null) setDialogState(() => category = val);
                   },
@@ -152,9 +153,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                   controller: virtueController,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   decoration: InputDecoration(
-                    labelText: "الفضل أو الملاحظة (اختياري)",
+                    labelText: LanguageService.tr('auto_adhkar_virtue_label'),
                     labelStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                    hintText: "مثال: دعاء مبارك لتفريج الهموم",
+                    hintText: LanguageService.tr('auto_adhkar_virtue_hint'),
                     hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                     filled: true,
                     fillColor: const Color(0xFF0F172A),
@@ -170,7 +171,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("إلغاء", style: TextStyle(color: Color(0xFF94A3B8))),
+              child: Text(LanguageService.tr('cancel'), style: const TextStyle(color: Color(0xFF94A3B8))),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -181,9 +182,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                 final text = textController.text.trim();
                 if (text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       backgroundColor: Colors.redAccent,
-                      content: Text("يرجى كتابة نص الذكر أو الدعاء أولاً"),
+                      content: Text(LanguageService.tr('auto_adhkar_error_empty')),
                     ),
                   );
                   return;
@@ -198,13 +199,13 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                 if (!mounted || !ctx.mounted) return;
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Color(0xFF065F46),
-                    content: Text("تمت إضافة الذكر بنجاح وإدراجه في دورة الظهور ✅"),
+                  SnackBar(
+                    backgroundColor: const Color(0xFF065F46),
+                    content: Text(LanguageService.tr('auto_adhkar_added_success')),
                   ),
                 );
               },
-              child: const Text("حفظ الذكر", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(LanguageService.tr('auto_adhkar_save_btn'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -216,9 +217,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
     final item = specific ?? AutoAdhkarService.getRandomEnabledDhikr();
     if (item == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           backgroundColor: Colors.orange,
-          content: Text("يرجى تفعيل ذكر واحد على الأقل للظهور"),
+          content: Text(LanguageService.tr('auto_adhkar_none_enabled')),
         ),
       );
       return;
@@ -265,7 +266,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                 Icon(Icons.notifications_active, color: theme.accent, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  "معاينة الذكر المنبثق على الشاشة",
+                  LanguageService.tr('auto_adhkar_preview_title'),
                   style: TextStyle(color: theme.accent, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
               ],
@@ -295,7 +296,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      item.category,
+                      item.displayCategory,
                       style: const TextStyle(color: Color(0xFF854D0E), fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -329,7 +330,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text("حسناً", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(LanguageService.tr('ok'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -340,46 +341,52 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<AppThemeColor>(
-      valueListenable: ThemeService.currentTheme,
-      builder: (context, theme, _) {
-        final allItems = AutoAdhkarService.allAdhkar;
-        final filteredItems = _selectedCategory == 'الكل'
-            ? allItems
-            : allItems.where((i) => i.category == _selectedCategory).toList();
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LanguageService.currentLocale,
+      builder: (context, _, __) {
+        return ValueListenableBuilder<AppThemeColor>(
+          valueListenable: ThemeService.currentTheme,
+          builder: (context, theme, _) {
+            final allItems = AutoAdhkarService.allAdhkar;
+            final filteredItems = _selectedCategory == 'الكل'
+                ? allItems
+                : allItems.where((i) => i.category == _selectedCategory).toList();
 
-        final enabledCount = allItems.where((i) => i.isEnabled).length;
+            final enabledCount = allItems.where((i) => i.isEnabled).length;
 
-        final categories = ['الكل', ...{...allItems.map((i) => i.category)}];
+            final categories = ['الكل', ...{...allItems.map((i) => i.category)}];
 
-        return Scaffold(
-          backgroundColor: theme.background,
-          appBar: AppBar(
-            backgroundColor: theme.cardBackground,
-            elevation: 0,
-            title: const Text(
-              "أذكار وأدعية الشاشة التلقائية",
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.add, color: theme.accent),
-                tooltip: "إضافة ذكر أو دعاء مخصص",
+            return Scaffold(
+              backgroundColor: theme.background,
+              appBar: AppBar(
+                backgroundColor: theme.cardBackground,
+                elevation: 0,
+                title: Text(
+                  LanguageService.tr('auto_adhkar_page_title'),
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                centerTitle: true,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.add, color: theme.accent),
+                    tooltip: LanguageService.tr('auto_adhkar_add_tooltip'),
+                    onPressed: () => _showAddCustomDhikrDialog(theme),
+                  ),
+                ],
+              ),
+              floatingActionButton: FloatingActionButton.extended(
+                backgroundColor: theme.primary,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text(
+                  LanguageService.tr('auto_adhkar_add_btn'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
                 onPressed: () => _showAddCustomDhikrDialog(theme),
               ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: theme.primary,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text("إضافة ذكر جديد", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            onPressed: () => _showAddCustomDhikrDialog(theme),
-          ),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -409,18 +416,18 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                           child: Icon(Icons.auto_awesome, color: theme.accent, size: 24),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "ظهور الأذكار التلقائي على الشاشة",
-                                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                                LanguageService.tr('auto_adhkar_card_title'),
+                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                "تذكيرك بذكر الله والأدعية أثناء تصفح الهاتف والإنترنت",
-                                style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11),
+                                LanguageService.tr('auto_adhkar_card_desc'),
+                                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11),
                               ),
                             ],
                           ),
@@ -444,7 +451,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                             Icon(Icons.check_circle_outline, color: theme.accent, size: 16),
                             const SizedBox(width: 6),
                             Text(
-                              "الأذكار المفعلة: $enabledCount من ${allItems.length}",
+                              "${LanguageService.tr('auto_adhkar_enabled_prefix')}$enabledCount ${LanguageService.tr('of_total')} ${allItems.length}",
                               style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 12),
                             ),
                           ],
@@ -464,7 +471,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                                 Icon(Icons.play_circle_outline, color: theme.accent, size: 14),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "اختبر الظهور الآن",
+                                  LanguageService.tr('auto_adhkar_test_btn'),
                                   style: TextStyle(color: theme.accent, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -480,7 +487,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
               const SizedBox(height: 20),
 
               // 2. Frequency & Sound Settings
-              _buildSectionHeader("إعدادات التكرار والتنبيه", Icons.timer, theme.accent),
+              _buildSectionHeader(LanguageService.tr('auto_adhkar_settings_header'), Icons.timer, theme.accent),
               const SizedBox(height: 8),
               Material(
                 color: theme.cardBackground,
@@ -493,24 +500,24 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                   child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "معدل ظهور الذكر على الشاشة أثناء التصفح:",
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    Text(
+                      LanguageService.tr('auto_adhkar_freq_title'),
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        {'mins': 5, 'label': 'كل 5 دقائق (سريع)'},
-                        {'mins': 10, 'label': 'كل 10 دقائق'},
-                        {'mins': 15, 'label': 'كل 15 دقيقة (مستحسن)'},
-                        {'mins': 30, 'label': 'كل 30 دقيقة'},
-                        {'mins': 60, 'label': 'كل ساعة'},
-                        {'mins': 120, 'label': 'كل ساعتين'},
+                        {'mins': 5, 'labelKey': 'freq_5_min'},
+                        {'mins': 10, 'labelKey': 'freq_10_min'},
+                        {'mins': 15, 'labelKey': 'freq_15_min'},
+                        {'mins': 30, 'labelKey': 'freq_30_min'},
+                        {'mins': 60, 'labelKey': 'freq_60_min'},
+                        {'mins': 120, 'labelKey': 'freq_120_min'},
                       ].map((item) {
                         final mins = item['mins'] as int;
-                        final label = item['label'] as String;
+                        final label = LanguageService.tr(item['labelKey'] as String);
                         final isSelected = _intervalMinutes == mins;
                         return ChoiceChip(
                           label: Text(label),
@@ -533,8 +540,14 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                       contentPadding: EdgeInsets.zero,
                       value: _soundEnabled,
                       activeThumbColor: theme.accent,
-                      title: const Text("نغمة تنبيه صوتية عند ظهور الذكر", style: TextStyle(color: Colors.white, fontSize: 13)),
-                      subtitle: const Text("تشغيل صوت هادئ مع الإشعار المنبثق", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                      title: Text(
+                        LanguageService.tr('auto_adhkar_sound_title'),
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                      subtitle: Text(
+                        LanguageService.tr('auto_adhkar_sound_desc'),
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      ),
                       onChanged: _toggleSound,
                     ),
                   ],
@@ -545,20 +558,21 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
 
               // 3. Selection & Filtering Controls
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSectionHeader("اختر الأذكار والأدعية التي تظهر لك", Icons.format_list_bulleted, theme.accent),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () => _selectAll(true),
-                        child: Text("تحديد الكل", style: TextStyle(color: theme.accent, fontSize: 11)),
-                      ),
-                      TextButton(
-                        onPressed: () => _selectAll(false),
-                        child: const Text("إلغاء الكل", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                      ),
-                    ],
+                  Expanded(
+                    child: _buildSectionHeader(
+                      LanguageService.tr('auto_adhkar_select_list_header'),
+                      Icons.format_list_bulleted,
+                      theme.accent,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _selectAll(true),
+                    child: Text(LanguageService.tr('select_all'), style: TextStyle(color: theme.accent, fontSize: 11)),
+                  ),
+                  TextButton(
+                    onPressed: () => _selectAll(false),
+                    child: Text(LanguageService.tr('deselect_all'), style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
                   ),
                 ],
               ),
@@ -573,7 +587,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(left: 6),
                       child: FilterChip(
-                        label: Text(cat),
+                        label: Text(AutoAdhkarService.getCategoryDisplayName(cat)),
                         selected: isSel,
                         selectedColor: theme.primary,
                         backgroundColor: const Color(0xFF1E293B),
@@ -631,7 +645,7 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        item.category,
+                                        item.displayCategory,
                                         style: TextStyle(color: theme.accent, fontSize: 10, fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -643,9 +657,9 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                                           color: Colors.blueAccent.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: const Text(
-                                          "مضاف من طرفك",
-                                          style: TextStyle(color: Colors.lightBlueAccent, fontSize: 9),
+                                        child: Text(
+                                          LanguageService.tr('auto_adhkar_user_added'),
+                                          style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 9),
                                         ),
                                       ),
                                     ],
@@ -675,13 +689,13 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
                             children: [
                               IconButton(
                                 icon: Icon(Icons.remove_red_eye_outlined, color: theme.accent, size: 18),
-                                tooltip: "معاينة الظهور",
+                                tooltip: LanguageService.tr('auto_adhkar_preview_tooltip'),
                                 onPressed: () => _testTriggerDhikr(theme, item),
                               ),
                               if (item.isCustom)
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-                                  tooltip: "حذف الذكر المخصص",
+                                  tooltip: LanguageService.tr('auto_adhkar_delete_tooltip'),
                                   onPressed: () async {
                                     await AutoAdhkarService.deleteCustomDhikr(item.id);
                                     setState(() {});
@@ -702,16 +716,21 @@ class _AutoAdhkarScreenState extends State<AutoAdhkarScreen> {
         );
       },
     );
+  },
+);
   }
 
   Widget _buildSectionHeader(String title, IconData icon, Color accentColor) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, color: accentColor, size: 18),
         const SizedBox(width: 6),
-        Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+        Flexible(
+          child: Text(
+            title,
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
